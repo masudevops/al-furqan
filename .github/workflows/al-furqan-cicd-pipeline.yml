@@ -27,12 +27,6 @@ jobs:
       - name: Build app
         run: npm run build
 
-      - name: Copy web.config to dist
-        run: |
-          if [ -f web.config ]; then
-            cp web.config dist/web.config
-          fi
-
       - name: Zip build output
         run: zip -r release.zip dist
 
@@ -61,30 +55,12 @@ jobs:
       - name: Unzip build
         run: unzip release.zip
 
-      - name: List files to verify deployment
-        run: |
-          echo "Files in dist directory:"
-          ls -la dist/ || echo "dist directory not found"
-          echo "Checking for index.html:"
-          ls -la dist/index.html || echo "index.html not found"
-          echo "Checking for web.config:"
-          ls -la dist/web.config || echo "web.config not found"
-          echo "Current working directory:"
-          pwd
-          echo "Contents of current directory:"
-          ls -la
-
       - name: Login to Azure
         uses: azure/login@v2
         with:
           client-id:       ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id:       ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Configure Azure Web App for Static Site
-        run: |
-          az webapp config set --name alfurqan --resource-group $(az webapp show --name alfurqan --query resourceGroup -o tsv) --startup-file "" --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} || echo "Config update skipped"
-          az webapp config appsettings set --name alfurqan --resource-group $(az webapp show --name alfurqan --query resourceGroup -o tsv) --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} || echo "Settings update skipped"
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
@@ -93,5 +69,4 @@ jobs:
           app-name: 'alfurqan'
           slot-name: 'Production'
           package: './dist'
-          restart: true
 

@@ -76,4 +76,5 @@ jobs:
           slot-name: 'Production'
           package: './dist'
           restart: true
+          clean: true
 

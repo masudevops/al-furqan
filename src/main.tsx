@@ -1,9 +1,13 @@
 // src/main.tsx
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { inject } from "@vercel/analytics";
 import App from "./App";
 import "./index.css";
 import { ThemeProvider } from "./context/ThemeContext";
+
+// Inject Vercel Web Analytics
+inject();
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {

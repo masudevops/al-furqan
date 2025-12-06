@@ -69,6 +69,10 @@ jobs:
           ls -la dist/index.html || echo "index.html not found"
           echo "Checking for web.config:"
           ls -la dist/web.config || echo "web.config not found"
+          echo "Current working directory:"
+          pwd
+          echo "Contents of current directory:"
+          ls -la
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -76,6 +80,11 @@ jobs:
           client-id:       ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id:       ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Configure Azure Web App for Static Site
+        run: |
+          az webapp config set --name alfurqan --resource-group $(az webapp show --name alfurqan --query resourceGroup -o tsv) --startup-file "" --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} || echo "Config update skipped"
+          az webapp config appsettings set --name alfurqan --resource-group $(az webapp show --name alfurqan --query resourceGroup -o tsv) --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} || echo "Settings update skipped"
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp

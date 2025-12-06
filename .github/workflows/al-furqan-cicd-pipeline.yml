@@ -61,6 +61,15 @@ jobs:
       - name: Unzip build
         run: unzip release.zip
 
+      - name: List files to verify deployment
+        run: |
+          echo "Files in dist directory:"
+          ls -la dist/ || echo "dist directory not found"
+          echo "Checking for index.html:"
+          ls -la dist/index.html || echo "index.html not found"
+          echo "Checking for web.config:"
+          ls -la dist/web.config || echo "web.config not found"
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -76,5 +85,4 @@ jobs:
           slot-name: 'Production'
           package: './dist'
           restart: true
-          clean: true
 

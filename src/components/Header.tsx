@@ -14,7 +14,7 @@ export default function Header() {
             to="/" 
             className="text-2xl font-bold bg-gradient-to-r from-green-600 to-teal-500 bg-clip-text text-transparent"
           >
-            🚀 Al Furqan - UPDATED NOW 🚀
+            Al Furqan
           </Link>
           
           <nav className="hidden md:flex items-center space-x-8">

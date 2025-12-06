@@ -27,6 +27,12 @@ jobs:
       - name: Build app
         run: npm run build
 
+      - name: Copy web.config to dist
+        run: |
+          if [ -f web.config ]; then
+            cp web.config dist/web.config
+          fi
+
       - name: Zip build output
         run: zip -r release.zip dist
 
@@ -69,4 +75,5 @@ jobs:
           app-name: 'alfurqan'
           slot-name: 'Production'
           package: './dist'
+          restart: true
 

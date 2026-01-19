@@ -1,0 +1,34 @@
+{
+    "locations": [
+        "New York",
+        "London",
+        "Mecca",
+        "Dhaka"
+    ],
+    "times": {
+        "New York": {
+            "date": "2024-01-01",
+            "fajr": "05:45",
+            "dhuhr": "12:15",
+            "asr": "14:45",
+            "maghrib": "16:50",
+            "isha": "18:30"
+        },
+        "London": {
+            "date": "2024-01-01",
+            "fajr": "06:10",
+            "dhuhr": "12:05",
+            "asr": "13:50",
+            "maghrib": "16:00",
+            "isha": "17:45"
+        },
+        "Mecca": {
+            "date": "2024-01-01",
+            "fajr": "05:30",
+            "dhuhr": "12:20",
+            "asr": "15:30",
+            "maghrib": "17:50",
+            "isha": "19:20"
+        }
+    }
+}

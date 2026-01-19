@@ -1,0 +1,42 @@
+{
+    "collections": [
+        {
+            "id": "bukhari",
+            "title": "Sahih al-Bukhari",
+            "total": 7563
+        },
+        {
+            "id": "muslim",
+            "title": "Sahih Muslim",
+            "total": 3033
+        },
+        {
+            "id": "nasai",
+            "title": "Sunan an-Nasa'i",
+            "total": 5758
+        },
+        {
+            "id": "abudawud",
+            "title": "Sunan Abu Dawud",
+            "total": 5274
+        }
+    ],
+    "hadiths": [
+        {
+            "collectionId": "bukhari",
+            "bookNumber": 1,
+            "hadithNumber": 1,
+            "textArabic": "إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ، وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى",
+            "textEnglish": "The reward of deeds depends upon the intentions and every person will get the reward according to what he has intended.",
+            "narrator": "Umar bin Al-Khattab"
+        },
+        {
+            "collectionId": "muslim",
+            "bookNumber": 1,
+            "hadithNumber": 8,
+            "textArabic": "بُنِيَ الإِسْلاَمُ عَلَى خَمْسٍ",
+            "textEnglish": "Islam is built on five (pillars).",
+            "narrator": "Ibn Umar"
+        }
+    ]
+}

@@ -1,0 +1,34 @@
+// Ibn Kathir Tafseer Data
+export const ibnKathirTafseerData = {
+  "en.ibnkathir": {
+    "1:1": "In the Name of Allah, the Most Gracious, the Most Merciful. This is the Basmalah, and it is recommended to say it at the beginning of every action. Allah is the proper name of the Lord, the Most High, and it is said that it is the Greatest Name of Allah. Ar-Rahman (the Most Gracious) is one of Allah's Names that is specific to Him. None except Allah is called Ar-Rahman, as Allah said: 'Say: Invoke Allah or invoke Ar-Rahman (the Most Gracious), by whatever name you invoke Him (it is the same), for to Him belong the Best Names.' Ar-Rahim (the Most Merciful) means the One Who bestows His mercy on His believing servants, as Allah said: 'And He is Ever Most Merciful to the believers.'",
+    
+    "1:2": "All praise and thanks be to Allah, the Lord of all that exists. Al-Hamdu (all praise and thanks) is a statement of praise and commendation. Allah is praised for His perfect attributes and actions. Lillahi (to Allah) means that all praise belongs to Allah alone. Rabb (Lord) means the Owner, the Master, the Ruler, the Controller, the Sustainer, etc. Al-Alameen (all that exists) refers to all of creation - mankind, Jinns, angels, animals, plants, and all that Allah created.",
+    
+    "1:3": "The Most Gracious, the Most Merciful. This verse repeats the attributes of Allah's mercy mentioned in the Basmalah, emphasizing Allah's infinite mercy and compassion towards His creation.",
+    
+    "1:4": "The Only Owner of the Day of Recompense. Maliki (Owner/King) indicates Allah's absolute sovereignty over the Day of Judgment. Yawm ad-Din (Day of Recompense) refers to the Day of Judgment when all people will be recompensed for their deeds, good or evil.",
+    
+    "1:5": "You (Alone) we worship, and You (Alone) we ask for help. Iyyaka (You Alone) emphasizes exclusivity - worship is for Allah alone. Na'budu (we worship) means to submit, obey, and humble oneself before Allah. Nasta'een (we seek help) means we seek assistance and support from Allah alone in all our affairs.",
+    
+    "1:6": "Guide us to the Straight Path. Ihdina (Guide us) is a request for guidance. As-Sirat al-Mustaqeem (the Straight Path) refers to Islam, the path that leads to Allah's pleasure and Paradise. This is the path of the Prophets, the truthful, the martyrs, and the righteous.",
+    
+    "1:7": "The path of those upon whom You have bestowed favor, not of those who have evoked [Your] anger or of those who are astray. This verse clarifies the Straight Path by mentioning those who followed it (the favored ones like the Prophets and righteous people) and those who deviated from it (those who earned Allah's anger like some among the Jews, and those who went astray like some among the Christians)."
+  },
+  
+  "bn.ibnkathir": {
+    "1:1": "পরম করুণাময় অসীম দয়ালু আল্লাহর নামে। এটি বিসমিল্লাহ, এবং প্রতিটি কাজের শুরুতে এটি বলা মুস্তাহাব। আল্লাহ হলো মহান প্রভুর নিজস্ব নাম, এবং বলা হয় যে এটি আল্লাহর সর্বশ্রেষ্ঠ নাম। আর-রহমান (পরম করুণাময়) আল্লাহর একটি নাম যা কেবল তাঁর জন্য নির্দিষ্ট। আল্লাহ ছাড়া আর কাউকে আর-রহমান বলা হয় না। আর-রহীম (অসীম দয়ালু) অর্থ যিনি তাঁর মুমিন বান্দাদের উপর দয়া করেন।",
+    
+    "1:2": "সমস্ত প্রশংসা আল্লাহর জন্য যিনি সকল সৃষ্টির প্রতিপালক। আল-হামদু (সমস্ত প্রশংসা) হলো প্রশংসা ও স্তুতির বাক্য। আল্লাহর নিখুঁত গুণাবলী ও কর্মের জন্য তাঁর প্রশংসা করা হয়। লিল্লাহি (আল্লাহর জন্য) অর্থ সমস্ত প্রশংসা কেবল আল্লাহরই। রব্ব (প্রতিপালক) অর্থ মালিক, প্রভু, শাসক, নিয়ন্ত্রক, পালনকর্তা ইত্যাদি। আল-আলামীন (সকল সৃষ্টি) বলতে সমস্ত সৃষ্টি - মানুষ, জিন, ফেরেশতা, পশু, উদ্ভিদ এবং আল্লাহ যা সৃষ্টি করেছেন সব কিছুকে বোঝায়।",
+    
+    "1:3": "পরম করুণাময়, অসীম দয়ালু। এই আয়াতটি বিসমিল্লাহতে উল্লিখিত আল্লাহর দয়ার গুণাবলীর পুনরাবৃত্তি করে, তাঁর সৃষ্টির প্রতি আল্লাহর অসীম দয়া ও করুণার উপর জোর দেয়।",
+    
+    "1:4": "বিচার দিনের একমাত্র মালিক। মালিকি (মালিক/রাজা) বিচার দিবসে আল্লাহর পূর্ণ সার্বভৌমত্ব নির্দেশ করে। ইয়াওমুদ্দীন (প্রতিফল দিবস) বিচার দিবসকে বোঝায় যখন সকল মানুষ তাদের ভাল বা মন্দ কর্মের প্রতিফল পাবে।",
+    
+    "1:5": "আমরা কেবল তোমারই ইবাদত করি এবং কেবল তোমারই সাহায্য প্রার্থনা করি। ইয্যাকা (কেবল তোমার) একচ্ছত্রতার উপর জোর দেয় - ইবাদত কেবল আল্লাহরই জন্য। না'বুদু (আমরা ইবাদত করি) অর্থ আল্লাহর কাছে আত্মসমর্পণ, আনুগত্য ও বিনয় প্রকাশ করা। নাস্তা'ঈন (আমরা সাহায্য চাই) অর্থ আমরা আমাদের সকল বিষয়ে কেবল আল্লাহর কাছেই সাহায্য ও সহায়তা চাই।",
+    
+    "1:6": "আমাদেরকে সরল পথ দেখাও। ইহদিনা (আমাদেরকে পথ দেখাও) হলো হিদায়াতের জন্য প্রার্থনা। আস-সিরাতুল মুস্তাকীম (সরল পথ) ইসলামকে বোঝায়, যে পথ আল্লাহর সন্তুষ্টি ও জান্নাতের দিকে নিয়ে যায়। এটি নবীগণ, সিদ্দীকগণ, শহীদগণ ও নেককারদের পথ।",
+    
+    "1:7": "তাদের পথ, যাদের উপর তুমি অনুগ্রহ করেছ, তাদের নয় যারা ক্রোধভাজন হয়েছে এবং তাদেরও নয় যারা পথভ্রষ্ট হয়েছে। এই আয়াতটি সরল পথকে স্পষ্ট করে যারা এর অনুসরণ করেছে (অনুগ্রহপ্রাপ্তরা যেমন নবীগণ ও নেককার ব্যক্তিরা) এবং যারা এ থেকে বিচ্যুত হয়েছে (যারা আল্লাহর ক্রোধের পাত্র হয়েছে যেমন কিছু ইহুদী, এবং যারা পথভ্রষ্ট হয়েছে যেমন কিছু খ্রিস্টান) তাদের উল্লেখ করে।"
+  }
+} as const;

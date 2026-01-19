@@ -240,8 +240,8 @@ export default function Bookmarks(): JSX.Element {
   };
 
   const navigateToAyah = (surahNumber: number, ayahNumber: number) => {
-    // Navigate to /surah/:surahNumber and scroll to #ayah-<ayahNumber>
-    navigate(`/surah/${surahNumber}#ayah-${ayahNumber}`);
+    // Navigate to /quran/:surahNumber and scroll to #ayah-<ayahNumber>
+    navigate(`/quran/${surahNumber}#ayah-${ayahNumber}`);
   };
 
   if (loading) {

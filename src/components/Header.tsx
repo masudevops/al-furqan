@@ -1,65 +1,85 @@
-// src/components/Header.tsx
-
-import { Link } from "react-router-dom";
-import { useTheme } from "../context/ThemeContext";
+import { Link, useLocation } from "react-router-dom";
+import { useState } from "react";
+import { FaBars, FaTimes } from "react-icons/fa";
 
 export default function Header() {
-  const { darkMode, toggleDarkMode } = useTheme();
+  const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
+
+  const links = [
+    { name: "Quran", path: "/al-quran" },
+    { name: "Prayer Times", path: "/salah" },
+    { name: "Hisnul Muslim", path: "/hisnul" },
+    { name: "Bookmarks", path: "/bookmarks" },
+    { name: "Tafseer", path: "/tafseer" },
+    { name: "Islamic Library", path: "/library" },
+  ];
+
+  const handleLinkClick = () => setIsOpen(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 shadow-sm">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <Link 
-            to="/" 
-            className="text-2xl font-bold bg-gradient-to-r from-green-600 to-teal-500 bg-clip-text text-transparent"
-          >
-            Al Furqan
-          </Link>
-          
-          <nav className="hidden md:flex items-center space-x-8">
-            <Link 
-              to="/quran" 
-              className="text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-colors font-medium"
-            >
-              Quran
-            </Link>
-            <Link 
-              to="/prayer" 
-              className="text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-colors font-medium"
-            >
-              Prayer Times
-            </Link>
-            {/* <Link 
-              to="/qibla" 
-              className="text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-colors font-medium"
-            >
-              Qibla
-            </Link> */}
-            <Link 
-              to="/hisnul" 
-              className="text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-colors font-medium"
-            >
-              Hisnul Muslim
-            </Link>
-            <Link 
-              to="/bookmarks" 
-              className="text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-colors font-medium"
-            >
-              Bookmarks
-            </Link>
-          </nav>
+    <header className="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 shadow-sm transition-colors duration-300">
+      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        {/* Logo */}
+        <Link
+          to="/"
+          className="text-2xl font-bold flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-arabic"
+          onClick={handleLinkClick}
+        >
+          Al-Furqan
+        </Link>
 
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={toggleDarkMode}
-              className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-            >
-              {darkMode ? "☀️" : "🌙"}
-            </button>
+        {/* Desktop Nav */}
+        <nav className="hidden md:flex items-center gap-6">
+          {links.map((link) => {
+            const isActive = location.pathname === link.path;
+            return (
+              <Link
+                key={link.name}
+                to={link.path}
+                className={`text-sm font-medium transition-colors hover:text-emerald-500 ${isActive
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-gray-600 dark:text-gray-300"
+                  }`}
+              >
+                {link.name}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Mobile Toggle */}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="md:hidden text-gray-600 dark:text-gray-300 focus:outline-none"
+        >
+          {isOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
+        </button>
+      </div>
+
+      {/* Mobile Menu */}
+      {isOpen && (
+        <div className="md:hidden bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 animate-fadeIn absolute w-full left-0 top-16 shadow-lg">
+          <div className="flex flex-col p-4 space-y-4">
+            {links.map((link) => {
+              const isActive = location.pathname === link.path;
+              return (
+                <Link
+                  key={link.name}
+                  to={link.path}
+                  onClick={handleLinkClick}
+                  className={`text-base font-medium transition-colors hover:text-emerald-500 ${isActive
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-gray-600 dark:text-gray-300"
+                    }`}
+                >
+                  {link.name}
+                </Link>
+              );
+            })}
           </div>
         </div>
-      </div>
+      )}
     </header>
   );
 }

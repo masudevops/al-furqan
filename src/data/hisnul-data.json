@@ -1,0 +1,70 @@
+{
+    "categories": [
+        "Morning",
+        "Evening",
+        "Prayer",
+        "Travel",
+        "Home",
+        "Hajj & Umrah",
+        "Nature",
+        "Illness"
+    ],
+    "duas": [
+        {
+            "id": 1,
+            "category": "Morning",
+            "title": "Upon waking up",
+            "arabic": "الْحَمْدُ للهِ الَّذِي أَحْيَانَا بَعْدَ مَا أَمَاتَنَا وَإِلَيْهِ النُّشُورُ",
+            "transliteration": "Alhamdu lillahil-lathee ahyana ba'da ma amatana wa-ilayhin-nushoor",
+            "translation": "All praise is due to Allah who gave us life after having given us death and unto Him is the resurrection."
+        },
+        {
+            "id": 2,
+            "category": "Travel",
+            "title": "Supplication for traveling",
+            "arabic": "سُبْحَانَ الَّذِي سَخَّرَ لَنَا هَذَا وَمَا كُنَّا لَهُ مُقْرِنِينَ",
+            "transliteration": "Subhanal-lathee sakhkhara lana hatha wama kunna lahu muqrineen",
+            "translation": "Glory to Him who has subjected this to us, and we could not have otherwise subdued it."
+        },
+        {
+            "id": 3,
+            "category": "Evening",
+            "title": "Evening Remembrance",
+            "arabic": "أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لاَ إِلَهَ إِلاَّ اللَّهُ وَحْدَهُ لاَ شَرِيكَ لَهُ",
+            "transliteration": "Amsayna wa-amsal-mulku lillah, walhamdu lillah, la ilaha illallah wahdahu la shareeka lah",
+            "translation": "We have reached the evening and at this very time unto Allah belongs all sovereignty, and all praise is for Allah. None has the right to be worshipped except Allah, alone, without partner."
+        },
+        {
+            "id": 4,
+            "category": "Prayer",
+            "title": "After Salaam",
+            "arabic": "أَسْتَغْفِرُ اللَّهَ، أَسْتَغْفِرُ اللَّهَ، أَسْتَغْفِرُ اللَّهَ",
+            "transliteration": "Astaghfirullah, Astaghfirullah, Astaghfirullah",
+            "translation": "I seek the forgiveness of Allah (three times)."
+        },
+        {
+            "id": 5,
+            "category": "Home",
+            "title": "Entering the Home",
+            "arabic": "بِسْمِ اللهِ وَلَجْنَا، وَ بِسْمِ اللهِ خَرَجْنَا، وَعَلَى رَبِّنَا تَوَكَّلْنَا",
+            "transliteration": "Bismillahi walajna, wa bismillahi kharajna, wa 'ala Rabbina tawakkalna",
+            "translation": "In the Name of Allah we enter, in the Name of Allah we leave, and upon our Lord we depend."
+        },
+        {
+            "id": 6,
+            "category": "Illness",
+            "title": "Visiting the Sick",
+            "arabic": "لَا بَأْسَ طَهُورٌ إِنْ شَاءَ اللهُ",
+            "transliteration": "La ba'sa tahoorun in shaa Allah",
+            "translation": "Do not worry, it will be a purification (for you), if Allah wills."
+        },
+        {
+            "id": 7,
+            "category": "Morning",
+            "title": "Morning Protection",
+            "arabic": "بِسْمِ اللهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلَا فِي السَّمَاءِ وَهُوَ السَّمِيعُ الْعَلِيمُ",
+            "transliteration": "Bismillahil-lathee la yadurru ma'as-mihi shay'un fil-ardi wala fis-sama'i wa huwas-samee'ul-'aleem",
+            "translation": "In the Name of Allah, Who with His Name nothing can cause harm in the earth nor in the heavens, and He is the All-Hearing, the All-Knowing. (Recite 3 times)"
+        }
+    ]
+}

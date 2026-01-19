@@ -21,11 +21,11 @@ import {
   Home,
   Smile,
   AlertTriangle,
-  // add more as needed
 } from "lucide-react";
 import { FaCopy, FaShare, FaCheck } from "react-icons/fa";
 // JSON from https://raw.githubusercontent.com/wafaaelmaandy/Hisn-Muslim-Json/master/husn_en.json
 import duaData from "../data/hisnulMuslim.json";
+import SEO from "../components/SEO";
 
 interface Dua {
   id: string;
@@ -153,7 +153,7 @@ const CATEGORY_TO_GROUP: Record<string, string> = {
 };
 
 // Icon map for main groups (use lucide-react icons as placeholders)
-const GROUP_ICONS = {
+const GROUP_ICONS: Record<string, React.ReactElement> = {
   "Salah": <BookOpen className="w-8 h-8 text-green-600" />,
   "Morning & Evening": <Sun className="w-8 h-8 text-yellow-500" />,
   "Sleep": <BedDouble className="w-8 h-8 text-blue-400" />,
@@ -294,6 +294,8 @@ export default function HisnulMuslim() {
 
   return (
     <div className="relative min-h-[calc(100vh-80px)] flex flex-col bg-gradient-to-b from-yellow-50 to-green-50 dark:from-gray-900 dark:to-gray-800">
+      <SEO title="Hisnul Muslim" description="Fortress of the Muslim - Daily Adhkar" />
+      
       {/* Top bar and quote */}
       <div className="sticky top-0 z-20 bg-yellow-100/90 dark:bg-gray-900/90 border-b border-yellow-200 dark:border-gray-800 px-4 py-3 flex flex-col items-center shadow-sm">
         <div className="text-lg font-bold text-green-700 dark:text-green-300 tracking-wide mb-1">Hisnul Muslim</div>
@@ -314,7 +316,7 @@ export default function HisnulMuslim() {
                     className="flex flex-col items-center justify-center bg-white/80 dark:bg-gray-900/80 rounded-2xl shadow border border-gray-100 dark:border-gray-800 p-5 hover:shadow-lg transition-all duration-200 group"
                     onClick={() => setSelectedGroup(group)}
                   >
-                    {GROUP_ICONS[group as keyof typeof GROUP_ICONS]}
+                    {GROUP_ICONS[group]}
                     <span className="mt-3 text-base font-semibold text-gray-800 dark:text-gray-100 text-center">
                       {group}
                     </span>
@@ -330,7 +332,7 @@ export default function HisnulMuslim() {
                   <ChevronLeft className="w-5 h-5" /> All Categories
                 </button>
                 <h2 className="text-2xl font-bold mb-4 text-green-700 dark:text-green-300 flex items-center gap-2">
-                  {GROUP_ICONS[selectedGroup as keyof typeof GROUP_ICONS]} {selectedGroup}
+                  {GROUP_ICONS[selectedGroup]} {selectedGroup}
                 </h2>
                 <div className="space-y-6">
                   {groupedCategories[selectedGroup]?.map((cat) => {
@@ -338,24 +340,24 @@ export default function HisnulMuslim() {
                     return (
                       <div
                         key={cat.name}
-                        className={`card transition-all duration-300 overflow-hidden ${isOpen ? "shadow-lg border-green-300 dark:border-green-700" : "hover:shadow-md"}`}
+                        className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300 overflow-hidden ${isOpen ? "shadow-lg border-emerald-300 dark:border-emerald-700" : "hover:shadow-md"}`}
                       >
                         <button
                           onClick={() => toggleCategory(cat.name)}
-                          className={`w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-green-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors group focus:outline-none`}
+                          className={`w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-emerald-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors group focus:outline-none`}
                         >
                           <span className="text-xl font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                            <span className="inline-block w-2 h-2 rounded-full bg-gradient-to-r from-green-400 to-purple-400 mr-2 group-hover:scale-125 transition-transform" />
+                            <span className="inline-block w-2 h-2 rounded-full bg-gradient-to-r from-emerald-400 to-purple-400 mr-2 group-hover:scale-125 transition-transform" />
                             {cat.name}
                           </span>
                           {isOpen ? (
-                            <ChevronUp className="text-green-600 dark:text-green-400 transition-transform group-hover:-rotate-12" />
+                            <ChevronUp className="text-emerald-600 dark:text-emerald-400 transition-transform group-hover:-rotate-12" />
                           ) : (
                             <ChevronDown className="text-purple-600 dark:text-purple-400 transition-transform group-hover:rotate-12" />
                           )}
                         </button>
                         <div
-                          className={`transition-all duration-300 ${isOpen ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"} bg-gradient-to-br from-white via-green-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900`}
+                          className={`transition-all duration-300 ${isOpen ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"} bg-gradient-to-br from-white via-emerald-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900`}
                         >
                           {isOpen && (
                             <ul className="divide-y divide-gray-100 dark:divide-gray-800 px-2 py-2 space-y-4">
@@ -364,7 +366,7 @@ export default function HisnulMuslim() {
                                   key={dua.id}
                                   className="relative p-6 bg-white/80 dark:bg-gray-900/80 rounded-xl shadow border border-gray-100 dark:border-gray-800 hover:shadow-lg transition-all duration-200 group"
                                 >
-                                  <div className="absolute left-0 top-4 bottom-4 w-1 bg-gradient-to-b from-green-400 via-teal-400 to-purple-400 rounded-full opacity-30 group-hover:opacity-60 transition-opacity" />
+                                  <div className="absolute left-0 top-4 bottom-4 w-1 bg-gradient-to-b from-emerald-400 via-teal-400 to-purple-400 rounded-full opacity-30 group-hover:opacity-60 transition-opacity" />
                                   <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
                                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                       <button
@@ -373,7 +375,7 @@ export default function HisnulMuslim() {
                                         title="Copy dua"
                                       >
                                         {copiedDua === dua.id ? (
-                                          <FaCheck className="text-green-500" />
+                                          <FaCheck className="text-emerald-500" />
                                         ) : (
                                           <FaCopy />
                                         )}
@@ -426,24 +428,24 @@ export default function HisnulMuslim() {
               return (
                 <div
                   key={cat.name}
-                  className={`card transition-all duration-300 overflow-hidden ${isOpen ? "shadow-lg border-green-300 dark:border-green-700" : "hover:shadow-md"}`}
+                  className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300 overflow-hidden ${isOpen ? "shadow-lg border-emerald-300 dark:border-emerald-700" : "hover:shadow-md"}`}
                 >
                   <button
                     onClick={() => toggleCategory(cat.name)}
-                    className={`w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-green-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors group focus:outline-none`}
+                    className={`w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-emerald-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors group focus:outline-none`}
                   >
                     <span className="text-xl font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                      <span className="inline-block w-2 h-2 rounded-full bg-gradient-to-r from-green-400 to-purple-400 mr-2 group-hover:scale-125 transition-transform" />
+                      <span className="inline-block w-2 h-2 rounded-full bg-gradient-to-r from-emerald-400 to-purple-400 mr-2 group-hover:scale-125 transition-transform" />
                       {cat.name}
                     </span>
                     {isOpen ? (
-                      <ChevronUp className="text-green-600 dark:text-green-400 transition-transform group-hover:-rotate-12" />
+                      <ChevronUp className="text-emerald-600 dark:text-emerald-400 transition-transform group-hover:-rotate-12" />
                     ) : (
                       <ChevronDown className="text-purple-600 dark:text-purple-400 transition-transform group-hover:rotate-12" />
                     )}
                   </button>
                   <div
-                    className={`transition-all duration-300 ${isOpen ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"} bg-gradient-to-br from-white via-green-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900`}
+                    className={`transition-all duration-300 ${isOpen ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"} bg-gradient-to-br from-white via-emerald-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900`}
                   >
                     {isOpen && (
                       <ul className="divide-y divide-gray-100 dark:divide-gray-800 px-2 py-2 space-y-4">
@@ -452,7 +454,7 @@ export default function HisnulMuslim() {
                             key={dua.id}
                             className="relative p-6 bg-white/80 dark:bg-gray-900/80 rounded-xl shadow border border-gray-100 dark:border-gray-800 hover:shadow-lg transition-all duration-200 group"
                           >
-                            <div className="absolute left-0 top-4 bottom-4 w-1 bg-gradient-to-b from-green-400 via-teal-400 to-purple-400 rounded-full opacity-30 group-hover:opacity-60 transition-opacity" />
+                            <div className="absolute left-0 top-4 bottom-4 w-1 bg-gradient-to-b from-emerald-400 via-teal-400 to-purple-400 rounded-full opacity-30 group-hover:opacity-60 transition-opacity" />
                             <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
                               <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button
@@ -461,7 +463,7 @@ export default function HisnulMuslim() {
                                   title="Copy dua"
                                 >
                                   {copiedDua === dua.id ? (
-                                    <FaCheck className="text-green-500" />
+                                    <FaCheck className="text-emerald-500" />
                                   ) : (
                                     <FaCopy />
                                   )}
@@ -518,7 +520,7 @@ export default function HisnulMuslim() {
                     key={dua.id}
                     className="relative p-6 bg-white/80 dark:bg-gray-900/80 rounded-xl shadow border border-gray-100 dark:border-gray-800 hover:shadow-lg transition-all duration-200 group"
                   >
-                    <div className="absolute left-0 top-4 bottom-4 w-1 bg-gradient-to-b from-green-400 via-teal-400 to-purple-400 rounded-full opacity-30 group-hover:opacity-60 transition-opacity" />
+                    <div className="absolute left-0 top-4 bottom-4 w-1 bg-gradient-to-b from-emerald-400 via-teal-400 to-purple-400 rounded-full opacity-30 group-hover:opacity-60 transition-opacity" />
                     <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
@@ -527,7 +529,7 @@ export default function HisnulMuslim() {
                           title="Copy dua"
                         >
                           {copiedDua === dua.id ? (
-                            <FaCheck className="text-green-500" />
+                            <FaCheck className="text-emerald-500" />
                           ) : (
                             <FaCopy />
                           )}
@@ -577,7 +579,7 @@ export default function HisnulMuslim() {
           <Star className="w-6 h-6 mb-1" fill={tab === "favorites" ? "#fde047" : "none"} />
         </button>
         <button
-          className={`flex flex-col items-center px-2 py-1 ${tab === "groups" ? "text-green-600" : "text-gray-500 dark:text-gray-400"}`}
+          className={`flex flex-col items-center px-2 py-1 ${tab === "groups" ? "text-emerald-600" : "text-gray-500 dark:text-gray-400"}`}
           onClick={() => { setTab("groups"); setSelectedGroup(null); }}
         >
           <Grid className="w-6 h-6 mb-1" />

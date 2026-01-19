@@ -76,6 +76,46 @@ export async function fetchPrayerTimes(
     }
 }
 
+export async function fetchPrayerTimesByCoords(
+    latitude: number,
+    longitude: number,
+    method: number = 3 // Muslim World League
+): Promise<PrayerTimesData | null> {
+    try {
+        const url = `${ALADHAN_API_BASE}/timings?latitude=${latitude}&longitude=${longitude}&method=${method}`;
+
+        console.log(`Fetching prayer times for coords ${latitude}, ${longitude} from: ${url}`);
+
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: Failed to fetch prayer times by coords`);
+        }
+
+        const json: PrayerTimesResponse = await response.json();
+        return json.data;
+    } catch (error) {
+        console.error("Error fetching prayer times by coords:", error);
+        return null;
+    }
+}
+
+export async function reverseGeocode(lat: number, lon: number): Promise<{ city: string; country: string } | null> {
+    try {
+        const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`;
+        const response = await fetch(url);
+        if (!response.ok) return null;
+
+        const data = await response.json();
+        return {
+            city: data.city || data.locality || data.principalSubdivision || "Unknown Location",
+            country: data.countryName || ""
+        };
+    } catch (error) {
+        console.error("Error in reverse geocoding:", error);
+        return null;
+    }
+}
+
 // Available calculation methods
 export const CALCULATION_METHODS = [
     { id: 1, name: "University of Islamic Sciences, Karachi" },

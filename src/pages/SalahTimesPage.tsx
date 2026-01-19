@@ -40,6 +40,50 @@ export default function SalahTimesPage() {
         setCountry(formData.get('country') as string);
     };
 
+    const detectLocation = () => {
+        if (!navigator.geolocation) {
+            setError("Geolocation is not supported by your browser.");
+            return;
+        }
+
+        setLoading(true);
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const { latitude, longitude } = position.coords;
+                try {
+                    const { fetchPrayerTimesByCoords, reverseGeocode } = await import("../services/prayerTimesService");
+
+                    // Fetch both in parallel
+                    const [prayerData, geoResult] = await Promise.all([
+                        fetchPrayerTimesByCoords(latitude, longitude, method),
+                        reverseGeocode(latitude, longitude)
+                    ]);
+
+                    if (prayerData) {
+                        setPrayerData(prayerData);
+                        if (geoResult) {
+                            setCity(geoResult.city);
+                            setCountry(geoResult.country);
+                        } else {
+                            setCity(`Location (${latitude.toFixed(2)}, ${longitude.toFixed(2)})`);
+                            setCountry("");
+                        }
+                    } else {
+                        setError("Could not retrieve prayer times for your current position.");
+                    }
+                } catch (err) {
+                    setError("Failed to fetch timings for your position.");
+                } finally {
+                    setLoading(false);
+                }
+            },
+            () => {
+                setError("Unable to retrieve your location. Please check your permissions.");
+                setLoading(false);
+            }
+        );
+    };
+
     const prayerOrder = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
 
     return (
@@ -66,8 +110,9 @@ export default function SalahTimesPage() {
                             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">City</label>
                             <input
                                 name="city"
+                                key={`city-${city}`} // Add key to force re-render when city changes via geolocation
                                 defaultValue={city}
-                                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-sm"
                                 placeholder="e.g. London"
                             />
                         </div>
@@ -75,17 +120,27 @@ export default function SalahTimesPage() {
                             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Country</label>
                             <input
                                 name="country"
+                                key={`country-${country}`} // Add key to force re-render when country changes
                                 defaultValue={country}
-                                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-sm"
                                 placeholder="e.g. UK"
                             />
                         </div>
-                        <div className="flex items-end">
+                        <div className="flex items-end gap-2">
                             <button
                                 type="submit"
-                                className="w-full px-6 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors font-medium"
+                                className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors font-semibold text-sm shadow-sm"
                             >
-                                Update Location
+                                Search City
+                            </button>
+                            <button
+                                type="button"
+                                onClick={detectLocation}
+                                className="px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all font-semibold text-sm flex items-center justify-center gap-2 border border-emerald-100 dark:border-emerald-800 shadow-sm"
+                                title="Use my current location"
+                            >
+                                <FaMapMarkerAlt />
+                                <span className="hidden sm:inline">Auto-detect</span>
                             </button>
                         </div>
                     </form>

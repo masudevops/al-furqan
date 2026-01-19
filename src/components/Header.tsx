@@ -8,11 +8,12 @@ export default function Header() {
 
   const links = [
     { name: "Quran", path: "/al-quran" },
+    { name: "Hadith", path: "/hadith" },
+    { name: "Tafseer", path: "/tafseer" },
     { name: "Prayer Times", path: "/salah" },
     { name: "Hisnul Muslim", path: "/hisnul" },
     { name: "Bookmarks", path: "/bookmarks" },
-    { name: "Tafseer", path: "/tafseer" },
-    { name: "Islamic Library", path: "/library" },
+    { name: "Islamic Books", path: "/library" },
   ];
 
   const handleLinkClick = () => setIsOpen(false);
@@ -38,8 +39,8 @@ export default function Header() {
                 key={link.name}
                 to={link.path}
                 className={`text-sm font-medium transition-colors hover:text-emerald-500 ${isActive
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-gray-600 dark:text-gray-300"
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-gray-600 dark:text-gray-300"
                   }`}
               >
                 {link.name}
@@ -69,8 +70,8 @@ export default function Header() {
                   to={link.path}
                   onClick={handleLinkClick}
                   className={`text-base font-medium transition-colors hover:text-emerald-500 ${isActive
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-gray-600 dark:text-gray-300"
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-gray-600 dark:text-gray-300"
                     }`}
                 >
                   {link.name}

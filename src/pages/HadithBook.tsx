@@ -1,8 +1,8 @@
-// src/pages/HadithBook.tsx
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { fetchHadithsByBook, type Hadith, HADITH_COLLECTIONS } from "../services/hadithService";
+import { fetchHadithsByChapter, type Hadith, HADITH_COLLECTIONS } from "../services/hadithService";
 import { FaArrowLeft } from "react-icons/fa";
+import SEO from "../components/SEO";
 
 export default function HadithBookPage() {
     const { collectionId, bookNumber } = useParams<{ collectionId: string; bookNumber: string }>();
@@ -19,7 +19,7 @@ export default function HadithBookPage() {
         const load = async () => {
             setLoading(true);
             try {
-                const data = await fetchHadithsByBook(collectionId, bookNumber);
+                const data = await fetchHadithsByChapter(collectionId, bookNumber);
                 setHadiths(data);
             } catch (err) {
                 console.error(err);
@@ -34,7 +34,8 @@ export default function HadithBookPage() {
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-[50vh]">
-                <p className="text-gray-500">Loading Hadiths...</p>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+                <p className="ml-3 text-gray-500">Loading Hadiths...</p>
             </div>
         );
     }
@@ -47,27 +48,37 @@ export default function HadithBookPage() {
                     onClick={() => navigate(`/hadith/${collectionId}`)}
                     className="text-emerald-500 hover:underline"
                 >
-                    Back to Books
+                    Back to Chapters
                 </button>
             </div>
         );
     }
 
     return (
-        <div className="max-w-4xl mx-auto pb-10">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+            <SEO
+                title={`${collectionInfo?.title || 'Hadith'} - Chapter ${bookNumber}`}
+                description="Read authentic Hadiths"
+            />
+
             <button
                 onClick={() => navigate(`/hadith/${collectionId}`)}
                 className="flex items-center gap-2 text-gray-500 hover:text-emerald-500 mb-6 transition-colors"
             >
-                <FaArrowLeft /> Back to Book List
+                <FaArrowLeft /> Back to Chapters
             </button>
 
-            <div className="mb-8">
+            <div className="mb-8 border-b border-gray-100 dark:border-gray-700 pb-4">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                     {collectionInfo?.title}
                 </h1>
-                <p className="text-gray-500 dark:text-gray-400">
-                    Book {bookNumber}
+                {collectionInfo?.arabicName && (
+                    <p className="text-lg font-arabic text-gray-600 dark:text-gray-400 mt-1">
+                        {collectionInfo.arabicName}
+                    </p>
+                )}
+                <p className="text-gray-500 dark:text-gray-400 mt-2">
+                    Chapter {bookNumber} • {hadiths.length} Hadith{hadiths.length !== 1 ? 's' : ''}
                 </p>
             </div>
 
@@ -78,11 +89,11 @@ export default function HadithBookPage() {
                         className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-100 dark:border-gray-700"
                     >
                         <div className="flex justify-between items-start mb-4">
-                            <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono text-gray-500 dark:text-gray-400">
+                            <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm font-mono text-gray-600 dark:text-gray-400">
                                 Hadith {item.hadithNumber}
                             </span>
                             {item.status && (
-                                <span className="px-2 py-1 bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 rounded text-xs font-semibold uppercase">
+                                <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded text-xs font-semibold uppercase">
                                     {item.status}
                                 </span>
                             )}
@@ -90,7 +101,7 @@ export default function HadithBookPage() {
 
                         {/* Arabic */}
                         {item.hadithArabic && (
-                            <div className="mb-6">
+                            <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
                                 <p className="font-arabic text-right text-2xl leading-[2.2] text-gray-900 dark:text-gray-100">
                                     {item.hadithArabic}
                                 </p>
@@ -100,8 +111,8 @@ export default function HadithBookPage() {
                         {/* Translation */}
                         <div>
                             {item.englishNarrator && (
-                                <p className="font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                    {item.englishNarrator}
+                                <p className="font-semibold text-emerald-700 dark:text-emerald-400 mb-3">
+                                    Narrated by {item.englishNarrator}
                                 </p>
                             )}
                             <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
@@ -113,7 +124,7 @@ export default function HadithBookPage() {
             </div>
 
             {hadiths.length === 0 && (
-                <p className="text-center text-gray-500 py-10">No hadiths found in this section.</p>
+                <p className="text-center text-gray-500 py-10">No hadiths found in this chapter.</p>
             )}
         </div>
     );

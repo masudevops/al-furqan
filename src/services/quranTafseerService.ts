@@ -1,17 +1,16 @@
 // Al-Furqan - Quran Tafseer Service (API-based)
-// Provides comprehensive Tafseer from Quran.com API
+// Provides comprehensive Tafseer from spa5k/tafsir_api via jsDeliver
 
-const QURAN_API_BASE = "https://api.quran.com/api/v4";
+const TAFSEER_API_BASE = "https://cdn.jsdelivr.net/gh/spa5k/tafsir_api@main/tafsir";
 
 // Tafseer Data Types
 export interface TafseerSource {
-  identifier: string;
+  identifier: string; // The slug in the new API
   name: string;
   language: string;
   author: string;
   englishName: string;
   description?: string;
-  apiId: number; // Quran.com API ID
 }
 
 export interface TafseerAyah {
@@ -28,62 +27,55 @@ export interface TafseerResponse {
   success: boolean;
 }
 
-// Available Tafseer Sources from Quran.com API
+// Available Tafseer Sources from spa5k/tafsir_api
 export const AVAILABLE_TAFSEER_SOURCES: TafseerSource[] = [
   {
-    identifier: "en.ibnkathir",
-    name: "Ibn Kathir (Abridged)",
+    identifier: "en-tafisr-ibn-kathir",
+    name: "Ibn Kathir (English)",
     language: "en",
     author: "Hafiz Ibn Kathir",
-    englishName: "Ibn Kathir (English)",
-    description: "Classical Sunni tafsir by the renowned 14th-century scholar - Complete version",
-    apiId: 169
+    englishName: "Tafsir Ibn Kathir",
+    description: "Classical Sunni tafsir - Abridged version"
   },
   {
-    identifier: "bn.ibnkathir",
-    name: "তাফসীর ইবনে কাসীর",
-    language: "bn",
-    author: "হাফিজ ইবনে কাসীর",
-    englishName: "Tafseer ibn Kathir (Bengali)",
-    description: "Classical Sunni tafsir by the renowned 14th-century scholar in Bengali",
-    apiId: 164
-  },
-  {
-    identifier: "ar.ibnkathir",
+    identifier: "ar-tafsir-ibn-kathir",
     name: "تفسير ابن كثير",
     language: "ar",
     author: "الحافظ ابن كثير",
     englishName: "Tafsir Ibn Kathir (Arabic)",
-    description: "Original Arabic tafsir by Ibn Kathir",
-    apiId: 14
+    description: "Original Arabic tafsir by Ibn Kathir"
   },
-
   {
-    identifier: "bn.ahsanulbayaan",
-    name: "তাফসীর আহসানুল বায়ান",
+    identifier: "bn-tafseer-ibn-e-kaseer",
+    name: "তাফসীর ইবনে কাসীর",
     language: "bn",
-    author: "বায়ান ফাউন্ডেশন",
-    englishName: "Tafsir Ahsanul Bayaan (Bengali)",
-    description: "Modern Bengali tafsir by Bayaan Foundation",
-    apiId: 165
+    author: "হাফিজ ইবনে কাসীর",
+    englishName: "Tafseer ibn Kathir (Bengali)",
+    description: "Classical Sunni tafsir in Bengali"
   },
   {
-    identifier: "en.maarif",
+    identifier: "en-tafsir-maarif-ul-quran",
     name: "Ma'arif al-Qur'an",
     language: "en",
     author: "Mufti Muhammad Shafi",
     englishName: "Ma'arif al-Qur'an (English)",
-    description: "Comprehensive English tafsir by Mufti Muhammad Shafi",
-    apiId: 168
+    description: "Comprehensive English tafsir by Mufti Muhammad Shafi"
   },
   {
-    identifier: "ur.ibnkathir",
+    identifier: "ur-tafseer-ibn-e-kaseer",
     name: "تفسیر ابن کثیر",
     language: "ur",
     author: "حافظ ابن کثیر",
     englishName: "Tafsir Ibn Kathir (Urdu)",
-    description: "Ibn Kathir tafsir in Urdu",
-    apiId: 160
+    description: "Ibn Kathir tafsir in Urdu"
+  },
+  {
+    identifier: "en-al-jalalayn",
+    name: "Tafsir al-Jalalayn",
+    language: "en",
+    author: "Al-Mahalli & Al-Suyuti",
+    englishName: "Tafsir al-Jalalayn",
+    description: "Classical succinct Sunni tafsir"
   }
 ];
 
@@ -94,14 +86,24 @@ export function getTafseerSources(): TafseerSource[] {
 
 // Get tafseer source by identifier
 export function getTafseerSource(identifier: string): TafseerSource | null {
-  return AVAILABLE_TAFSEER_SOURCES.find(source => source.identifier === identifier) || null;
+  // Handle legacy identifiers for backward compatibility during transition if needed
+  const legacyMap: Record<string, string> = {
+    "en.ibnkathir": "en-tafisr-ibn-kathir",
+    "bn.ibnkathir": "bn-tafseer-ibn-e-kaseer",
+    "ar.ibnkathir": "ar-tafsir-ibn-kathir",
+    "ur.ibnkathir": "ur-tafseer-ibn-e-kaseer",
+    "en.maarif": "en-tafsir-maarif-ul-quran"
+  };
+
+  const actualIdentifier = legacyMap[identifier] || identifier;
+  return AVAILABLE_TAFSEER_SOURCES.find(source => source.identifier === actualIdentifier) || null;
 }
 
-// Fetch tafseer for a specific ayah from Quran.com API
+// Fetch tafseer for a specific ayah from the new API
 export async function fetchTafseerForAyah(
-  surahNumber: number, 
-  ayahNumber: number, 
-  sourceIdentifier: string = "en.ibnkathir"
+  surahNumber: number,
+  ayahNumber: number,
+  sourceIdentifier: string = "en-tafisr-ibn-kathir"
 ): Promise<TafseerResponse | null> {
   try {
     const source = getTafseerSource(sourceIdentifier);
@@ -109,66 +111,66 @@ export async function fetchTafseerForAyah(
       throw new Error(`Unknown tafseer source: ${sourceIdentifier}`);
     }
 
-    console.log(`Fetching tafseer from API: ${surahNumber}:${ayahNumber} with source ${sourceIdentifier} (API ID: ${source.apiId})`);
+    const identifier = source.identifier;
+    const url = `${TAFSEER_API_BASE}/${identifier}/${surahNumber}/${ayahNumber}.json`;
+
+    console.log(`Fetching tafseer from new API: ${url}`);
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout for comprehensive tafseer
-    
-    const url = `${QURAN_API_BASE}/tafsirs/${source.apiId}/by_ayah/${surahNumber}:${ayahNumber}`;
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
     const response = await fetch(url, { signal: controller.signal });
     clearTimeout(timeout);
-    
+
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: Failed to fetch tafseer from API`);
+      throw new Error(`HTTP ${response.status}: Failed to fetch tafseer`);
     }
-    
+
     const data = await response.json();
-    
-    if (!data.tafsir || !data.tafsir.text) {
-      throw new Error("Invalid API response - no tafseer text found");
+
+    if (!data.text) {
+      throw new Error("Invalid API response - no text found");
     }
-    
+
     const tafseerAyah: TafseerAyah = {
       surah: surahNumber,
       ayah: ayahNumber,
-      text: data.tafsir.text,
-      source: sourceIdentifier,
+      text: data.text,
+      source: identifier,
       language: source.language
     };
-    
-    console.log(`Successfully fetched tafseer: ${data.tafsir.text.length} characters`);
-    
+
     return {
       ayah: tafseerAyah,
       source: source,
       success: true
     };
-    
+
   } catch (error) {
-    console.error("Error fetching tafseer from API:", error);
+    console.error("Error fetching tafseer:", error);
     return null;
   }
 }
 
-// Fetch multiple tafseer sources for the same ayah (for comparison)
+// Fetch multiple tafseer sources (for comparison)
 export async function fetchMultipleTafseerForAyah(
   surahNumber: number,
   ayahNumber: number,
-  sourceIdentifiers: string[] = ["en.ibnkathir", "bn.ibnkathir"]
+  sourceIdentifiers: string[] = ["en-tafisr-ibn-kathir", "bn-tafseer-ibn-e-kaseer"]
 ): Promise<TafseerResponse[]> {
   try {
-    const promises = sourceIdentifiers.map(sourceId => 
+    const promises = sourceIdentifiers.map(sourceId =>
       fetchTafseerForAyah(surahNumber, ayahNumber, sourceId)
     );
-    
+
     const results = await Promise.allSettled(promises);
-    
+
     return results
-      .filter((result): result is PromiseFulfilledResult<TafseerResponse> => 
+      .filter((result): result is PromiseFulfilledResult<TafseerResponse> =>
         result.status === 'fulfilled' && result.value !== null
       )
       .map(result => result.value);
-      
+
   } catch (error) {
     console.error("Error fetching multiple tafseer:", error);
     return [];
@@ -180,7 +182,7 @@ export function getTafseerSourcesByLanguage(language: string): TafseerSource[] {
   return AVAILABLE_TAFSEER_SOURCES.filter(source => source.language === language);
 }
 
-// Check if tafseer is available for a specific source
+// Check if tafseer is available
 export async function checkTafseerAvailability(
   surahNumber: number,
   ayahNumber: number,
@@ -190,29 +192,28 @@ export async function checkTafseerAvailability(
     const result = await fetchTafseerForAyah(surahNumber, ayahNumber, sourceIdentifier);
     return result !== null && result.success && result.ayah.text.trim().length > 0;
   } catch (error) {
-    console.error("Error checking tafseer availability:", error);
     return false;
   }
 }
 
-// Utility: Format tafseer text for display (remove HTML tags, clean up)
+// Utility: Format tafseer text for display - Improved for readability
 export function formatTafseerText(text: string): string {
+  if (!text) return "";
+
   return text
     .replace(/<[^>]*>/g, '') // Remove HTML tags
-    .replace(/&nbsp;/g, ' ') // Replace non-breaking spaces
-    .replace(/&amp;/g, '&') // Replace HTML entities
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
-    .replace(/\n\s*\n/g, '\n\n') // Clean up multiple newlines
+    .replace(/\r\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n') // Max two newlines
     .trim();
 }
 
-// Utility: Get default tafseer source based on language preference
+// Utility: Default source
 export function getDefaultTafseerSource(languagePreference: string = "en"): string {
   const sources = getTafseerSourcesByLanguage(languagePreference);
-  if (sources.length > 0) {
-    return sources[0].identifier;
-  }
-  return "en.ibnkathir"; // Fallback to Ibn Kathir English
+  return sources.length > 0 ? sources[0].identifier : "en-tafisr-ibn-kathir";
 }

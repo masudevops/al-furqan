@@ -9,6 +9,7 @@ export interface Surah {
   englishName: string;
   englishNameTranslation: string;
   revelationType: "Meccan" | "Medinan";
+  numberOfAyahs: number;
 }
 
 import surahListData from "../data/surah-list.json";

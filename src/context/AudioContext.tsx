@@ -49,6 +49,13 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
+    // We use a ref to the latest state so the event listener (handleEnded)
+    // always has access to the most recent playlist and index.
+    const stateRef = useRef({ playlist, currentIndex });
+    useEffect(() => {
+        stateRef.current = { playlist, currentIndex };
+    }, [playlist, currentIndex]);
+
     // Initialize Audio Object
     useEffect(() => {
         const audio = new Audio();
@@ -56,16 +63,23 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         audioRef.current = audio;
 
         const handleEnded = () => {
-            setIsPlaying(false);
-            playNextAuto();
+            const { playlist: currentPlaylist, currentIndex: currentIdx } = stateRef.current;
+            console.log("Audio Ended, checking for next. Current Index:", currentIdx, "List Length:", currentPlaylist.length);
+
+            if (currentIdx + 1 < currentPlaylist.length) {
+                setCurrentIndex(currentIdx + 1);
+            } else {
+                console.log("End of playlist reached.");
+                setIsPlaying(false);
+                setCurrentIndex(-1);
+            }
         };
 
         const handleTimeUpdate = () => {
+            if (!audio.duration) return;
             setCurrentTime(audio.currentTime);
-            if (audio.duration) {
-                setDuration(audio.duration);
-                setProgress((audio.currentTime / audio.duration) * 100);
-            }
+            setDuration(audio.duration);
+            setProgress((audio.currentTime / audio.duration) * 100);
         };
 
         const handleWaiting = () => setIsLoading(true);
@@ -92,10 +106,13 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         };
     }, []);
 
-    // Sync internal index with currentAyah
+    // Sync currentAyah with internal index
     useEffect(() => {
         if (currentIndex >= 0 && currentIndex < playlist.length) {
             setCurrentAyah(playlist[currentIndex]);
+        } else if (currentIndex === -1) {
+            // Optional: Don't clear currentAyah immediately? 
+            // setcurrentAyah(null); 
         }
     }, [currentIndex, playlist]);
 
@@ -105,16 +122,18 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
         const audio = audioRef.current;
 
-        // Check if source is already set to avoid reload
+        // Force play if source changed OR if we just incremented index
         if (audio.src !== currentAyah.audio) {
             audio.src = currentAyah.audio;
             audio.load();
-            audio.play().then(() => setIsPlaying(true)).catch(e => console.error("Play failed", e));
-        } else {
-            if (audio.paused) {
-                audio.play().then(() => setIsPlaying(true)).catch(e => console.error("Resume failed", e));
-            }
         }
+
+        audio.play()
+            .then(() => setIsPlaying(true))
+            .catch(e => {
+                console.warn("Play interrupted or failed (expected during rapid switching)", e);
+                // Don't set isPlaying=false if it was just an AbortError due to subsequent play
+            });
 
         // Update Media Session Metadata (Mobile/Lock Screen controls)
         if ('mediaSession' in navigator) {
@@ -122,7 +141,6 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 title: `Ayah ${currentAyah.number}`,
                 artist: currentAyah.surahName,
                 album: 'Al-Furqan',
-                // artwork: [{ src: '/logo.png', sizes: '512x512', type: 'image/png' }]
             });
 
             navigator.mediaSession.setActionHandler('play', togglePlay);
@@ -132,17 +150,6 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         }
 
     }, [currentAyah]);
-
-    // Auto-play logic for playlist
-    const playNextAuto = () => {
-        setCurrentIndex((prev) => {
-            if (prev + 1 < playlist.length) {
-                return prev + 1;
-            } else {
-                return -1; // End of playlist
-            }
-        });
-    };
 
     const togglePlay = () => {
         if (!audioRef.current) return;

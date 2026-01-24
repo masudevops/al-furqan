@@ -54,7 +54,7 @@ function App() {
               {/* Tafseer */}
               <Route path="/tafseer" element={<TafseerPage />} />
 
-              {/* Islamic Library */}
+              {/* Islamic Books */}
               <Route path="/library" element={<IslamicLibraryPage />} />
               <Route path="/library/:bookId" element={<BookDetailPage />} />
               <Route path="/books" element={<IslamicLibraryPage />} /> {/* Alias */}

@@ -4,40 +4,28 @@ import { useEffect, useState } from "react";
 import { fetchPage } from "../services/quranService";
 import type { PageAyah } from "../services/quranService";
 
-// Define a minimal type for the data returned by the single ayah endpoint
-interface SingleAyahData {
-  text: string;
-  // Add other properties if you access them, e.g., number: number;
-}
-
 interface PageViewProps {
   initialPage?: number;
+  isHighQuality?: boolean;
 }
 
-export default function PageView({ initialPage = 1 }: PageViewProps) {
+export default function PageView({ initialPage = 1, isHighQuality = false }: PageViewProps) {
   // ─── State ──────────────────────────────────────────────────────────────────
   const [page, setPage] = useState<number>(initialPage);
+  // We still fetch the page data to know WHICH ayahs are on this page
   const [ayahs, setAyahs] = useState<PageAyah[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // If the Mushaf‐page endpoint does NOT return Ayah 1, fetch it explicitly:
-  const [explicitVerseOne, setExplicitVerseOne] = useState<string | null>(null);
-
-  // If this page is the first page of a new Sūrah, fetch that Sūrah's Arabic name:
-  const [surahName, setSurahName] = useState<string | null>(null);
-
   // There are 604 pages in the Uthmānī Mushaf.
   const MAX_PAGE = 604;
 
-  // ─── 1) Fetch Mushaf page whenever `page` changes ─────────────────────────────────
+  // ─── 1) Fetch Mushaf page metadata whenever `page` changes ────────────────────────
   useEffect(() => {
     let cancelled = false;
 
     setLoading(true);
     setError(null);
-    setExplicitVerseOne(null);
-    setSurahName(null);
 
     fetchPage(page, "quran-uthmani")
       .then((data) => {
@@ -58,118 +46,16 @@ export default function PageView({ initialPage = 1 }: PageViewProps) {
     };
   }, [page]);
 
-  // ─── 2) Figure out the first Ayah on this page ──────────────────────────────────────
-  const firstAyah = ayahs.length > 0 ? ayahs[0] : null;
-  const surahNumber = firstAyah?.surah.number ?? null;
-  // Determine if this page is the beginning of a Surah (Ayah 1 is the first ayah on the page)
-  const isBeginningOfSurah = firstAyah !== null && firstAyah.numberInSurah === 1;
-
-  // ─── 3) Only show Basmalah if this page "starts" a new Sūrah, except Sūrah 9 ─────────────
-  const isSurahNine = surahNumber === 9;
-  // showBismillah is true if it's the beginning of a Surah (and not Surah 9) and data is loaded without error
-  const showBismillah =
-    !loading && !error && isBeginningOfSurah && !isSurahNine;
-
-  // ─── 4) If this page is the start of a new Sūrah, fetch the Sūrah's Arabic name ──────────
-  useEffect(() => {
-    if (showBismillah && surahNumber !== null) {
-      fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/ar`)
-        .then((res) => res.json())
-        .then((json) => {
-          setSurahName(json.data.name); // e.g. "سورة البقرة"
-        })
-        .catch(() => {
-          setSurahName(null);
-        });
-    } else {
-      setSurahName(null);
+  // ─── 2) Helper to construct Image URL ─────────────────────────────────────────────
+  const getAyahImageUrl = (surahNum: number, ayahNum: number) => {
+    const baseUrl = "https://cdn.islamic.network/quran/images";
+    if (isHighQuality) {
+      return `${baseUrl}/high-resolution/${surahNum}_${ayahNum}.png`;
     }
-  }, [showBismillah, surahNumber]);
-
-  // ─── 5) If Sūrah > 1 and Mushaf‐page skipped Ayah 1 entirely, fetch it explicitly ─────────
-  useEffect(() => {
-    // This condition should only trigger if the API *didn't* return Ayah 1 at all,
-    // but the page *should* start with Ayah 1 (i.e., it's the beginning of a Surah > 1).
-    if (
-      showBismillah && // It's the beginning of a Surah (and not Surah 9)
-      surahNumber !== null &&
-      surahNumber > 1 &&
-      firstAyah &&
-      firstAyah.numberInSurah > 1 // The first ayah returned is NOT Ayah 1
-    ) {
-      fetch(`https://api.alquran.cloud/v1/ayah/${surahNumber}:1/ar`)
-        .then((res) => res.json())
-        .then((json) => {
-          const fetched = (json.data as SingleAyahData).text.trim();
-          setExplicitVerseOne(fetched);
-        })
-        .catch(() => {
-          setExplicitVerseOne(null);
-        });
-    } else {
-      setExplicitVerseOne(null);
-    }
-  }, [showBismillah, surahNumber, firstAyah]);
-
-  // ─── 6) A more robust function to strip EXACTLY the Basmalah prefix ───────────────────
-  // The "standard" Uthmānī Basmalah is:
-  //   بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
-  // We use a Unicode‐aware pattern \p{Zs}+ to match any Arabic whitespace (often U+00A0).
-  // Made the dagger Alif (ٰ) optional in the regex to match the API's text.
-  const BASMALAH_REGEX = /^بِسْمِ\p{Zs}+ٱللَّهِٰ?\p{Zs}+ٱلرَّحْمَٰنِ\p{Zs}+ٱلرَّحِيمِ\p{Zs}*/u;
-
-  const stripBismillahPrefix = (text: string) => {
-    const stripped = text.replace(BASMALAH_REGEX, "").trim();
-    return stripped;
+    return `${baseUrl}/${surahNum}_${ayahNum}.png`;
   };
 
-  // ─── 7) Determine "finalVerseOneText" (the "remainder" after Basmalah) ─────────────────
-  let finalVerseOneText: string | null = null;
-
-  if (showBismillah && surahNumber === 1) {
-    // Sūrah 1: Basmalah itself IS Ayah 1 → no separate remainder
-    finalVerseOneText = null;
-  } else if (
-    showBismillah &&
-    surahNumber! > 1 &&
-    firstAyah &&
-    firstAyah.numberInSurah === 1
-  ) {
-    // The Mushaf page returned Ayah 1 as one combined chunk (e.g. "بِسْمِ … ٱلْم").
-    // Strip off exactly the Basmalah prefix; what remains is Verse 1 (e.g. "ٱلْم").
-    const raw = firstAyah.text.trim();
-    const remainder = stripBismillahPrefix(raw);
-    finalVerseOneText = remainder.length > 0 ? remainder : null;
-  } else if (showBismillah && explicitVerseOne) {
-    // Ayah 1 was not in Mushaf‐page at all → we fetched it above
-    finalVerseOneText = explicitVerseOne;
-  } else {
-    finalVerseOneText = null;
-  }
-
-  // ─── 8) Build the array of verses (“displayAyahs”) we actually show below Basmalah/Verse 1 ─
-  let displayAyahs: PageAyah[];
-  // If this page starts a Surah (and it's not Surah 1), the first ayah returned by the API
-  // is likely Ayah 1 combined with Bismillah. We handle Ayah 1 separately above,
-  // so displayAyahs should start from the second ayah returned by the API.
-  // We only slice if the first ayah returned is indeed Ayah 1 of the Surah > 1
-  if (showBismillah && surahNumber !== 1 && firstAyah && firstAyah.numberInSurah === 1) {
-    // For Surahs > 1 starting on this page, the first ayah returned contains Bismillah + Verse 1.
-    // We create a synthetic Ayah 1 object with the stripped text (remainder),
-    // and then include the rest of the ayahs from the API response.
-    const syntheticVerseOne: PageAyah = {
-      ...firstAyah,               // keep surah metadata, page number, etc.
-      text: finalVerseOneText || "", // use the stripped remainder
-      numberInSurah: 1,           // explicitly mark as verse 1
-      // Note: we removed `isSyntheticVerseOne` because PageAyah type does not expect it.
-    };
-    displayAyahs = [syntheticVerseOne, ...ayahs.slice(1)];
-  } else {
-    // Otherwise, display all ayahs returned by the API. This includes Surah 1 Ayah 1.
-    displayAyahs = ayahs;
-  }
-
-  // ─── 9) Navigation Handlers ──────────────────────────────────────────────────────
+  // ─── Navigation Handlers ──────────────────────────────────────────────────────────
   const handlePreviousPage = () => {
     if (page > 1) {
       setPage(page - 1);
@@ -184,30 +70,28 @@ export default function PageView({ initialPage = 1 }: PageViewProps) {
 
   return (
     <div className="flex flex-col items-center gap-8 py-8 px-4">
-      {/* ─── Top Navigation (Previous Page — Page X — Next Page) ────────────────────────── */}
-      <div className="flex items-center gap-4">
+      {/* ─── Top Navigation ────────────────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-4 sticky top-20 z-30 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-2 rounded-full shadow-sm border border-gray-200 dark:border-gray-700">
         <button
           onClick={handlePreviousPage}
           disabled={page <= 1}
-          className={`px-4 py-2 rounded-md text-sm font-medium ${
-            page <= 1
-              ? "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-              : "bg-emerald-500 hover:bg-emerald-600 text-white"
-          }`}
+          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${page <= 1
+            ? "bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed"
+            : "bg-emerald-500 hover:bg-emerald-600 text-white shadow-md hover:shadow-lg"
+            }`}
         >
           Previous Page
         </button>
-        <span className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+        <span className="text-lg font-bold text-gray-800 dark:text-gray-200 min-w-[80px] text-center font-mono">
           Page {page}
         </span>
         <button
           onClick={handleNextPage}
           disabled={page >= MAX_PAGE}
-          className={`px-4 py-2 rounded-md text-sm font-medium ${
-            page >= MAX_PAGE
-              ? "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-              : "bg-emerald-500 hover:bg-emerald-600 text-white"
-          }`}
+          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${page >= MAX_PAGE
+            ? "bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed"
+            : "bg-emerald-500 hover:bg-emerald-600 text-white shadow-md hover:shadow-lg"
+            }`}
         >
           Next Page
         </button>
@@ -215,94 +99,92 @@ export default function PageView({ initialPage = 1 }: PageViewProps) {
 
       {/* ─── Loading / Error States ───────────────────────────────────────────────────── */}
       {loading && (
-        <p className="text-gray-700 dark:text-gray-300 mt-6">
-          Loading Mushaf page {page}…
-        </p>
+        <div className="flex flex-col items-center gap-4 py-20">
+          <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-500 rounded-full animate-spin"></div>
+          <p className="text-gray-500 dark:text-gray-400">Loading Page {page}...</p>
+        </div>
       )}
       {error && (
-        <p className="text-red-500 dark:text-red-400 mt-6">Error: {error}</p>
+        <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg">
+          <p>Error loading page: {error}</p>
+          <button onClick={() => window.location.reload()} className="mt-2 text-sm underline">Retry</button>
+        </div>
       )}
 
-      {/* ─── Mushaf Content (only when not loading & no error) ───────────────────────────── */}
+      {/* ─── Mushaf Content (Images) ───────────────────────────────────────────────────── */}
       {!loading && !error && (
-        <div className="w-full max-w-3xl flex flex-col gap-8">
-          {/* ─── Part A: If this page starts a new Sūrah (≠9), print:
-                       1) Surah Name (centered)
-                       2) Underline
-                       3) Basmalah (no circle if Sūrah >1; circle‍"1" if Sūrah =1)
-                       4) If Sūrah >1, print the remainder of Verse 1 with circle‍"1"
-              ────────────────────────────────────────────────────────────────────────── */}
-          {showBismillah && surahName && (
-            <div className="flex flex-col items-center gap-2">
-              {/* 1) Surah Name (calligraphic) */}
-              <h2 className="font-noto text-4xl text-gray-900 dark:text-gray-100 leading-normal">
-                {surahName}
-              </h2>
+        <div className="w-full max-w-4xl flex flex-col items-center gap-6 animate-fadeIn">
 
-              {/* 2) Decorative underline */}
-              <div className="w-20 h-px bg-gray-500 dark:bg-gray-600 my-2" />
+          {/* Paper Container - Enforce Light Theme Appearance */}
+          <div className="bg-[#fdf6e3] rounded-sm shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-1px_rgba(0,0,0,0.06)] border border-[#e8dcb8] p-6 md:p-10 w-full min-h-[600px] transition-all">
 
-              {/* 3) Basmalah */}
-              {showBismillah && surahNumber! > 1 && (
-                <p className="font-noto text-4xl text-center text-gray-700 dark:text-gray-300 leading-loose tracking-tight">
-                  بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
-                </p>
-              )}
-            </div>
-          )}
+            {/* Ayah Images Container */}
+            <div className="flex flex-wrap justify-center items-center gap-1 md:gap-2 leading-[2.5] md:leading-[3]" dir="rtl">
+              {ayahs.map((ayah) => (
+                <div key={`${ayah.surah.number}-${ayah.numberInSurah}`} className="relative group inline-block">
+                  <img
+                    src={getAyahImageUrl(ayah.surah.number, ayah.numberInSurah)}
+                    alt={`Surah ${ayah.surah.englishName} Verse ${ayah.numberInSurah}`}
+                    className={`max-w-full h-auto object-contain select-none mix-blend-multiply ${
+                      // Removed all height constraints to respect the original image size/aspect ratio.
+                      // Styles will strictly follow h-auto w-auto (max-w-full from parent).
+                      ""
+                      } opacity-90 hover:opacity-100 transition-opacity`}
+                    // Removed dark:invert to keep text black on the cream background
+                    loading="lazy"
+                  />
 
-          {/* ─── Part B: Render the remaining verses on this page ───────────────────────── */}
-          <div dir="rtl" lang="ar" className="flex flex-col gap-6">
-            {displayAyahs.map((ayah) => (
-              <div
-                key={`${ayah.surah.number}-${ayah.numberInSurah}`}
-                className="relative flex justify-center items-center"
-              >
-                <p className="font-noto text-3xl leading-loose text-gray-900 dark:text-gray-100 text-right w-full">
-                  {ayah.text.trim()}
-                </p>
-                {/* Verse‐number ornament (circle) */}
-                <div className="absolute left-0 transform -translate-x-5 -translate-y-3">
-                  <div className="w-10 h-10 rounded-full border-2 border-gray-400 dark:border-gray-600 bg-transparent flex items-center justify-center">
-                    <span className="text-lg font-medium text-gray-500 dark:text-gray-400">
-                      {ayah.numberInSurah}
-                    </span>
-                  </div>
+                  {/* Tooltip on hover */}
+                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 font-sans">
+                    {ayah.surah.number}:{ayah.numberInSurah}
+                  </span>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+
+            {/* Page Footer inside the paper */}
+            <div className="mt-12 pt-6 border-t border-[#e8dcb8]/50 flex justify-between items-center text-[#8b8066] text-xs font-mono select-none">
+              <span>Page {page}</span>
+              <span className="opacity-50">Hafs • Madani</span>
+            </div>
+
+          </div>
+
+          {/* Source attribution outside paper */}
+          <div className="text-xs text-gray-400 font-mono opacity-50">
+            Source: Islamic Network CDN
           </div>
         </div>
       )}
 
-      {/* ─── Part C: Bottom Navigation (duplicate) ───────────────────────────────────────── */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={handlePreviousPage}
-          disabled={page <= 1}
-          className={`px-4 py-2 rounded-md text-sm font-medium ${
-            page <= 1
-              ? "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-              : "bg-emerald-500 hover:bg-emerald-600 text-white"
-          }`}
-        >
-          Previous Page
-        </button>
-        <span className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-          Page {page}
-        </span>
-        <button
-          onClick={handleNextPage}
-          disabled={page >= MAX_PAGE}
-          className={`px-4 py-2 rounded-md text-sm font-medium ${
-            page >= MAX_PAGE
-              ? "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-              : "bg-emerald-500 hover:bg-emerald-600 text-white"
-          }`}
-        >
-          Next Page
-        </button>
-      </div>
+      {/* ─── Bottom Navigation (duplicate) ────────────────────────────────────────────── */}
+      {!loading && (
+        <div className="flex items-center gap-4 mt-8 pb-12">
+          <button
+            onClick={handlePreviousPage}
+            disabled={page <= 1}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${page <= 1
+              ? "bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed"
+              : "bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
+              }`}
+          >
+            Previous
+          </button>
+          <span className="text-gray-500 dark:text-gray-400 font-mono text-sm">
+            {page} / {MAX_PAGE}
+          </span>
+          <button
+            onClick={handleNextPage}
+            disabled={page >= MAX_PAGE}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${page >= MAX_PAGE
+              ? "bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed"
+              : "bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
+              }`}
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }

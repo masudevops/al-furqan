@@ -80,7 +80,7 @@ export default function IslamicLibraryPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <SEO
-        title="Islamic Library"
+        title="Islamic Books"
         description="Access authentic Islamic books, articles, and resources powered by IslamHouse."
       />
 
@@ -88,7 +88,7 @@ export default function IslamicLibraryPage() {
       <div className="bg-emerald-600 text-white py-16 px-4">
         <div className="max-w-6xl mx-auto text-center">
           <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-90" />
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Islamic Library</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">Islamic Books</h1>
           <p className="text-xl opacity-90 max-w-2xl mx-auto">
             Discover a vast collection of authentic Islamic books and resources powered by IslamHouse.
           </p>

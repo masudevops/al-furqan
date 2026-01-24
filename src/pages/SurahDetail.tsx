@@ -481,7 +481,7 @@ export default function SurahDetail() {
                     : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
                     }`}
                 >
-                  Reading
+                  Mushaf
                 </button>
               </div>
 

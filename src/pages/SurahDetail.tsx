@@ -100,6 +100,16 @@ export default function SurahDetail() {
   const [copiedAyah, setCopiedAyah] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // ─── Auto-scroll to active Ayah ──────────────────────────────────────────────
+  useEffect(() => {
+    if (isPlaying && globalCurrentAyah && globalCurrentAyah.surahNumber === surah?.number) {
+      const element = document.getElementById(`ayah-${globalCurrentAyah.number}`);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+  }, [globalCurrentAyah, isPlaying, surah?.number]);
+
   // ─── 1) Fetch list of all Surahs for dropdown search ───────────────────────────
   useEffect(() => {
     const loadSurahList = async () => {
@@ -593,8 +603,8 @@ export default function SurahDetail() {
                 <div
                   key={ayah.number}
                   id={`ayah-${ayah.number}`}
-                  className={`bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border transition-colors duration-200 ${isPlayingThis
-                    ? "border-emerald-500 ring-1 ring-emerald-500 bg-emerald-50 dark:bg-gray-700"
+                  className={`bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border transition-all duration-300 ${isPlayingThis
+                    ? "border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-900/10 shadow-md transform scale-[1.01]"
                     : "border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600"
                     }`}
                 >

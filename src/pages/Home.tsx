@@ -8,34 +8,37 @@ export default function Home() {
       <SEO title="Al Furqan - Your Spiritual Companion" description="Your spiritual companion for Quran, Prayer, and Reflection" />
 
       {/* Hero Section */}
-      <div className="flex flex-col items-center justify-center min-h-[80vh] px-4">
-        <div className="text-center max-w-4xl mx-auto">
+      <div className="relative flex flex-col items-center justify-center py-20 md:py-32 px-4 overflow-hidden">
+        {/* Subtle Background Glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] max-w-3xl bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none" />
+
+        <div className="text-center max-w-4xl mx-auto relative z-10">
           {/* Main Title */}
-          <h1 className="text-6xl md:text-7xl font-bold mb-4">
-            <span className="text-emerald-400">Al</span> Furqan
+          <h1 className="text-6xl md:text-7xl font-bold mb-4 tracking-tight">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">Al</span> Furqan
           </h1>
 
           {/* Subtitle */}
-          <p className="text-xl md:text-2xl text-gray-300 mb-12">
+          <p className="text-xl md:text-2xl text-gray-300 mb-10 font-light">
             Your spiritual companion for Quran, Prayer, and Reflection
           </p>
 
           {/* Arabic Text */}
-          <div className="mb-8">
-            <div className="inline-block bg-gray-800 rounded-lg px-8 py-4">
-              <p className="text-2xl md:text-3xl font-arabic text-emerald-400" dir="rtl">
+          <div className="mb-10 hover:scale-105 transition-transform duration-500">
+            <div className="inline-block bg-gray-800/80 backdrop-blur-sm border border-gray-700/50 rounded-2xl px-10 py-6 shadow-2xl">
+              <p className="text-3xl md:text-4xl font-arabic text-emerald-400 leading-relaxed" dir="rtl">
                 بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
               </p>
             </div>
           </div>
 
           {/* Hadith Quote */}
-          <div className="mb-12">
-            <p className="text-lg md:text-xl text-gray-400 italic mb-2">
+          <div className="mb-8 opacity-80 hover:opacity-100 transition-opacity">
+            <p className="text-lg md:text-xl text-gray-300 italic mb-3 font-serif">
               "The best among you are those who learn the Quran and teach it."
             </p>
-            <p className="text-sm text-gray-500">
-              - Prophet Muhammad ﷺ (Bukhari)
+            <p className="text-sm text-emerald-500/80 uppercase tracking-widest font-semibold">
+              — Prophet Muhammad ﷺ
             </p>
           </div>
         </div>
@@ -110,7 +113,7 @@ export default function Home() {
             </div>
           </Link>
 
-          {/* Islamic Library - NEW */}
+          {/* Islamic Books - NEW */}
           <Link to="/library" className="group">
             <div className="bg-gray-800 hover:bg-gray-700 rounded-xl p-8 text-center transition-all duration-300 hover:scale-105 border border-gray-700 hover:border-emerald-500">
               <div className="w-16 h-16 bg-rose-500 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-rose-400 transition-colors">

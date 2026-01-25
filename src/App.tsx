@@ -3,6 +3,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import GlobalPlayer from "./components/GlobalPlayer";
 import { AudioProvider } from "./context/AudioContext";
+import { SettingsProvider } from "./context/SettingsContext";
 
 // Pages
 import Home from "./pages/Home";
@@ -31,49 +32,51 @@ import NotFound from "./pages/NotFound";
 function App() {
   return (
     <AudioProvider>
-      <Router>
-        <div className="min-h-screen flex flex-col bg-white dark:bg-gray-900 transition-colors duration-300 font-sans">
-          <Header />
-          <main className="flex-grow animate-fadeIn">
-            <Routes>
-              <Route path="/" element={<Home />} />
+      <SettingsProvider>
+        <Router>
+          <div className="min-h-screen flex flex-col bg-white dark:bg-gray-900 transition-colors duration-300 font-sans">
+            <Header />
+            <main className="flex-grow animate-fadeIn">
+              <Routes>
+                <Route path="/" element={<Home />} />
 
-              {/* Al Quran Section */}
-              <Route path="/al-quran" element={<AlQuranPage />} />
-              <Route path="/quran" element={<AlQuranPage />} /> {/* Alias */}
-              <Route path="/quran/:surahId" element={<SurahDetail />} />
+                {/* Al Quran Section */}
+                <Route path="/al-quran" element={<AlQuranPage />} />
+                <Route path="/quran" element={<AlQuranPage />} /> {/* Alias */}
+                <Route path="/quran/:surahId" element={<SurahDetail />} />
 
-              {/* Mushaf Direct Link */}
-              <Route path="/mushaf" element={<MushafPage />} />
+                {/* Mushaf Direct Link */}
+                <Route path="/mushaf" element={<MushafPage />} />
 
-              {/* Hadith Section */}
-              <Route path="/hadith" element={<HadithHome />} />
-              <Route path="/hadith/:collectionId" element={<HadithCollection />} />
-              <Route path="/hadith/:collectionId/:bookNumber" element={<HadithBook />} />
+                {/* Hadith Section */}
+                <Route path="/hadith" element={<HadithHome />} />
+                <Route path="/hadith/:collectionId" element={<HadithCollection />} />
+                <Route path="/hadith/:collectionId/:bookNumber" element={<HadithBook />} />
 
-              {/* Tafseer */}
-              <Route path="/tafseer" element={<TafseerPage />} />
+                {/* Tafseer */}
+                <Route path="/tafseer" element={<TafseerPage />} />
 
-              {/* Islamic Books */}
-              <Route path="/library" element={<IslamicLibraryPage />} />
-              <Route path="/library/:bookId" element={<BookDetailPage />} />
-              <Route path="/books" element={<IslamicLibraryPage />} /> {/* Alias */}
+                {/* Islamic Books */}
+                <Route path="/library" element={<IslamicLibraryPage />} />
+                <Route path="/library/:bookId" element={<BookDetailPage />} />
+                <Route path="/books" element={<IslamicLibraryPage />} /> {/* Alias */}
 
-              {/* Salah Times */}
-              <Route path="/salah" element={<SalahTimesPage />} />
-              <Route path="/prayer" element={<SalahTimesPage />} /> {/* Backward compat */}
+                {/* Salah Times */}
+                <Route path="/salah" element={<SalahTimesPage />} />
+                <Route path="/prayer" element={<SalahTimesPage />} /> {/* Backward compat */}
 
-              {/* Hisnul Muslim */}
-              <Route path="/hisnul" element={<HisnulMuslim />} />
+                {/* Hisnul Muslim */}
+                <Route path="/hisnul" element={<HisnulMuslim />} />
 
-              <Route path="/bookmarks" element={<Bookmarks />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
-          <GlobalPlayer />
-          <Footer />
-        </div>
-      </Router>
+                <Route path="/bookmarks" element={<Bookmarks />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </main>
+            <GlobalPlayer />
+            <Footer />
+          </div>
+        </Router>
+      </SettingsProvider>
     </AudioProvider>
   );
 }

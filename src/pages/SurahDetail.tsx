@@ -1,6 +1,6 @@
 // src/pages/SurahDetail.tsx
 
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
   fetchSurahByIdWithTranslation,
@@ -8,6 +8,7 @@ import {
   fetchSurahList,
 } from "../services/quranService";
 import { useAudio, type AudioAyah } from "../context/AudioContext";
+import { useSettings } from "../context/SettingsContext";
 import {
   FaPlay,
   FaPause,
@@ -81,8 +82,10 @@ export default function SurahDetail() {
   const [surahList, setSurahList] = useState<SurahInfo[]>([]);
   const [filteredSurahList, setFilteredSurahList] = useState<SurahInfo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [translation, setTranslation] = useState("en.sahih");
-  const [reciter, setReciter] = useState("ar.alafasy");
+
+  // Use Global Settings instead of local state
+  const { translation, setTranslation, reciter, setReciter } = useSettings();
+
   const [viewMode, setViewMode] = useState<"translation" | "page">(
     "translation"
   );
@@ -101,14 +104,33 @@ export default function SurahDetail() {
   const [error, setError] = useState<string | null>(null);
 
   // ─── Auto-scroll to active Ayah ──────────────────────────────────────────────
+  // ─── Auto-scroll to active Ayah OR Deep Link ─────────────────────────────────
+  const { hash } = useLocation(); // Need to import this hook
+
   useEffect(() => {
+    // Priority 1: Audio Playing
     if (isPlaying && globalCurrentAyah && globalCurrentAyah.surahNumber === surah?.number) {
       const element = document.getElementById(`ayah-${globalCurrentAyah.number}`);
       if (element) {
         element.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     }
-  }, [globalCurrentAyah, isPlaying, surah?.number]);
+    // Priority 2: Deep Link (Hash) on Load
+    else if (hash && surah && !loading) {
+      // hash is like "#ayah-255"
+      const id = hash.replace("#", "");
+      const element = document.getElementById(id);
+      if (element) {
+        // slight delay to ensure render
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+          // Highlight it briefly
+          element.classList.add("ring-2", "ring-emerald-500");
+          setTimeout(() => element.classList.remove("ring-2", "ring-emerald-500"), 3000);
+        }, 500);
+      }
+    }
+  }, [globalCurrentAyah, isPlaying, surah?.number, hash, loading]);
 
   // ─── 1) Fetch list of all Surahs for dropdown search ───────────────────────────
   useEffect(() => {

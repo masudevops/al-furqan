@@ -92,20 +92,6 @@ const reciterBaseUrls: Record<string, string> = {
   "ar.sudais": "https://verses.quran.com/Sudais/mp3",
 };
 
-// ───────────── 3) fetchSurahAudio (unchanged; includes Sudâis fallback) ─────────────
-// We only need a manual URL for Sheikh as-Sudâis; all other reciters use the API's endpoint.
-interface ApiAyah {
-  numberInSurah: number;
-  text: string;
-  audio: string;
-}
-interface ArabicApiAyah {
-  numberInSurah: number;
-  text: string;
-}
-
-// (Duplicate reciterBaseUrls removed from here)
-
 export async function fetchSurahAudio(
   surahNumber: string,
   reciter: string = "ar.alafasy"
@@ -172,8 +158,6 @@ export async function fetchSurahAudio(
 }
 
 // ───────────── 4) fetchPage (NEW!) ─────────────
-// GET /page/{pageNumber}/{edition}
-// Returns all Ayahs on that Mushaf page. We'll default edition="quran-uthmani".
 interface ApiPageAyah {
   number: number;
   text: string;
@@ -218,4 +202,65 @@ export async function fetchPage(
     numberInSurah: a.numberInSurah,
     surah: a.surah,
   }));
+}
+
+// ───────────── 5) Search (NEW!) ─────────────
+export interface SearchMatch {
+  number: number;
+  text: string;
+  edition: {
+    identifier: string;
+    name: string;
+  };
+  surah: {
+    number: number;
+    name: string;
+    englishName: string;
+  };
+  numberInSurah: number;
+}
+
+export interface SearchResponse {
+  count: number;
+  matches: SearchMatch[];
+}
+
+export async function searchAyahs(
+  query: string,
+  edition: string = "en.sahih"
+): Promise<SearchMatch[]> {
+  // If query is empty, return empty
+  if (!query.trim()) return [];
+
+  // API: /search/{query}/all/{edition}
+  const res = await fetch(`${API_BASE}/search/${encodeURIComponent(query)}/all/${edition}`);
+  if (!res.ok) throw new Error("Search failed");
+
+  const json = await res.json();
+  // json.data = { count, matches: [...] }
+  return json.data.matches as SearchMatch[];
+}
+
+// ───────────── 6) Editions (Settings) ─────────────
+export interface Edition {
+  identifier: string;
+  language: string;
+  name: string;
+  englishName: string;
+  format: string;
+  type: string;
+}
+
+export async function fetchEditions(
+  format?: "audio" | "text",
+  type?: "translation" | "quran" | "tafsir" | "versebyverse"
+): Promise<Edition[]> {
+  const params = new URLSearchParams();
+  if (format) params.append("format", format);
+  if (type) params.append("type", type);
+
+  const res = await fetch(`${API_BASE}/edition?${params.toString()}`);
+  if (!res.ok) throw new Error("Failed to fetch editions");
+  const json = await res.json();
+  return json.data as Edition[];
 }

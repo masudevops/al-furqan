@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import GlobalPlayer from "./components/GlobalPlayer";
@@ -75,6 +76,7 @@ function App() {
             <GlobalPlayer />
             <Footer />
           </div>
+          <SpeedInsights />
         </Router>
       </SettingsProvider>
     </AudioProvider>

@@ -114,6 +114,8 @@ Add Vitest, React Testing Library, Playwright, and axe. Define `test`, `test:uni
 
 Rotate exposed credentials. Remove secrets from client code and history where feasible. Introduce Vercel/Azure serverless endpoints or switch to approved public datasets. Add per-provider timeouts, rate limits, cache policy, and privacy notes.
 
+**Status:** Implemented June 20, 2026. Hadith and IslamHouse now use a server-side gateway with reusable client contracts, response validation, timeouts, bounded inputs, and edge-cache headers. Credential rotation and a production rate-limiting policy remain operational follow-ups.
+
 ### AF-003 — Canonical data contracts
 
 Define domain types separately from provider DTOs. Validate external JSON at runtime. Normalize provider failures into typed results. Add fixture-based adapter tests.

@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import SEO from "../components/SEO";
-import { type IslamicBook } from "../services/islamicBooksService";
+import {
+  fetchBookById,
+  type IslamicBook,
+} from "../services/islamicBooksService";
 import { ArrowLeft, Download, FileText, BookOpen } from "lucide-react";
 
 export default function BookDetailPage() {
@@ -11,58 +14,28 @@ export default function BookDetailPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const loadBookData = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const result = await fetchBookById(bookId || "");
+        if (!result) {
+          setError("Book not found");
+          return;
+        }
+        setBook(result);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load book");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (bookId) {
-      loadBookData();
+      void loadBookData();
     }
   }, [bookId]);
-
-  const loadBookData = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Fetch the specific book from IslamHouse API
-      const API_KEY = "paV29H2gm56kvLP";
-      const API_BASE = `https://api3.islamhouse.com/v3/${API_KEY}`;
-      const url = `${API_BASE}/main/get-item/id/${bookId}/json`;
-
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-      const rawData = await res.json();
-      const item = rawData.data;
-
-      if (!item) {
-        setError("Book not found");
-        return;
-      }
-
-      // Map to IslamicBook format
-      const downloads = item.attachments?.map((att: any) => ({
-        url: att.url,
-        label: att.extension.toUpperCase(),
-        size: att.size
-      })) || [];
-
-      const author = item.w_authors?.map((a: any) => a.title).join(", ") || "Unknown Author";
-
-      setBook({
-        id: item.id.toString(),
-        title: item.title,
-        description: item.description,
-        author: author,
-        language: item.source_lang,
-        coverImage: item.image,
-        downloads,
-        type: "book"
-      });
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load book");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) {
     return (

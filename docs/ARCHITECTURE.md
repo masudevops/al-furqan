@@ -22,6 +22,8 @@ This architecture is inexpensive and simple, but it exposes credentials, couples
 
 Adopt a modular frontend with a small backend-for-frontend (BFF) boundary for credentials, normalization, caching, and observability. Keep public static datasets client-deliverable when licensing and integrity permit.
 
+AF-002 established the first slice of this target: framework-neutral contracts and provider clients under `src/core`, a web endpoint adapter under `src/platform/web`, and standard Fetch API gateway functions under `api/providers` for Hadith and IslamHouse.
+
 ```mermaid
 flowchart LR
   U["Web/PWA user"] --> APP["Al-Furqan frontend"]

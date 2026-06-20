@@ -1,8 +1,18 @@
-// Hadith API Service - Using hadithapi.com
-// Documentation: https://hadithapi.com/
+import {
+    createHadithProvider,
+} from "../core/providers/hadithProvider";
+import type {
+    Hadith,
+    HadithBook,
+    HadithChapter,
+} from "../core/contracts/hadith";
+import { getProviderEndpoint } from "../platform/web/providerGateway";
 
-const API_KEY = "$2y$10$dRykIhT0di8yzzgj2iOHMeGniXNRF4QT5r2ko5U52kBTS3RkuOGMy";
-const API_BASE = "https://hadithapi.com/api";
+export type { Hadith, HadithBook, HadithChapter };
+
+const hadithProvider = createHadithProvider({
+    endpoint: getProviderEndpoint("hadith"),
+});
 
 export interface HadithCollection {
     id: string;
@@ -10,73 +20,6 @@ export interface HadithCollection {
     total: number;
     arabicName?: string;
     description?: string;
-}
-
-export interface HadithBook {
-    bookSlug: string;
-    bookName: string;
-    bookNameArabic?: string;
-    hadithCount: number;
-}
-
-export interface HadithChapter {
-    id: number;
-    chapterNumber: string;
-    chapterEnglish: string;
-    chapterUrdu?: string;
-    chapterArabic?: string;
-}
-
-export interface Hadith {
-    id: number;
-    hadithNumber: string;
-    englishNarrator: string;
-    hadithEnglish: string;
-    hadithUrdu?: string;
-    hadithArabic?: string;
-    status?: string;
-    bookSlug: string;
-    chapterId: string;
-}
-
-// Hadith API Response Types
-interface BooksApiResponse {
-    status: number;
-    books: Array<{
-        bookSlug: string;
-        bookName: string;
-        writerName: string;
-        writerDeath: string;
-        hadithsCount: string;
-        chaptersCount: string;
-        bookNameArabic?: string;
-    }>;
-}
-
-interface ChaptersApiResponse {
-    status: number;
-    chapters: Array<{
-        id: number;
-        chapterNumber: string;
-        chapterEnglish: string;
-        chapterUrdu?: string;
-        chapterArabic?: string;
-    }>;
-}
-
-interface HadithsApiResponse {
-    status: number;
-    hadiths: {
-        data: Array<{
-            id: number;
-            hadithNumber: string;
-            englishNarrator: string;
-            hadithEnglish: string;
-            hadithUrdu?: string;
-            hadithArabic?: string;
-            status?: string;
-        }>;
-    };
 }
 
 // Major Hadith Collections (manually defined since API doesn't provide this)
@@ -128,21 +71,7 @@ export const HADITH_COLLECTIONS: HadithCollection[] = [
 // Fetch all books from API
 export async function fetchBooks(): Promise<HadithBook[]> {
     try {
-        const res = await fetch(`${API_BASE}/books?apiKey=${API_KEY}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-        const data: BooksApiResponse = await res.json();
-
-        if (data.status !== 200 || !data.books) {
-            return [];
-        }
-
-        return data.books.map(book => ({
-            bookSlug: book.bookSlug,
-            bookName: book.bookName,
-            bookNameArabic: book.bookNameArabic,
-            hadithCount: parseInt(book.hadithsCount) || 0
-        }));
+        return await hadithProvider.getBooks();
     } catch (error) {
         console.error("Error fetching books:", error);
         return [];
@@ -152,16 +81,7 @@ export async function fetchBooks(): Promise<HadithBook[]> {
 // Fetch chapters for a specific book
 export async function fetchChapters(bookSlug: string): Promise<HadithChapter[]> {
     try {
-        const res = await fetch(`${API_BASE}/${bookSlug}/chapters?apiKey=${API_KEY}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-        const data: ChaptersApiResponse = await res.json();
-
-        if (data.status !== 200 || !data.chapters) {
-            return [];
-        }
-
-        return data.chapters;
+        return await hadithProvider.getChapters(bookSlug);
     } catch (error) {
         console.error("Error fetching chapters:", error);
         return [];
@@ -174,22 +94,7 @@ export async function fetchHadithsByChapter(
     chapterId: string
 ): Promise<Hadith[]> {
     try {
-        const res = await fetch(
-            `${API_BASE}/hadiths?apiKey=${API_KEY}&book=${bookSlug}&chapter=${chapterId}`
-        );
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-        const data: HadithsApiResponse = await res.json();
-
-        if (data.status !== 200 || !data.hadiths?.data) {
-            return [];
-        }
-
-        return data.hadiths.data.map(hadith => ({
-            ...hadith,
-            bookSlug,
-            chapterId
-        }));
+        return await hadithProvider.getHadiths(bookSlug, chapterId);
     } catch (error) {
         console.error("Error fetching hadiths:", error);
         return [];

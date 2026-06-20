@@ -39,12 +39,21 @@ export default tseslint.config(
       'playwright.config.ts',
       'tests/**/*.{ts,tsx}',
       'e2e/**/*.ts',
+      'api/**/*.ts',
+      'src/core/**/*.ts',
+      'src/platform/**/*.ts',
     ],
     languageOptions: {
       globals: {
         ...globals.browser,
         ...globals.node,
       },
+    },
+  },
+  {
+    files: ['api/**/*.ts'],
+    languageOptions: {
+      globals: globals.node,
     },
   },
 )

@@ -4,7 +4,7 @@
 
 - TypeScript strict compilation exists and passes.
 - Vite production build passes.
-- ESLint currently fails with 17 errors and 14 warnings.
+- Full-repository ESLint currently fails with 15 errors and 13 warnings in legacy application code; the AF-001/AF-002 quality scope passes.
 - Vitest and React Testing Library run six landing, navigation, search, Quran-route, and tafsir-route smoke tests.
 - Playwright runs four Chromium route/UI smoke tests against a production preview.
 - `jest-axe` and `@axe-core/playwright` provide critical-impact accessibility smoke gates.

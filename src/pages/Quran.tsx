@@ -1,14 +1,6 @@
 import { useEffect, useState } from "react";
-import { fetchSurahList } from "../services/quranService";
+import { fetchSurahList, type Surah } from "../services/quranService";
 import { Link } from "react-router-dom";
-
-interface Surah {
-  number: number;
-  englishName: string;
-  name: string;
-  englishNameTranslation: string;
-  revelationType: "Meccan" | "Medinan";
-}
 
 // Chronological revelation order (Ibn Abbas / al-Zanjani traditional sequence)
 const revelationOrder: number[] = [
@@ -47,7 +39,9 @@ export default function Quran() {
 
     if (sort === "alpha") {
       // Alphabetical by English name
-      sorted.sort((a, b) => a.englishName.localeCompare(b.englishName));
+      sorted.sort((a, b) =>
+        a.transliteratedName.localeCompare(b.transliteratedName),
+      );
     } else if (sort === "reveal") {
       // Chronological revelation order
       sorted.sort((a, b) => {
@@ -65,9 +59,9 @@ export default function Quran() {
     setFilteredSurahs(
       sorted.filter(
         (s) =>
-          s.englishName.toLowerCase().includes(term) ||
-          s.name.toLowerCase().includes(term) ||
-          s.englishNameTranslation.toLowerCase().includes(term)
+          s.transliteratedName.toLowerCase().includes(term) ||
+          s.arabicName.toLowerCase().includes(term) ||
+          s.translatedName.toLowerCase().includes(term)
       )
     );
   }, [search, sort, surahs]);
@@ -107,7 +101,9 @@ export default function Quran() {
         {/* Sort Dropdown */}
         <select
           value={sort}
-          onChange={(e) => setSort(e.target.value as any)}
+          onChange={(e) =>
+            setSort(e.target.value as "default" | "alpha" | "reveal")
+          }
           className="
             p-3
             bg-white dark:bg-gray-800
@@ -127,7 +123,7 @@ export default function Quran() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredSurahs.map((surah) => (
           <Link
-            to={`/surah/${surah.number}`}
+            to={`/quran/${surah.number}`}
             key={surah.number}
             className="card hover:shadow-lg transition-all"
           >
@@ -146,14 +142,14 @@ export default function Quran() {
                     {surah.number}
                   </div>
                   <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
-                    {surah.englishName}
+                    {surah.transliteratedName}
                   </h3>
                   <p className="text-gray-600 dark:text-gray-300">
-                    {surah.englishNameTranslation}
+                    {surah.translatedName}
                   </p>
                 </div>
                 <span className="text-2xl font-arabic text-gray-800 dark:text-gray-200">
-                  {surah.name}
+                  {surah.arabicName}
                 </span>
               </div>
               <div className="mt-3">

@@ -1,82 +1,94 @@
-// src/services/quranService.tsx
-// ────────────────────────────────────────────────────────────────────────────
+import surahListData from "../data/surah-list.json";
+import surah1 from "../data/surah-1.json";
+import type {
+  QuranEditionSurah,
+  ReaderSurah,
+  SurahMetadata,
+} from "../core/quran/contracts";
+import { parseQuranEditionSurah } from "../core/quran/contracts";
+import { parseSurahMetadataList } from "../core/quran/metadata";
+import { isValidSurahNumber, mergeReaderSurah } from "../core/quran/reader";
+
 const API_BASE = "https://api.alquran.cloud/v1";
 
-// ───────────── 1) fetchSurahList (unchanged) ─────────────
-export interface Surah {
-  number: number;
-  name: string;
-  englishName: string;
-  englishNameTranslation: string;
-  revelationType: "Meccan" | "Medinan";
-  numberOfAyahs: number;
-}
-
-import surahListData from "../data/surah-list.json";
+export type Surah = SurahMetadata;
 
 export async function fetchSurahList(): Promise<Surah[]> {
-  // Return local data immediately
-  return surahListData as Surah[];
+  const metadata = parseSurahMetadataList(surahListData);
+  if (!metadata) {
+    throw new Error("Local Quran metadata is invalid");
+  }
+  return metadata;
 }
 
-// ───────────── 2) fetchSurahByIdWithTranslation (unchanged) ─────────────
 export interface Ayah {
-  number: number;   // verse index within the surah
-  text: string;     // Arabic or translated text
-  audio?: string;   // URL to MP3, if available
-}
-
-import surah1 from "../data/surah-1.json";
-
-export async function fetchSurahByIdWithTranslation(
-  id: string,
-  translation: string = "en.sahih"
-): Promise<{
-  name: string;
-  englishName: string;
-  englishNameTranslation: string;
   number: number;
-  ayahs: Ayah[];
-}> {
-  // Fallback / Demo for Surah 1 (Local Data)
-  if (id === "1" && translation === "ar") {
-    return surah1.data as any; // Cast for simplicity in this demo refactor
+  text: string;
+  audio?: string;
+}
+
+async function fetchQuranEditionSurah(
+  surahNumber: number,
+  edition: string,
+): Promise<QuranEditionSurah> {
+  if (!isValidSurahNumber(surahNumber)) {
+    throw new Error("Invalid Surah number");
   }
-  // For translation, we'd need another JSON or just reuse Arabic one + mock translation, 
-  // but let's try network first, then fallback? 
-  // Actually, let's keep it simple: Try Network, if fail and id=1, return Local.
 
+  if (surahNumber === 1 && edition === "ar") {
+    const localSurah = parseQuranEditionSurah(surah1.data);
+    if (!localSurah) throw new Error("Local Quran fallback is invalid");
+    return localSurah;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8_000);
   try {
-    const controller = new AbortController();
-    const idTimeout = setTimeout(() => controller.abort(), 5000); // 5s timeout
-
-    const res = await fetch(`${API_BASE}/surah/${id}/${translation}`, { signal: controller.signal });
-    clearTimeout(idTimeout);
-
-    if (!res.ok) throw new Error(`Failed to fetch Surah ${id}`);
-    const { data } = await res.json();
-    return data;
-  } catch (e) {
-    console.warn("API failed or timed out, using fallback", e);
-    // Fallback: If local Surah 1 available and id=1, use it.
-    if (id === "1") return surah1.data as any;
-
-    // Generic Fallback
-    return {
-      number: Number(id),
-      name: "Offline Scemario",
-      englishName: `Surah ${id}`,
-      englishNameTranslation: "Content Unavailable",
-      ayahs: Array.from({ length: 5 }, (_, i) => ({
-        number: i + 1,
-        text: "Could not load text. Please check internet connection.",
-        audio: ""
-      }))
-    };
+    const response = await fetch(
+      `${API_BASE}/surah/${surahNumber}/${edition}`,
+      { signal: controller.signal },
+    );
+    if (!response.ok) {
+      throw new Error(`Failed to fetch Surah ${surahNumber}`);
+    }
+    const payload = (await response.json()) as { data?: unknown };
+    const parsed = parseQuranEditionSurah(payload.data);
+    if (!parsed) throw new Error("Invalid Quran provider response");
+    return parsed;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
-// ───────────── 3) fetchSurahAudio (unchanged; includes Sudâis fallback) ─────────────
+export async function fetchReaderSurah(
+  surahNumber: number,
+  translationEdition = "en.sahih",
+): Promise<ReaderSurah> {
+  const metadata = (await fetchSurahList()).find(
+    (surah) => surah.number === surahNumber,
+  );
+  if (!metadata) throw new Error("Surah not found");
+
+  const [arabicResult, translationResult] = await Promise.allSettled([
+    fetchQuranEditionSurah(surahNumber, "ar"),
+    fetchQuranEditionSurah(surahNumber, translationEdition),
+  ]);
+
+  if (arabicResult.status === "rejected") {
+    throw arabicResult.reason;
+  }
+
+  const translation =
+    translationResult.status === "fulfilled" ? translationResult.value : null;
+
+  return mergeReaderSurah(
+    metadata,
+    arabicResult.value,
+    translation,
+    translationEdition,
+  );
+}
+
 // We only need a manual URL for Sheikh as-Sudâis; all other reciters use the API's endpoint.
 interface ApiAyah {
   numberInSurah: number;
@@ -157,7 +169,6 @@ export async function fetchSurahAudio(
   }
 }
 
-// ───────────── 4) fetchPage (NEW!) ─────────────
 interface ApiPageAyah {
   number: number;
   text: string;
@@ -204,7 +215,6 @@ export async function fetchPage(
   }));
 }
 
-// ───────────── 5) Search (NEW!) ─────────────
 export interface SearchMatch {
   number: number;
   text: string;
@@ -241,7 +251,6 @@ export async function searchAyahs(
   return json.data.matches as SearchMatch[];
 }
 
-// ───────────── 6) Editions (Settings) ─────────────
 export interface Edition {
   identifier: string;
   language: string;

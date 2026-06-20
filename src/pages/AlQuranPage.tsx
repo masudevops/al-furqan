@@ -27,8 +27,9 @@ function FileSurahList() {
         setQ(val);
         const term = val.toLowerCase();
         setFiltered(surahList.filter(s =>
-            s.englishName.toLowerCase().includes(term) ||
-            s.name.toLowerCase().includes(term) ||
+            s.transliteratedName.toLowerCase().includes(term) ||
+            s.arabicName.toLowerCase().includes(term) ||
+            s.translatedName.toLowerCase().includes(term) ||
             String(s.number).includes(term)
         ));
     };
@@ -60,13 +61,13 @@ function FileSurahList() {
                                 {s.number}
                             </div>
                             <div>
-                                <h3 className="font-semibold text-gray-800 dark:text-gray-200">{s.englishName}</h3>
-                                <p className="text-xs text-gray-500">{s.englishNameTranslation}</p>
+                                <h3 className="font-semibold text-gray-800 dark:text-gray-200">{s.transliteratedName}</h3>
+                                <p className="text-xs text-gray-500">{s.translatedName}</p>
                             </div>
                         </div>
                         <div className="text-right">
-                            <p className="font-arabic text-lg text-gray-800 dark:text-gray-200">{s.name.replace("سُورَةُ ", "")}</p>
-                            <p className="text-xs text-gray-400">{s.revelationType}</p>
+                            <p className="font-noto text-xl text-gray-800 dark:text-gray-200" lang="ar" dir="rtl">{s.arabicName.replace("سُورَةُ ", "")}</p>
+                            <p className="text-xs text-gray-400">{s.revelationType} • {s.ayahCount} ayahs</p>
                         </div>
                     </Link>
                 ))}

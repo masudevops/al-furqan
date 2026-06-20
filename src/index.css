@@ -21,6 +21,13 @@ body {
   text-transform: none;
 }
 
+.quran-arabic-text {
+  font-family: 'Noto Naskh Arabic', 'Amiri', serif;
+  font-variant-ligatures: common-ligatures;
+  line-height: 2.25;
+  text-wrap: pretty;
+}
+
 /* Background Patterns */
 .bg-islamic-pattern {
   background-image: url("https://www.toptal.com/designers/subtlepatterns/patterns/islamic-pattern.png");

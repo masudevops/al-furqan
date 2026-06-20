@@ -74,7 +74,7 @@ export default function TafseerPage() {
     const currentSurah = surahs.find(s => s.number === parseInt(selectedSurah));
     if (!currentSurah) return;
 
-    if (parseInt(selectedAyah) < (currentSurah.numberOfAyahs || 0)) {
+    if (parseInt(selectedAyah) < currentSurah.ayahCount) {
       setSelectedAyah((parseInt(selectedAyah) + 1).toString());
     } else if (parseInt(selectedSurah) < 114) {
       setSelectedSurah((parseInt(selectedSurah) + 1).toString());
@@ -89,7 +89,7 @@ export default function TafseerPage() {
       const prevSurah = surahs.find(s => s.number === parseInt(selectedSurah) - 1);
       if (prevSurah) {
         setSelectedSurah((parseInt(selectedSurah) - 1).toString());
-        setSelectedAyah((prevSurah.numberOfAyahs || 1).toString());
+        setSelectedAyah(prevSurah.ayahCount.toString());
       }
     }
   };
@@ -131,7 +131,7 @@ export default function TafseerPage() {
                 className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
               >
                 {surahs.map(s => (
-                  <option key={s.number} value={s.number}>{s.number}. {s.englishName}</option>
+                  <option key={s.number} value={s.number}>{s.number}. {s.transliteratedName}</option>
                 ))}
               </select>
             </div>
@@ -142,7 +142,7 @@ export default function TafseerPage() {
                 onChange={(e) => setSelectedAyah(e.target.value)}
                 className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
               >
-                {Array.from({ length: selectedSurahData?.numberOfAyahs || 286 }, (_, i) => i + 1).map(n => (
+                {Array.from({ length: selectedSurahData?.ayahCount || 1 }, (_, i) => i + 1).map(n => (
                   <option key={n} value={n}>{n}</option>
                 ))}
               </select>
@@ -173,7 +173,7 @@ export default function TafseerPage() {
 
           <div className="text-center">
             <span className="font-bold text-lg text-emerald-600 dark:text-emerald-400">
-              {selectedSurahData?.englishName} {selectedSurah}:{selectedAyah}
+              {selectedSurahData?.transliteratedName} {selectedSurah}:{selectedAyah}
             </span>
           </div>
 

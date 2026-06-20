@@ -3,10 +3,21 @@
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
-  fetchSurahByIdWithTranslation,
+  fetchReaderSurah,
   fetchSurahAudio,
   fetchSurahList,
 } from "../services/quranService";
+import type {
+  ReaderAyah,
+  ReaderSurah,
+  SurahMetadata,
+} from "../core/quran/contracts";
+import {
+  clampArabicFontSize,
+  loadReaderPreferences,
+  saveReaderPreferences,
+} from "../core/quran/readerPreferences";
+import QuranReaderControls from "../components/quran/QuranReaderControls";
 import { useAudio, type AudioAyah } from "../context/AudioContext";
 import { useSettings } from "../context/SettingsContext";
 import {
@@ -26,28 +37,6 @@ import {
 import PageView from "../components/PageView";
 import TafsirView from "../components/TafsirView";
 import { FeatureGate } from "../components/FeatureGate";
-
-interface Ayah {
-  number: number;
-  text: string;
-  englishText?: string;
-  audio?: string;
-  page: number;
-}
-
-interface Surah {
-  name: string;
-  englishName: string;
-  englishNameTranslation: string;
-  number: number;
-  ayahs: Ayah[];
-}
-
-interface SurahInfo {
-  number: number;
-  name: string;
-  englishName: string;
-}
 
 // Mushaf page lookup (not relevant to audio logic)
 const SURAH_TO_PAGE: Record<number, number> = {
@@ -79,9 +68,9 @@ export default function SurahDetail() {
   } = useAudio();
 
   // ─── STATE ──────────────────────────────────────────────────────────────────
-  const [surah, setSurah] = useState<Surah | null>(null);
-  const [surahList, setSurahList] = useState<SurahInfo[]>([]);
-  const [filteredSurahList, setFilteredSurahList] = useState<SurahInfo[]>([]);
+  const [surah, setSurah] = useState<ReaderSurah | null>(null);
+  const [surahList, setSurahList] = useState<SurahMetadata[]>([]);
+  const [filteredSurahList, setFilteredSurahList] = useState<SurahMetadata[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Use Global Settings instead of local state
@@ -103,21 +92,37 @@ export default function SurahDetail() {
   );
   const [copiedAyah, setCopiedAyah] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
+  const [readerPreferences, setReaderPreferences] = useState(() =>
+    loadReaderPreferences(localStorage),
+  );
+
+  useEffect(() => {
+    saveReaderPreferences(localStorage, {
+      ...readerPreferences,
+      arabicFontSize: clampArabicFontSize(readerPreferences.arabicFontSize),
+    });
+  }, [readerPreferences]);
 
   // ─── Auto-scroll to active Ayah ──────────────────────────────────────────────
   // ─── Auto-scroll to active Ayah OR Deep Link ─────────────────────────────────
   const { hash } = useLocation(); // Need to import this hook
+  const loadedSurahNumber = surah?.metadata.number;
 
   useEffect(() => {
     // Priority 1: Audio Playing
-    if (isPlaying && globalCurrentAyah && globalCurrentAyah.surahNumber === surah?.number) {
+    if (
+      isPlaying &&
+      globalCurrentAyah &&
+      globalCurrentAyah.surahNumber === loadedSurahNumber
+    ) {
       const element = document.getElementById(`ayah-${globalCurrentAyah.number}`);
       if (element) {
         element.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     }
     // Priority 2: Deep Link (Hash) on Load
-    else if (hash && surah && !loading) {
+    else if (hash && loadedSurahNumber && !loading) {
       // hash is like "#ayah-255"
       const id = hash.replace("#", "");
       const element = document.getElementById(id);
@@ -131,7 +136,7 @@ export default function SurahDetail() {
         }, 500);
       }
     }
-  }, [globalCurrentAyah, isPlaying, surah?.number, hash, loading]);
+  }, [globalCurrentAyah, isPlaying, loadedSurahNumber, hash, loading]);
 
   // ─── 1) Fetch list of all Surahs for dropdown search ───────────────────────────
   useEffect(() => {
@@ -167,7 +172,14 @@ export default function SurahDetail() {
   // ─── 4) Track route param "surahId" → set currentSurahNumber ──────────────────────
   useEffect(() => {
     if (!surahId) return;
-    setCurrentSurahNumber(parseInt(surahId, 10));
+    const parsed = Number.parseInt(surahId, 10);
+    setCurrentSurahNumber(
+      Number.isInteger(parsed) && parsed >= 1 && parsed <= 114 ? parsed : null,
+    );
+    if (!Number.isInteger(parsed) || parsed < 1 || parsed > 114) {
+      setLoading(false);
+      setError("That Surah could not be found.");
+    }
     setActiveTafsirAyah(null); // Close tafsir on surah change
   }, [surahId]);
 
@@ -182,42 +194,24 @@ export default function SurahDetail() {
       const sId = currentSurahNumber.toString();
 
       try {
-        // 1. Fetch Texts First (Fast)
-        const [trans, arabic] = await Promise.all([
-          fetchSurahByIdWithTranslation(sId, translation),
-          fetchSurahByIdWithTranslation(sId, "ar"),
-        ]);
+        const readerSurah = await fetchReaderSurah(
+          currentSurahNumber,
+          translation,
+        );
 
-        // Merge text immediately
-        const initialAyahs = (arabic.ayahs as any[]).map((ayah: any, i: number) => ({
-          number: i + 1,
-          text: ayah.text,
-          englishText: trans.ayahs[i]?.text || "",
-          audio: "", // Placeholder
-          page: ayah.page || 0,
-        }));
+        setSurah(readerSurah);
+        setLoading(false);
 
-        const newSurah: Surah = {
-          name: arabic.name,
-          englishName: arabic.englishName,
-          englishNameTranslation: arabic.englishNameTranslation,
-          number: arabic.number,
-          ayahs: initialAyahs,
-        };
-
-        setSurah(newSurah);
-        setLoading(false); // <--- UNBLOCK UI IMMEDIATELY
-
-        // 2. Fetch Audio in background (Slower)
+        // Preserve the existing audio behavior without coupling it to Quran text.
         fetchSurahAudio(sId, reciter)
           .then(audioData => {
             setSurah(prev => {
               // Prevent race condition if user switched surah already
-              if (!prev || prev.number !== currentSurahNumber) return prev;
+              if (!prev || prev.metadata.number !== currentSurahNumber) return prev;
 
               const ayahsWithAudio = prev.ayahs.map((a, i) => ({
                 ...a,
-                audio: audioData[i]?.audio || ""
+                audioUrl: audioData[i]?.audio || "",
               }));
 
               return { ...prev, ayahs: ayahsWithAudio };
@@ -229,12 +223,12 @@ export default function SurahDetail() {
         console.error(e);
         // Only error if TEXT fails
         setSurah(null);
-        setError("Failed to load surah text. Please try again.");
+        setError("We couldn’t load this Surah. Check your connection and try again.");
         setLoading(false);
       }
     };
-    load();
-  }, [currentSurahNumber, translation, reciter]);
+    void load();
+  }, [currentSurahNumber, translation, reciter, retryKey]);
 
   // ─── Bookmark toggle: add/remove { surah, ayah } ─────────────────────────────────
   const handleBookmarkToggle = (surahNumber: number, ayahNumber: number) => {
@@ -256,19 +250,19 @@ export default function SurahDetail() {
     bookmarks.some((b) => b.surah === surahNum && b.ayah === ayahNum);
 
   // ─── Audio Helper Functions ────────────────────────────────────────────────────
-  const convertToAudioAyah = (ayah: Ayah): AudioAyah => ({
-    number: ayah.number,
-    text: ayah.text,
-    audio: ayah.audio || "", // ensure string
-    surahNumber: surah?.number || 0,
-    surahName: surah?.englishName || ""
+  const convertToAudioAyah = (ayah: ReaderAyah): AudioAyah => ({
+    number: ayah.ref.ayahNumber,
+    text: ayah.arabicText,
+    audio: ayah.audioUrl || "",
+    surahNumber: surah?.metadata.number || 0,
+    surahName: surah?.metadata.transliteratedName || "",
   });
 
-  const handlePlayAyah = (ayah: Ayah) => {
+  const handlePlayAyah = (ayah: ReaderAyah) => {
     // Check if this verse is already playing
     if (
-      globalCurrentAyah?.surahNumber === surah?.number &&
-      globalCurrentAyah?.number === ayah.number &&
+      globalCurrentAyah?.surahNumber === surah?.metadata.number &&
+      globalCurrentAyah?.number === ayah.ref.ayahNumber &&
       isPlaying
     ) {
       togglePlay(); // Pause
@@ -277,7 +271,9 @@ export default function SurahDetail() {
       // "Play" on a verse usually initiates reading from there.
       // Let's create a playlist from this verse to the end of the surah
       if (!surah) return;
-      const startIndex = surah.ayahs.findIndex(a => a.number === ayah.number);
+      const startIndex = surah.ayahs.findIndex(
+        (item) => item.ref.ayahNumber === ayah.ref.ayahNumber,
+      );
       const relevantAyahs = surah.ayahs.slice(startIndex);
       const playlist = relevantAyahs.map(convertToAudioAyah);
       playPlaylist(playlist, 0);
@@ -288,7 +284,10 @@ export default function SurahDetail() {
     if (!surah) return;
 
     // If currently playing from this Surah, just toggle
-    if (globalCurrentAyah?.surahNumber === surah.number && isPlaying) {
+    if (
+      globalCurrentAyah?.surahNumber === surah.metadata.number &&
+      isPlaying
+    ) {
       togglePlay();
       return;
     }
@@ -323,8 +322,9 @@ export default function SurahDetail() {
       q
         ? surahList.filter(
           (s) =>
-            s.englishName.toLowerCase().includes(q) ||
-            s.name.toLowerCase().includes(q) ||
+            s.transliteratedName.toLowerCase().includes(q) ||
+            s.arabicName.toLowerCase().includes(q) ||
+            s.translatedName.toLowerCase().includes(q) ||
             s.number.toString().includes(q)
         )
         : surahList
@@ -332,15 +332,15 @@ export default function SurahDetail() {
   };
 
   // ─── Copy an Ayah's text (with translation) ──────────────────────────────────
-  const copyAyah = async (ayah: Ayah) => {
+  const copyAyah = async (ayah: ReaderAyah) => {
     const text =
       viewMode === "translation"
-        ? `${ayah.text}\n\n${ayah.englishText}\n\n${surah?.englishName} ${ayah.number
+        ? `${ayah.arabicText}\n\n${ayah.translationText || ""}\n\n${surah?.metadata.transliteratedName} ${ayah.ref.ayahNumber
         }`
-        : `${ayah.text}\n\n${surah?.englishName} ${ayah.number}`;
+        : `${ayah.arabicText}\n\n${surah?.metadata.transliteratedName} ${ayah.ref.ayahNumber}`;
     try {
       await navigator.clipboard.writeText(text);
-      setCopiedAyah(ayah.number);
+      setCopiedAyah(ayah.ref.ayahNumber);
       setTimeout(() => setCopiedAyah(null), 2000);
     } catch (err) {
       console.error("Failed to copy:", err);
@@ -348,21 +348,21 @@ export default function SurahDetail() {
   };
 
   // ─── Share an Ayah's text ────────────────────────────────────────────────────
-  const shareAyah = async (ayah: Ayah) => {
+  const shareAyah = async (ayah: ReaderAyah) => {
     const shareText =
       viewMode === "translation"
-        ? `${ayah.text}\n\n${ayah.englishText}\n\n${surah?.englishName} ${ayah.number
+        ? `${ayah.arabicText}\n\n${ayah.translationText || ""}\n\n${surah?.metadata.transliteratedName} ${ayah.ref.ayahNumber
         }`
-        : `${ayah.text}\n\n${surah?.englishName} ${ayah.number}`;
+        : `${ayah.arabicText}\n\n${surah?.metadata.transliteratedName} ${ayah.ref.ayahNumber}`;
     try {
       if (navigator.share) {
         await navigator.share({
-          title: `${surah?.englishName} ${ayah.number}`,
+          title: `${surah?.metadata.transliteratedName} ${ayah.ref.ayahNumber}`,
           text: shareText,
         });
       } else {
         await navigator.clipboard.writeText(shareText);
-        setCopiedAyah(ayah.number);
+        setCopiedAyah(ayah.ref.ayahNumber);
         setTimeout(() => setCopiedAyah(null), 2000);
         alert("Ayah copied to clipboard!");
       }
@@ -371,325 +371,396 @@ export default function SurahDetail() {
     }
   };
 
-  // ─── RENDER: loading / error / "no surah" ────────────────────────────────────
-  if (loading)
+  if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen dark:bg-gray-900">
-        <p className="text-center dark:text-gray-200">Loading Surah…</p>
+      <div
+        className="min-h-[70vh] bg-gray-50 px-4 py-12 dark:bg-gray-900"
+        aria-live="polite"
+      >
+        <div className="mx-auto max-w-4xl animate-pulse space-y-6">
+          <div className="mx-auto h-8 w-48 rounded bg-gray-200 dark:bg-gray-700" />
+          {[1, 2, 3].map((item) => (
+            <div
+              key={item}
+              className="h-52 rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
+            />
+          ))}
+          <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+            Loading Surah…
+          </p>
+        </div>
       </div>
     );
+  }
 
-  if (error)
+  if (error || !surah) {
     return (
-      <div className="flex flex-col justify-center items-center h-screen dark:bg-gray-900">
-        <p className="text-center text-red-600 dark:text-red-400 mb-4">
-          {error}
+      <div className="flex min-h-[70vh] flex-col items-center justify-center bg-gray-50 px-4 text-center dark:bg-gray-900">
+        <p className="mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+          Quran reader unavailable
         </p>
-        <button
-          onClick={() => navigate("/")}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Return to Home
-        </button>
-      </div>
-    );
-
-  if (!surah)
-    return (
-      <div className="flex flex-col justify-center items-center h-screen dark:bg-gray-900">
-        <p className="text-center text-red-600 dark:text-red-400 mb-4">
-          Surah not found.
+        <p className="mb-6 max-w-md text-gray-600 dark:text-gray-400">
+          {error || "That Surah could not be found."}
         </p>
-        <button
-          onClick={() => navigate("/")}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Return to Home
-        </button>
+        <div className="flex flex-wrap justify-center gap-3">
+          {currentSurahNumber && (
+            <button
+              onClick={() => setRetryKey((value) => value + 1)}
+              className="rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700"
+            >
+              Try again
+            </button>
+          )}
+          <button
+            onClick={() => navigate("/al-quran")}
+            className="rounded-lg border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 hover:border-emerald-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+          >
+            Browse Surahs
+          </button>
+        </div>
       </div>
     );
+  }
 
-  // ─── Compute Mushaf page if needed (Reading view) ─────────────────────────────
   const startingMushafPage =
     currentSurahNumber && SURAH_TO_PAGE[currentSurahNumber]
       ? SURAH_TO_PAGE[currentSurahNumber]
       : 1;
+  const isCurrentSurahPlaying =
+    isPlaying &&
+    globalCurrentAyah?.surahNumber === surah.metadata.number;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
-      {/* ─── HEADER ─────────────────────────────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto px-4 py-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            {/* Surah selector (only in Translation view) */}
+    <div className="min-h-screen bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
+      <div className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-800/95">
+        <div className="mx-auto max-w-5xl px-4 py-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             {viewMode === "translation" && (
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <button
-                    onClick={() =>
-                      setIsSurahDropdownOpen(!isSurahDropdownOpen)
-                    }
-                    className="flex items-center gap-2 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm font-medium"
-                  >
-                    {surah.englishName} ({surah.name})
-                    <FaChevronDown
-                      className={`transition-transform ${isSurahDropdownOpen ? "transform rotate-180" : ""
-                        }`}
-                      size={12}
-                    />
-                  </button>
-                  {isSurahDropdownOpen && (
-                    <div className="absolute z-50 mt-1 w-56 max-h-96 overflow-y-auto bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700">
-                      <div className="sticky top-0 p-2 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <FaSearch className="text-gray-400" />
-                          </div>
-                          <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={handleSurahSearch}
-                            placeholder="Search surahs..."
-                            className="w-full pl-10 pr-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-white border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                            autoFocus
-                          />
-                        </div>
-                      </div>
-                      <div className="py-1">
-                        {filteredSurahList.length > 0 ? (
-                          filteredSurahList.map((s) => (
-                            <button
-                              key={s.number}
-                              onClick={() => {
-                                navigateToSurah(s.number);
-                                setIsSurahDropdownOpen(false);
-                              }}
-                              className={`block w-full text-left px-4 py-2 text-sm ${s.number === surah.number
-                                ? "bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200"
-                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                }`}
-                            >
-                              {s.number}. {s.englishName} ({s.name})
-                            </button>
-                          ))
-                        ) : (
-                          <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
-                            No surahs found
-                          </div>
-                        )}
+              <div className="relative">
+                <button
+                  onClick={() =>
+                    setIsSurahDropdownOpen(!isSurahDropdownOpen)
+                  }
+                  className="flex min-h-11 w-full items-center justify-between gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 sm:w-auto"
+                >
+                  {surah.metadata.transliteratedName}
+                  <FaChevronDown
+                    className={isSurahDropdownOpen ? "rotate-180" : ""}
+                    size={12}
+                  />
+                </button>
+                {isSurahDropdownOpen && (
+                  <div className="absolute z-50 mt-1 max-h-96 w-full min-w-72 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800 sm:w-80">
+                    <div className="sticky top-0 border-b border-gray-200 bg-white p-2 dark:border-gray-700 dark:bg-gray-800">
+                      <div className="relative">
+                        <FaSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                          type="text"
+                          value={searchQuery}
+                          onChange={handleSurahSearch}
+                          placeholder="Search Surahs..."
+                          className="w-full rounded border border-gray-300 bg-white py-2 pl-10 pr-3 text-sm text-gray-800 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                          autoFocus
+                        />
                       </div>
                     </div>
-                  )}
-                </div>
+                    <div className="py-1">
+                      {filteredSurahList.length > 0 ? (
+                        filteredSurahList.map((item) => (
+                          <button
+                            key={item.number}
+                            onClick={() => {
+                              navigateToSurah(item.number);
+                              setIsSurahDropdownOpen(false);
+                            }}
+                            className={`block w-full px-4 py-3 text-left text-sm ${
+                              item.number === surah.metadata.number
+                                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200"
+                                : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                            }`}
+                          >
+                            {item.number}. {item.transliteratedName} (
+                            {item.arabicName})
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                          No Surahs found
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* View Mode / Translation / Reciter / Play Audio */}
-            <div className="flex flex-wrap items-center gap-3">
-              {/* View Mode Buttons */}
-              <div className="flex rounded-md shadow-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex rounded-lg shadow-sm">
                 <button
                   onClick={() => setViewMode("translation")}
-                  className={`px-3 py-2 text-sm font-medium flex items-center gap-2 ${viewMode === "translation"
-                    ? "bg-emerald-500 text-white"
-                    : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                    } rounded-l-md`}
+                  className={`min-h-11 rounded-l-lg px-3 text-sm font-medium ${
+                    viewMode === "translation"
+                      ? "bg-emerald-600 text-white"
+                      : "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+                  }`}
                 >
-                  Translation
+                  Reader
                 </button>
-                
-                {/* Mushaf Button - Only show if feature is enabled */}
                 <FeatureGate feature="enableMushafView">
                   <button
                     onClick={() => setViewMode("page")}
-                    className={`px-3 py-2 text-sm font-medium rounded-r-md flex items-center gap-2 ${viewMode === "page"
-                      ? "bg-emerald-500 text-white"
-                      : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                      }`}
+                    className={`min-h-11 rounded-r-lg px-3 text-sm font-medium ${
+                      viewMode === "page"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+                    }`}
                   >
                     Mushaf
                   </button>
                 </FeatureGate>
               </div>
 
-              {/* Translation Selector */}
               {viewMode === "translation" && (
-                <select
-                  value={translation}
-                  onChange={(e) => setTranslation(e.target.value)}
-                  className="bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                >
-                  <option value="en.sahih">English</option>
-                  <option value="bn.bengali">Bengali</option>
-                  <option value="ur.jalandhry">Urdu</option>
-                  <option value="fr.hamidullah">French (Hamidullah)</option>
-                  <option value="de.aburida">German (Abu Rida)</option>
-                  <option value="tr.diyanet">Turkish (Diyanet)</option>
-                  <option value="id.muntakhab">Indonesian</option>
-                </select>
-              )}
-
-              {/* Reciter Selector */}
-              {viewMode === "translation" && (
-                <select
-                  value={reciter}
-                  onChange={(e) => setReciter(e.target.value)}
-                  className="bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                >
-                  <option value="ar.alafasy">Mishary Alafasy</option>
-                  <option value="ar.minshawi">Minshawi</option>
-                  <option value="ar.sudais">Abdur-Rahman as-Sudais</option>
-                  <option value="ar.husary">Al-Husary</option>
-                  <option value="ar.abdulbasitmurattal">Abdul Basit</option>
-                  <option value="ar.saoodshuraym">Saood Shuraym</option>
-                  <option value="ar.abdullahbasfar">Abdullah Basfar</option>
-                  <option value="ar.abdulsamad">Abdul Samad</option>
-                  <option value="ar.shaatree">Abu Bakr Ash-Shatri</option>
-                  <option value="ar.ahmedajamy">Ahmed Al-Ajamy</option>
-                  <option value="ar.hanirifai">Hani Ar-Rifai</option>
-                  <option value="ar.ibrahimakhbar">Ibrahim Al-Akhdar</option>
-                  <option value="ar.mahermuaiqly">Maher Al-Muaiqly</option>
-                  <option value="ar.muhammadayyoub">Muhammad Ayyub</option>
-                  <option value="ar.muhammadjibreel">Muhammad Jibreel</option>
-                </select>
-              )}
-
-              {/* Play All Button */}
-              {viewMode === "translation" && (
-                <button
-                  onClick={handlePlayAll}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors ${(isPlaying && globalCurrentAyah?.surahNumber === surah.number)
-                    ? "bg-red-500 text-white hover:bg-red-600"
-                    : "bg-emerald-500 text-white hover:bg-emerald-600"
+                <>
+                  <label className="sr-only" htmlFor="reader-translation">
+                    Translation edition
+                  </label>
+                  <select
+                    id="reader-translation"
+                    value={translation}
+                    onChange={(event) => setTranslation(event.target.value)}
+                    className="min-h-11 rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-800 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                  >
+                    <option value="en.sahih">English</option>
+                    <option value="bn.bengali">Bengali</option>
+                    <option value="ur.jalandhry">Urdu</option>
+                    <option value="fr.hamidullah">French</option>
+                    <option value="de.aburida">German</option>
+                    <option value="tr.diyanet">Turkish</option>
+                    <option value="id.muntakhab">Indonesian</option>
+                  </select>
+                  <label className="sr-only" htmlFor="reader-reciter">
+                    Reciter
+                  </label>
+                  <select
+                    id="reader-reciter"
+                    value={reciter}
+                    onChange={(event) => setReciter(event.target.value)}
+                    className="min-h-11 max-w-48 rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-800 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                  >
+                    <option value="ar.alafasy">Mishary Alafasy</option>
+                    <option value="ar.minshawi">Minshawi</option>
+                    <option value="ar.sudais">Abdur-Rahman as-Sudais</option>
+                    <option value="ar.husary">Al-Husary</option>
+                    <option value="ar.abdulbasitmurattal">Abdul Basit</option>
+                  </select>
+                  <button
+                    onClick={handlePlayAll}
+                    className={`flex min-h-11 items-center gap-2 rounded-lg px-4 font-medium text-white ${
+                      isCurrentSurahPlaying
+                        ? "bg-red-500 hover:bg-red-600"
+                        : "bg-emerald-600 hover:bg-emerald-700"
                     }`}
-                >
-                  {(isPlaying && globalCurrentAyah?.surahNumber === surah.number) ? (
-                    <>
-                      <FaPause size={14} /> Stop
-                    </>
-                  ) : (
-                    <>
-                      <FaPlay size={14} /> Play All
-                    </>
-                  )}
-                </button>
+                  >
+                    {isCurrentSurahPlaying ? (
+                      <>
+                        <FaPause size={14} /> Stop
+                      </>
+                    ) : (
+                      <>
+                        <FaPlay size={14} /> Play all
+                      </>
+                    )}
+                  </button>
+                </>
               )}
             </div>
           </div>
 
-          {/* Navigation Between Surahs */}
-          <div className="flex items-center justify-between mt-6">
+          {viewMode === "translation" && (
+            <div className="mt-3">
+              <QuranReaderControls
+                preferences={readerPreferences}
+                onChange={(preferences) =>
+                  setReaderPreferences({
+                    ...preferences,
+                    arabicFontSize: clampArabicFontSize(
+                      preferences.arabicFontSize,
+                    ),
+                  })
+                }
+              />
+            </div>
+          )}
+
+          <div className="mt-5 grid grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-4">
             <button
               onClick={prevSurah}
-              className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-emerald-500 transition-colors"
+              aria-label="Previous Surah"
+              className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-emerald-600 dark:text-gray-400 dark:hover:bg-gray-700 sm:px-3"
             >
-              <FaBackward /> Previous Surah
+              <FaBackward /> <span className="hidden sm:inline">Previous</span>
             </button>
-            <div className="text-center">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
-                {surah.englishName}
+            <div className="min-w-0 text-center">
+              <p
+                className="mb-1 truncate font-noto text-2xl text-emerald-700 dark:text-emerald-300 sm:text-3xl"
+                lang="ar"
+                dir="rtl"
+              >
+                {surah.metadata.arabicName}
+              </p>
+              <h1 className="truncate text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
+                {surah.metadata.transliteratedName}
               </h1>
-              <p className="text-gray-500 dark:text-gray-400">
-                {surah.englishNameTranslation} • {surah.ayahs.length} Verses
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Surah {surah.metadata.number} • {surah.metadata.translatedName} •{" "}
+                {surah.metadata.revelationType} • {surah.metadata.ayahCount} ayahs
               </p>
             </div>
             <button
               onClick={nextSurah}
-              className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-emerald-500 transition-colors"
+              aria-label="Next Surah"
+              className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-emerald-600 dark:text-gray-400 dark:hover:bg-gray-700 sm:px-3"
             >
-              Next Surah <FaForward />
+              <span className="hidden sm:inline">Next</span> <FaForward />
             </button>
           </div>
         </div>
       </div>
 
-      {/* ─── CONTENT ─────────────────────────────────────────────────────────────────── */}
-      <div className="max-w-5xl mx-auto px-4 py-8 pb-32">
+      <main className="mx-auto max-w-5xl px-3 py-6 pb-32 sm:px-4 sm:py-8">
         {viewMode === "page" ? (
           <PageView initialPage={startingMushafPage} />
         ) : (
-          <div className="space-y-6">
-            {/* Bismillah (skip for Surah 1 & 9) */}
-            {![1, 9].includes(surah.number) && (
-              <div className="text-center mb-10">
-                <p className="font-arabic text-4xl text-gray-800 dark:text-gray-200 leading-looose">
+          <div
+            className={
+              readerPreferences.density === "compact"
+                ? "space-y-3"
+                : "space-y-6"
+            }
+          >
+            {!surah.translationAvailable &&
+              readerPreferences.showTranslation && (
+                <div
+                  role="status"
+                  className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-200"
+                >
+                  The selected translation could not be loaded. Arabic text is
+                  still available.
+                </div>
+              )}
+
+            {![1, 9].includes(surah.metadata.number) && (
+              <div className="mb-8 text-center">
+                <p
+                  className="font-noto text-4xl leading-[2.2] text-gray-800 dark:text-gray-200"
+                  lang="ar"
+                  dir="rtl"
+                >
                   بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
                 </p>
               </div>
             )}
 
             {surah.ayahs.map((ayah) => {
+              const ayahNumber = ayah.ref.ayahNumber;
               const isPlayingThis =
-                globalCurrentAyah?.surahNumber === surah.number &&
-                globalCurrentAyah?.number === ayah.number &&
+                globalCurrentAyah?.surahNumber === surah.metadata.number &&
+                globalCurrentAyah?.number === ayahNumber &&
                 isPlaying;
-
-              const isTafsirOpen = activeTafsirAyah === ayah.number;
+              const isTafsirOpen = activeTafsirAyah === ayahNumber;
+              const bookmarked = isAyahBookmarked(
+                surah.metadata.number,
+                ayahNumber,
+              );
 
               return (
-                <div
-                  key={ayah.number}
-                  id={`ayah-${ayah.number}`}
-                  className={`bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border transition-all duration-300 ${isPlayingThis
-                    ? "border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-900/10 shadow-md transform scale-[1.01]"
-                    : "border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600"
-                    }`}
+                <article
+                  key={ayahNumber}
+                  id={`ayah-${ayahNumber}`}
+                  aria-labelledby={`ayah-label-${ayahNumber}`}
+                  className={`rounded-2xl border bg-white shadow-sm transition-colors dark:bg-gray-800 ${
+                    readerPreferences.density === "compact"
+                      ? "p-4 sm:p-5"
+                      : "p-5 sm:p-7"
+                  } ${
+                    isPlayingThis
+                      ? "border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20 dark:bg-emerald-900/10"
+                      : "border-gray-100 hover:border-gray-200 dark:border-gray-700 dark:hover:border-gray-600"
+                  }`}
                 >
-                  <div className="flex flex-col gap-6">
-                    {/* Top Bar: Number + Actions */}
-                    <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-4">
+                  <div
+                    className={
+                      readerPreferences.density === "compact"
+                        ? "flex flex-col gap-4"
+                        : "flex flex-col gap-6"
+                    }
+                  >
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-3 dark:border-gray-700">
                       <div className="flex items-center gap-2">
-                        <span className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 font-medium text-sm">
-                          {ayah.number}
-                        </span>
-                        {/* Bookmark Button */}
-                        <button
-                          onClick={() => handleBookmarkToggle(surah.number, ayah.number)}
-                          className={`p-2 rounded-full transition-colors ${isAyahBookmarked(surah.number, ayah.number)
-                            ? "text-yellow-400 hover:text-yellow-500"
-                            : "text-gray-400 hover:text-gray-500"
-                            }`}
-                          title="Bookmark"
+                        <span
+                          id={`ayah-label-${ayahNumber}`}
+                          className="flex h-9 min-w-9 items-center justify-center rounded-full bg-emerald-100 px-2 text-sm font-semibold text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300"
                         >
-                          {isAyahBookmarked(surah.number, ayah.number) ? (
-                            <FaStar />
-                          ) : (
-                            <FaRegStar />
-                          )}
+                          {surah.metadata.number}:{ayahNumber}
+                        </span>
+                        <button
+                          onClick={() =>
+                            handleBookmarkToggle(
+                              surah.metadata.number,
+                              ayahNumber,
+                            )
+                          }
+                          aria-label={`${
+                            bookmarked ? "Remove bookmark from" : "Bookmark"
+                          } ayah ${ayahNumber}`}
+                          className={`min-h-10 min-w-10 rounded-full p-2 transition-colors ${
+                            bookmarked
+                              ? "text-yellow-500"
+                              : "text-gray-400 hover:text-yellow-500"
+                          }`}
+                        >
+                          {bookmarked ? <FaStar /> : <FaRegStar />}
                         </button>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        {/* Play Button */}
+                      <div className="flex items-center gap-1 sm:gap-2">
                         <button
                           onClick={() => handlePlayAyah(ayah)}
-                          className={`p-2 rounded-full transition-colors ${isPlayingThis
-                            ? "text-emerald-600 bg-emerald-100"
-                            : "text-gray-400 hover:text-emerald-600 hover:bg-gray-50 dark:hover:bg-gray-700"
-                            }`}
+                          className={`min-h-10 min-w-10 rounded-full p-2 transition-colors ${
+                            isPlayingThis
+                              ? "bg-emerald-100 text-emerald-600"
+                              : "text-gray-400 hover:bg-gray-50 hover:text-emerald-600 dark:hover:bg-gray-700"
+                          }`}
                           title={isPlayingThis ? "Pause" : "Play"}
                         >
-                          {isPlayingThis ? <FaPause size={14} /> : <FaPlay size={14} />}
+                          {isPlayingThis ? (
+                            <FaPause size={14} />
+                          ) : (
+                            <FaPlay size={14} />
+                          )}
                         </button>
-
-                        {/* Tafsir Button */}
                         <button
-                          onClick={() => setActiveTafsirAyah(isTafsirOpen ? null : ayah.number)}
-                          className={`p-2 rounded-full transition-colors ${isTafsirOpen
-                            ? "text-emerald-600 bg-emerald-100 dark:bg-emerald-900/50"
-                            : "text-gray-400 hover:text-emerald-600 hover:bg-gray-50 dark:hover:bg-gray-700"
-                            }`}
+                          onClick={() =>
+                            setActiveTafsirAyah(
+                              isTafsirOpen ? null : ayahNumber,
+                            )
+                          }
+                          className={`min-h-10 min-w-10 rounded-full p-2 transition-colors ${
+                            isTafsirOpen
+                              ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50"
+                              : "text-gray-400 hover:bg-gray-50 hover:text-emerald-600 dark:hover:bg-gray-700"
+                          }`}
                           title="Read Tafsir"
                         >
                           <FaBookOpen size={14} />
                         </button>
-
                         <button
                           onClick={() => copyAyah(ayah)}
-                          className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                          className="min-h-10 min-w-10 rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                           title="Copy"
                         >
-                          {copiedAyah === ayah.number ? (
+                          {copiedAyah === ayahNumber ? (
                             <FaCheck className="text-emerald-500" />
                           ) : (
                             <FaCopy size={14} />
@@ -697,7 +768,7 @@ export default function SurahDetail() {
                         </button>
                         <button
                           onClick={() => shareAyah(ayah)}
-                          className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                          className="min-h-10 min-w-10 rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                           title="Share"
                         >
                           <FaShare size={14} />
@@ -705,33 +776,41 @@ export default function SurahDetail() {
                       </div>
                     </div>
 
-                    {/* Arabic Text */}
-                    <div className="w-full">
-                      <p className="font-arabic text-right text-3xl md:text-4xl leading-[2.5] text-gray-900 dark:text-gray-100 py-2">
-                        {ayah.text}
-                      </p>
-                    </div>
+                    <p
+                      className="quran-arabic-text py-2 text-right text-gray-900 dark:text-gray-100"
+                      lang="ar"
+                      dir="rtl"
+                      style={{
+                        fontSize: `${readerPreferences.arabicFontSize}px`,
+                      }}
+                    >
+                      {ayah.arabicText}
+                    </p>
 
-                    {/* Translation */}
-                    <div className="w-full">
-                      <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed font-light">
-                        {ayah.englishText}
-                      </p>
-                    </div>
+                    {readerPreferences.showTranslation &&
+                      ayah.translationText && (
+                        <div className="border-t border-gray-100 pt-4 dark:border-gray-700">
+                          <p className="text-base leading-8 text-gray-700 dark:text-gray-300 sm:text-lg">
+                            {ayah.translationText}
+                          </p>
+                        </div>
+                      )}
 
-                    {/* Inline Tafsir View */}
                     {isTafsirOpen && (
-                      <div className="w-full border-t border-gray-100 dark:border-gray-700 pt-4">
-                        <TafsirView surahNumber={surah.number} ayahNumber={ayah.number} />
+                      <div className="border-t border-gray-100 pt-4 dark:border-gray-700">
+                        <TafsirView
+                          surahNumber={surah.metadata.number}
+                          ayahNumber={ayahNumber}
+                        />
                       </div>
                     )}
                   </div>
-                </div>
+                </article>
               );
             })}
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

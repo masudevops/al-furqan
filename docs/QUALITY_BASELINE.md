@@ -66,5 +66,5 @@ Provider calls are not required for smoke-test success. Provider contract tests 
 - The landing page currently reports a non-critical heading-order violation because feature cards move from `h1` to `h3`; AF-001 records but does not redesign that hierarchy.
 - No coverage threshold is enforced yet.
 - No visual regression suite is included.
-- The existing React 19 / `react-helmet-async` peer mismatch requires `npm ci --legacy-peer-deps` in CI until the dependency is upgraded or replaced.
+- The existing React 19 / `react-helmet-async` peer mismatch requires npm's legacy peer-resolution mode until the dependency is upgraded or replaced. The repository-level `.npmrc` applies this consistently to local installs, CI, and Vercel's automatic install step.
 - The clean install currently reports 23 dependency audit findings (2 low, 7 moderate, 13 high, and 1 critical). AF-001 records this baseline; dependency remediation requires a separate reviewed ticket because automatic upgrades may change application behavior.

@@ -73,6 +73,8 @@ Unit and smoke tests do not need real credentials and must never call credential
 
 Configure `HADITH_API_KEY` and `ISLAMHOUSE_API_KEY` as encrypted project environment variables for each required environment. The same-origin `/api/providers` default routes to standard Fetch API functions under `api/providers/`. See the [Vercel Functions documentation](https://vercel.com/docs/functions).
 
+Vercel's automatic npm install uses the checked-in `.npmrc`. This currently enables `legacy-peer-deps` for the known React 19 / `react-helmet-async@2` peer-range mismatch; no custom Vercel install command is required.
+
 ### Azure or another static host
 
 The current Azure workflow deploys only static `dist` files and cannot execute the provider functions. Deploy the `api/` gateway separately on a server/serverless runtime, set its server-only credentials there, configure allowed origins, and build the client with:

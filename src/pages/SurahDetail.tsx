@@ -25,6 +25,7 @@ import {
 } from "react-icons/fa";
 import PageView from "../components/PageView";
 import TafsirView from "../components/TafsirView";
+import { FeatureGate } from "../components/FeatureGate";
 
 interface Ayah {
   number: number;
@@ -496,15 +497,19 @@ export default function SurahDetail() {
                 >
                   Translation
                 </button>
-                <button
-                  onClick={() => setViewMode("page")}
-                  className={`px-3 py-2 text-sm font-medium rounded-r-md flex items-center gap-2 ${viewMode === "page"
-                    ? "bg-emerald-500 text-white"
-                    : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                    }`}
-                >
-                  Mushaf
-                </button>
+                
+                {/* Mushaf Button - Only show if feature is enabled */}
+                <FeatureGate feature="enableMushafView">
+                  <button
+                    onClick={() => setViewMode("page")}
+                    className={`px-3 py-2 text-sm font-medium rounded-r-md flex items-center gap-2 ${viewMode === "page"
+                      ? "bg-emerald-500 text-white"
+                      : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                      }`}
+                  >
+                    Mushaf
+                  </button>
+                </FeatureGate>
               </div>
 
               {/* Translation Selector */}

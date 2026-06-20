@@ -1,21 +1,12 @@
 import { useState } from "react";
 import PageView from "../components/PageView";
-// import Home from "./Home";  
-// Actually Home.tsx was redesigned to contain Surah List. 
-// We should probably extract Surah List or reuse Home logic.
-// For now, let's assume we copy the Surah List logic or just redirect to Home for list.
-// But specs say: Al Qur'an page has tabs.
-
-// Let's create a dedicated SurahList component later, but for now
-// we will implement a simple list here or pull from Home.
-// To keep it clean, I'll inline the list or make a component if needed.
-// Reusing Home's logic for now but stripping the Landing/Hero part.
-
 import { Link } from "react-router-dom";
 import { useEffect } from "react";
 import { fetchSurahList, type Surah } from "../services/quranService";
 import { FaSearch } from "react-icons/fa";
 import SEO from "../components/SEO";
+import { useFeatureFlags } from "../hooks/useFeatureFlags";
+import { FeatureGate } from "../components/FeatureGate";
 
 function FileSurahList() {
     // Duplicate logic from Home for now to be safe and fast, 
@@ -85,7 +76,8 @@ function FileSurahList() {
 }
 
 export default function AlQuranPage() {
-    const [activeTab, setActiveTab] = useState<"list" | "mushaf">("list");
+    const { mushafView } = useFeatureFlags();
+    const [activeTab, setActiveTab] = useState<"list" | "mushaf">(mushafView ? "list" : "list");
 
     return (
         <>
@@ -101,26 +93,41 @@ export default function AlQuranPage() {
                     >
                         Surah List
                     </button>
-                    <button
-                        onClick={() => setActiveTab("mushaf")}
-                        className={`pb-2 px-1 text-sm font-medium transition-colors border-b-2 ${activeTab === "mushaf"
-                            ? "border-emerald-500 text-emerald-600 dark:text-emerald-400"
-                            : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400"
-                            }`}
-                    >
-                        Mushaf View
-                    </button>
+                    
+                    {/* Mushaf View Tab - Only show if feature is enabled */}
+                    <FeatureGate feature="enableMushafView">
+                        <button
+                            onClick={() => setActiveTab("mushaf")}
+                            className={`pb-2 px-1 text-sm font-medium transition-colors border-b-2 ${activeTab === "mushaf"
+                                ? "border-emerald-500 text-emerald-600 dark:text-emerald-400"
+                                : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                                }`}
+                        >
+                            Mushaf View
+                        </button>
+                    </FeatureGate>
                 </div>
 
                 {activeTab === "list" ? (
                     <FileSurahList />
                 ) : (
-                    <div className="py-4">
-                        <div className="text-center mb-4 text-sm text-gray-500">
-                            Page Read Mode
+                    <FeatureGate 
+                        feature="enableMushafView"
+                        fallback={
+                            <div className="text-center py-12">
+                                <p className="text-gray-500 dark:text-gray-400">
+                                    Mushaf view is currently disabled.
+                                </p>
+                            </div>
+                        }
+                    >
+                        <div className="py-4">
+                            <div className="text-center mb-4 text-sm text-gray-500">
+                                Page Read Mode
+                            </div>
+                            <PageView initialPage={1} />
                         </div>
-                        <PageView initialPage={1} />
-                    </div>
+                    </FeatureGate>
                 )}
             </div>
         </>

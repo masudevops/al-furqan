@@ -77,15 +77,45 @@ test("Tafsir route loads", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("global search accepts input without crashing", async ({ page }) => {
+test("global search safely handles literal metacharacters and provider text", async ({ page }) => {
+  await page.route(/api\.alquran\.cloud\/v1\/search\//, async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        data: {
+          count: 1,
+          matches: [
+            {
+              number: 1,
+              numberInSurah: 1,
+              text: '<img src=x onerror="alert(1)"> literal (.*) result',
+              edition: {
+                identifier: "en.sahih",
+                name: "Saheeh International",
+              },
+              surah: {
+                number: 1,
+                name: "الفاتحة",
+                englishName: "Al-Fatihah",
+              },
+            },
+          ],
+        },
+      }),
+    });
+  });
   await page.goto("/");
   await page.getByRole("button", { name: /search/i }).click();
 
-  const search = page.getByPlaceholder(/search quran/i);
-  await search.fill("pa");
+  const search = page.getByRole("textbox", { name: "Search Quran" });
+  await search.fill("(.*");
 
-  await expect(search).toHaveValue("pa");
-  await expect(page.getByText(/type at least 3 characters/i)).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /al-fatihah/i }),
+  ).toBeVisible();
+  await expect(page.locator("mark")).toHaveText("(.*");
+  await expect(page.locator("img[src='x']")).toHaveCount(0);
+  await expect(page.getByText(/<img src=x onerror=/i)).toBeVisible();
 });
 
 test("opens a Surah and reads Arabic with translation", async ({ page }) => {

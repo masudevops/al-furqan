@@ -11,6 +11,7 @@ export default defineConfig({
   reporter: process.env.CI ? "github" : "list",
   use: {
     baseURL: `http://127.0.0.1:${port}`,
+    serviceWorkers: "block",
     trace: "on-first-retry",
   },
   projects: [

@@ -104,10 +104,36 @@ test("global search safely handles literal metacharacters and provider text", as
       }),
     });
   });
+  await page.route(/api\.alquran\.cloud\/v1\/juz\/1\//, async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        data: {
+          edition: {
+            identifier: "en.sahih",
+            name: "Saheeh International",
+          },
+          ayahs: [
+            {
+              number: 1,
+              numberInSurah: 1,
+              juz: 1,
+              text: '<img src=x onerror="alert(1)"> literal (.*) result',
+              surah: {
+                number: 1,
+                name: "الفاتحة",
+                englishName: "Al-Fatihah",
+              },
+            },
+          ],
+        },
+      }),
+    });
+  });
   await page.goto("/");
   await page.getByRole("button", { name: /search/i }).click();
 
-  const search = page.getByRole("textbox", { name: "Search Quran" });
+  const search = page.getByRole("searchbox", { name: "Search Quran" });
   await search.fill("(.*");
 
   await expect(
@@ -116,6 +142,20 @@ test("global search safely handles literal metacharacters and provider text", as
   await expect(page.locator("mark")).toHaveText("(.*");
   await expect(page.locator("img[src='x']")).toHaveCount(0);
   await expect(page.getByText(/<img src=x onerror=/i)).toBeVisible();
+
+  await page.getByLabel("Surah").selectOption("1");
+  await page.getByLabel("Juz").selectOption("1");
+  await expect(page).toHaveURL(/q=%28\.\*/);
+  await expect(page).toHaveURL(/surah=1/);
+  await expect(page).toHaveURL(/juz=1/);
+  await expect(
+    page.getByRole("button", { name: /al-fatihah/i }),
+  ).toBeVisible();
+
+  await page.reload();
+  await expect(
+    page.getByRole("searchbox", { name: "Search Quran" }),
+  ).toHaveValue("(.*");
 });
 
 test("opens a Surah and reads Arabic with translation", async ({ page }) => {

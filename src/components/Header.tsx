@@ -1,5 +1,5 @@
-import { Link, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { FaBars, FaTimes, FaSearch, FaCog } from "react-icons/fa";
 import SearchModal from "./SearchModal";
 import SettingsModal from "./SettingsModal";
@@ -7,6 +7,7 @@ import SettingsModal from "./SettingsModal";
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   const links = [
     { name: "Quran", path: "/al-quran" },
@@ -21,6 +22,12 @@ export default function Header() {
   /* New State for Search & Settings */
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("q")) {
+      setIsSearchModalOpen(true);
+    }
+  }, [searchParams]);
 
   const handleLinkClick = () => setIsOpen(false);
 

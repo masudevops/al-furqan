@@ -47,7 +47,7 @@ Estimates are ranges, not delivery commitments. Any L, XL, or Program item must 
 |---:|---|---|---|---:|---|---|
 | 1 | AF-005A Quran Search Safety | Completed | P0 | XS, 1–2 days | AF-003 | Raw HTML/regex risk removed; malformed queries covered by automated tests |
 | 2 | AF-004 Reading Continuity | Completed | P0 | M, 6–8 days | AF-003 | Versioned bookmarks, last-read resume, recent Surahs, corruption recovery |
-| 3 | AF-005B Quran Search 2.0 | Planned | P1 | L, 12–18 days | AF-005A | Arabic/translation search, normalization, filters, accessible results, shareable query state |
+| 3 | AF-005B Quran Search 2.0 | Completed | P1 | L, 12–18 days | AF-005A | Arabic/translation search, normalization, filters, accessible results, shareable query state |
 | 4 | AF-006A Audio Reliability | Planned | P1 | M, 8–10 days | AF-003 | Stabilize existing playback lifecycle, invalid sources, errors, and accessibility |
 
 ### Next — Quran understanding and listening
@@ -169,6 +169,8 @@ Estimates are ranges, not delivery commitments. Any L, XL, or Program item must 
 
 ### AF-005B — Quran Search 2.0
 
+**Status:** Completed June 21, 2026
+
 **Priority:** P1  
 **Effort:** L, 12–18 engineer-days  
 **Dependencies:** AF-003, AF-005A
@@ -219,9 +221,9 @@ Estimates are ranges, not delivery commitments. Any L, XL, or Program item must 
 
 ## Recommended next story
 
-### AF-005B — Quran Search 2.0
+### AF-006A — Audio Reliability
 
-AF-004 has established safe local continuity and AF-005A removed the immediate search risk. AF-005B is now the next Quran-centric story: Arabic normalization, translation filters, accessible result navigation, and shareable query state.
+The Quran reader, continuity, and search foundations are now stable. AF-006A should isolate and harden the existing audio lifecycle before adding repeat, speed, queues, downloads, or background playback.
 
 ## Backlog risks and decision points
 

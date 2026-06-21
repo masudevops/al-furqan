@@ -7,6 +7,8 @@ import { FaSearch } from "react-icons/fa";
 import SEO from "../components/SEO";
 import { useFeatureFlags } from "../hooks/useFeatureFlags";
 import { FeatureGate } from "../components/FeatureGate";
+import { getWebReadingContinuityRepository } from "../platform/web/readingContinuity";
+import type { ReadingContinuityState } from "../core/quran/readingContinuity";
 
 function FileSurahList() {
     // Duplicate logic from Home for now to be safe and fast, 
@@ -79,11 +81,50 @@ function FileSurahList() {
 export default function AlQuranPage() {
     const { mushafView } = useFeatureFlags();
     const [activeTab, setActiveTab] = useState<"list" | "mushaf">(mushafView ? "list" : "list");
+    const [continuity] = useState<ReadingContinuityState>(() =>
+        getWebReadingContinuityRepository().getState(),
+    );
 
     return (
         <>
             <SEO title="Al Qur'an" description="Read and Listen to the Holy Quran" />
             <div className="max-w-6xl mx-auto px-4 py-8 min-h-screen">
+                {(continuity.lastRead || continuity.recentSurahs.length > 0) && (
+                    <section
+                        aria-labelledby="continue-reading-title"
+                        className="mb-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-900/60 dark:bg-emerald-950/30"
+                    >
+                        <h1 id="continue-reading-title" className="text-xl font-bold text-gray-900 dark:text-white">
+                            Continue reading
+                        </h1>
+                        {continuity.lastRead && (
+                            <Link
+                                to={`/quran/${continuity.lastRead.ref.surahNumber}#ayah-${continuity.lastRead.ref.ayahNumber}`}
+                                className="mt-3 inline-flex rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-700"
+                            >
+                                Resume Surah {continuity.lastRead.ref.surahNumber}, Ayah {continuity.lastRead.ref.ayahNumber}
+                            </Link>
+                        )}
+                        {continuity.recentSurahs.length > 0 && (
+                            <div className="mt-4">
+                                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                    Recent Surahs
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                    {continuity.recentSurahs.map((recent) => (
+                                        <Link
+                                            key={recent.surahNumber}
+                                            to={`/quran/${recent.surahNumber}#ayah-${recent.lastAyahNumber}`}
+                                            className="rounded-full border border-emerald-300 bg-white px-3 py-1.5 text-sm font-medium text-emerald-800 hover:border-emerald-500 dark:border-emerald-800 dark:bg-gray-900 dark:text-emerald-200"
+                                        >
+                                            Surah {recent.surahNumber}
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </section>
+                )}
                 <div className="flex gap-4 border-b border-gray-200 dark:border-gray-700 mb-6">
                     <button
                         onClick={() => setActiveTab("list")}

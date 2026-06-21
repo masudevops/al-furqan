@@ -140,6 +140,9 @@ test("Surah reader remains usable on a mobile viewport", async ({ page }) => {
   await page.goto("/quran/1");
 
   await expect(page.locator("#ayah-1")).toBeVisible();
+  await page
+    .getByRole("button", { name: /save ayah 1 as last read/i })
+    .click();
   await expect(
     page.getByRole("button", { name: /increase arabic font size/i }),
   ).toBeVisible();
@@ -152,4 +155,54 @@ test("Surah reader remains usable on a mobile viewport", async ({ page }) => {
     };
   });
   expect(bodyWidth.scrollWidth).toBeLessThanOrEqual(bodyWidth.clientWidth);
+
+  await page.goto("/al-quran");
+  await expect(
+    page.getByRole("link", { name: /resume surah 1, ayah 1/i }),
+  ).toBeVisible();
+});
+
+test("migrates bookmarks and resumes the explicit last-read ayah", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "quranBookmarks",
+      JSON.stringify([
+        { surah: 1, ayah: 1 },
+        { surah: 999, ayah: 1 },
+      ]),
+    );
+  });
+  await mockSurahOne(page);
+  await page.goto("/quran/1");
+
+  await expect(
+    page.getByRole("button", { name: /remove bookmark from ayah 1/i }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: /save ayah 2 as last read/i })
+    .click();
+
+  const storedState = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("alFurqan.quran.continuity") || "{}"),
+  );
+  expect(storedState.bookmarks).toHaveLength(1);
+  expect(storedState.lastRead.ref).toEqual({
+    surahNumber: 1,
+    ayahNumber: 2,
+  });
+  expect(storedState.recentSurahs[0].surahNumber).toBe(1);
+
+  await page.goto("/al-quran");
+  await expect(
+    page.getByRole("link", { name: /resume surah 1, ayah 2/i }),
+  ).toHaveAttribute("href", "/quran/1#ayah-2");
+
+  await page.goto("/bookmarks");
+  await expect(
+    page.getByRole("heading", { name: /al-faatiha/i }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: /remove bookmark for surah 1, ayah 1/i })
+    .click();
+  await expect(page.getByText(/no bookmarks yet/i)).toBeVisible();
 });

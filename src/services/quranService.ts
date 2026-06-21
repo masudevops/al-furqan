@@ -8,6 +8,7 @@ import type {
 import { parseQuranEditionSurah } from "../core/quran/contracts";
 import { parseSurahMetadataList } from "../core/quran/metadata";
 import { isValidSurahNumber, mergeReaderSurah } from "../core/quran/reader";
+import { encodeSearchPathSegment } from "../core/quran/search";
 
 const API_BASE = "https://api.alquran.cloud/v1";
 
@@ -237,13 +238,17 @@ export interface SearchResponse {
 
 export async function searchAyahs(
   query: string,
-  edition: string = "en.sahih"
+  edition: string = "en.sahih",
+  signal?: AbortSignal,
 ): Promise<SearchMatch[]> {
   // If query is empty, return empty
   if (!query.trim()) return [];
 
   // API: /search/{query}/all/{edition}
-  const res = await fetch(`${API_BASE}/search/${encodeURIComponent(query)}/all/${edition}`);
+  const res = await fetch(
+    `${API_BASE}/search/${encodeSearchPathSegment(query)}/all/${encodeSearchPathSegment(edition)}`,
+    { signal },
+  );
   if (!res.ok) throw new Error("Search failed");
 
   const json = await res.json();

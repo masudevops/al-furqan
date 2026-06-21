@@ -8,7 +8,7 @@
     "typecheck": "tsc -b",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "lint:quality": "eslint vite.config.ts vitest.config.ts playwright.config.ts tests e2e api src/core src/platform src/components/quran src/components/SearchModal.tsx src/services/hadithService.ts src/services/islamicBooksService.ts src/services/quranService.ts src/pages/BookDetailPage.tsx src/pages/AlQuranPage.tsx src/pages/SurahDetail.tsx",
+    "lint:quality": "eslint vite.config.ts vitest.config.ts playwright.config.ts tests e2e api src/core src/platform src/components/quran src/components/SearchModal.tsx src/services/hadithService.ts src/services/islamicBooksService.ts src/services/quranService.ts src/pages/BookDetailPage.tsx src/pages/AlQuranPage.tsx src/pages/Bookmarks.tsx src/pages/SurahDetail.tsx",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "verify": "npm run typecheck && npm run lint:quality && npm run test && npm run test:e2e && npm run build",

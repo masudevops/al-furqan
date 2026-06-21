@@ -46,7 +46,7 @@ Estimates are ranges, not delivery commitments. Any L, XL, or Program item must 
 | Order | Story | Status | Priority | Effort | Dependency | Outcome |
 |---:|---|---|---|---:|---|---|
 | 1 | AF-005A Quran Search Safety | Completed | P0 | XS, 1–2 days | AF-003 | Raw HTML/regex risk removed; malformed queries covered by automated tests |
-| 2 | AF-004 Reading Continuity | Ready | P0 | M, 6–8 days | AF-003 | Versioned bookmarks, last-read resume, recent Surahs, corruption recovery |
+| 2 | AF-004 Reading Continuity | Completed | P0 | M, 6–8 days | AF-003 | Versioned bookmarks, last-read resume, recent Surahs, corruption recovery |
 | 3 | AF-005B Quran Search 2.0 | Planned | P1 | L, 12–18 days | AF-005A | Arabic/translation search, normalization, filters, accessible results, shareable query state |
 | 4 | AF-006A Audio Reliability | Planned | P1 | M, 8–10 days | AF-003 | Stabilize existing playback lifecycle, invalid sources, errors, and accessibility |
 
@@ -106,7 +106,7 @@ Estimates are ranges, not delivery commitments. Any L, XL, or Program item must 
 
 ### AF-005A — Quran Search Safety
 
-**Status:** Completed June 21, 2026  
+**Status:** Completed June 21, 2026
 **Priority:** P0  
 **Effort:** XS, 1–2 engineer-days  
 **Dependency:** AF-003
@@ -131,6 +131,8 @@ Estimates are ranges, not delivery commitments. Any L, XL, or Program item must 
 - Typecheck, scoped lint, unit tests, E2E tests, build, and verify pass.
 
 ### AF-004 — Reading Continuity
+
+**Status:** Completed June 21, 2026
 
 **Priority:** P0  
 **Effort:** M, 6–8 engineer-days  
@@ -217,9 +219,9 @@ Estimates are ranges, not delivery commitments. Any L, XL, or Program item must 
 
 ## Recommended next story
 
-### AF-004 — Reading Continuity
+### AF-005B — Quran Search 2.0
 
-AF-005A has closed the confirmed search rendering and malformed-query risk. AF-004 is now the highest-value product enhancement: it lets users safely resume Quran reading while establishing versioned, platform-neutral persistence before bookmarks and history expand further.
+AF-004 has established safe local continuity and AF-005A removed the immediate search risk. AF-005B is now the next Quran-centric story: Arabic normalization, translation filters, accessible result navigation, and shareable query state.
 
 ## Backlog risks and decision points
 

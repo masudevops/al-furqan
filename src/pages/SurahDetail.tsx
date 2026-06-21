@@ -1,7 +1,7 @@
 // src/pages/SurahDetail.tsx
 
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   fetchReaderSurah,
   fetchSurahAudio,
@@ -17,6 +17,8 @@ import {
   loadReaderPreferences,
   saveReaderPreferences,
 } from "../core/quran/readerPreferences";
+import type { QuranBookmark } from "../core/quran/readingContinuity";
+import { getWebReadingContinuityRepository } from "../platform/web/readingContinuity";
 import QuranReaderControls from "../components/quran/QuranReaderControls";
 import { useAudio, type AudioAyah } from "../context/AudioContext";
 import { useSettings } from "../context/SettingsContext";
@@ -33,6 +35,7 @@ import {
   FaChevronDown,
   FaSearch,
   FaBookOpen,
+  FaBookmark,
 } from "react-icons/fa";
 import PageView from "../components/PageView";
 import TafsirView from "../components/TafsirView";
@@ -79,9 +82,16 @@ export default function SurahDetail() {
   const [viewMode, setViewMode] = useState<"translation" | "page">(
     "translation"
   );
-  const [bookmarks, setBookmarks] = useState<{ surah: number; ayah: number }[]>(
-    []
+  const continuityRepository = useMemo(getWebReadingContinuityRepository, []);
+  const [bookmarks, setBookmarks] = useState<QuranBookmark[]>(() =>
+    continuityRepository.getState().bookmarks,
   );
+  const [lastReadAyah, setLastReadAyah] = useState<number | null>(() => {
+    const lastRead = continuityRepository.getState().lastRead;
+    return lastRead?.ref.surahNumber === Number(surahId)
+      ? lastRead.ref.ayahNumber
+      : null;
+  });
 
   const [activeTafsirAyah, setActiveTafsirAyah] = useState<number | null>(null);
 
@@ -152,23 +162,6 @@ export default function SurahDetail() {
     loadSurahList();
   }, []);
 
-  // ─── 2) On mount, load bookmarks from localStorage ─────────────────────────────
-  useEffect(() => {
-    const saved = localStorage.getItem("quranBookmarks");
-    if (saved) {
-      try {
-        setBookmarks(JSON.parse(saved));
-      } catch {
-        setBookmarks([]);
-      }
-    }
-  }, []);
-
-  // ─── 3) Whenever bookmarks change, write back to localStorage ─────────────────
-  useEffect(() => {
-    localStorage.setItem("quranBookmarks", JSON.stringify(bookmarks));
-  }, [bookmarks]);
-
   // ─── 4) Track route param "surahId" → set currentSurahNumber ──────────────────────
   useEffect(() => {
     if (!surahId) return;
@@ -200,6 +193,13 @@ export default function SurahDetail() {
         );
 
         setSurah(readerSurah);
+        continuityRepository.recordSurahVisit(currentSurahNumber);
+        const persistedLastRead = continuityRepository.getState().lastRead;
+        setLastReadAyah(
+          persistedLastRead?.ref.surahNumber === currentSurahNumber
+            ? persistedLastRead.ref.ayahNumber
+            : null,
+        );
         setLoading(false);
 
         // Preserve the existing audio behavior without coupling it to Quran text.
@@ -228,26 +228,34 @@ export default function SurahDetail() {
       }
     };
     void load();
-  }, [currentSurahNumber, translation, reciter, retryKey]);
+  }, [
+    continuityRepository,
+    currentSurahNumber,
+    translation,
+    reciter,
+    retryKey,
+  ]);
 
   // ─── Bookmark toggle: add/remove { surah, ayah } ─────────────────────────────────
   const handleBookmarkToggle = (surahNumber: number, ayahNumber: number) => {
-    const exists = bookmarks.findIndex(
-      (b) => b.surah === surahNumber && b.ayah === ayahNumber
+    setBookmarks(
+      continuityRepository.toggleBookmark(
+        { surahNumber, ayahNumber },
+        translation,
+      ).bookmarks,
     );
-    if (exists > -1) {
-      setBookmarks((prev) =>
-        prev.filter((b) => !(b.surah === surahNumber && b.ayah === ayahNumber))
-      );
-    } else {
-      setBookmarks((prev) => [
-        ...prev,
-        { surah: surahNumber, ayah: ayahNumber },
-      ]);
-    }
   };
   const isAyahBookmarked = (surahNum: number, ayahNum: number) =>
-    bookmarks.some((b) => b.surah === surahNum && b.ayah === ayahNum);
+    bookmarks.some(
+      (bookmark) =>
+        bookmark.ref.surahNumber === surahNum &&
+        bookmark.ref.ayahNumber === ayahNum,
+    );
+
+  const handleSetLastRead = (surahNumber: number, ayahNumber: number) => {
+    continuityRepository.setLastRead({ surahNumber, ayahNumber });
+    setLastReadAyah(ayahNumber);
+  };
 
   // ─── Audio Helper Functions ────────────────────────────────────────────────────
   const convertToAudioAyah = (ayah: ReaderAyah): AudioAyah => ({
@@ -721,6 +729,24 @@ export default function SurahDetail() {
                           }`}
                         >
                           {bookmarked ? <FaStar /> : <FaRegStar />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSetLastRead(
+                              surah.metadata.number,
+                              ayahNumber,
+                            )
+                          }
+                          aria-label={`Save ayah ${ayahNumber} as last read`}
+                          aria-pressed={lastReadAyah === ayahNumber}
+                          className={`min-h-10 min-w-10 rounded-full p-2 transition-colors ${
+                            lastReadAyah === ayahNumber
+                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300"
+                              : "text-gray-400 hover:text-emerald-600"
+                          }`}
+                        >
+                          <FaBookmark aria-hidden="true" />
                         </button>
                       </div>
 

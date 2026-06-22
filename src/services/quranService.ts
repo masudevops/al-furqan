@@ -8,7 +8,12 @@ import type {
 import { parseQuranEditionSurah } from "../core/quran/contracts";
 import { parseSurahMetadataList } from "../core/quran/metadata";
 import { isValidSurahNumber, mergeReaderSurah } from "../core/quran/reader";
-import { encodeSearchPathSegment } from "../core/quran/search";
+import {
+  encodeSearchPathSegment,
+  normalizeSearchText,
+  type QuranSearchRequest,
+} from "../core/quran/search";
+import { isNumber, isRecord, isString } from "../core/contracts/validation";
 
 const API_BASE = "https://api.alquran.cloud/v1";
 
@@ -229,6 +234,7 @@ export interface SearchMatch {
     englishName: string;
   };
   numberInSurah: number;
+  juzNumber?: number;
 }
 
 export interface SearchResponse {
@@ -236,24 +242,109 @@ export interface SearchResponse {
   matches: SearchMatch[];
 }
 
+interface SearchEditionSummary {
+  identifier: string;
+  name: string;
+}
+
+function parseSearchEdition(value: unknown): SearchEditionSummary | null {
+  return isRecord(value) &&
+    isString(value.identifier) &&
+    isString(value.name)
+    ? { identifier: value.identifier, name: value.name }
+    : null;
+}
+
+function parseSearchMatch(
+  value: unknown,
+  fallbackEdition?: SearchEditionSummary,
+): SearchMatch | null {
+  const edition = isRecord(value) ? parseSearchEdition(value.edition) : null;
+  if (
+    !isRecord(value) ||
+    !isNumber(value.number) ||
+    !isString(value.text) ||
+    !isNumber(value.numberInSurah) ||
+    !isRecord(value.surah) ||
+    !isNumber(value.surah.number) ||
+    !isString(value.surah.name) ||
+    !isString(value.surah.englishName) ||
+    (!edition && !fallbackEdition)
+  ) {
+    return null;
+  }
+
+  const resolvedEdition = edition ?? fallbackEdition!;
+  return {
+    number: value.number,
+    text: value.text,
+    edition: {
+      identifier: resolvedEdition.identifier,
+      name: resolvedEdition.name,
+    },
+    surah: {
+      number: value.surah.number,
+      name: value.surah.name,
+      englishName: value.surah.englishName,
+    },
+    numberInSurah: value.numberInSurah,
+    juzNumber: isNumber(value.juz) ? value.juz : undefined,
+  };
+}
+
+function parseSearchMatches(
+  value: unknown,
+  fallbackEdition?: SearchEditionSummary,
+): SearchMatch[] {
+  if (!Array.isArray(value)) throw new Error("Invalid search response");
+  const matches = value.map((match) =>
+    parseSearchMatch(match, fallbackEdition),
+  );
+  if (matches.some((match) => match === null)) {
+    throw new Error("Invalid search response");
+  }
+  return matches as SearchMatch[];
+}
+
 export async function searchAyahs(
-  query: string,
-  edition: string = "en.sahih",
+  request: QuranSearchRequest,
   signal?: AbortSignal,
 ): Promise<SearchMatch[]> {
-  // If query is empty, return empty
-  if (!query.trim()) return [];
+  const query = normalizeSearchText(request.query);
+  if (!query) return [];
 
-  // API: /search/{query}/all/{edition}
-  const res = await fetch(
-    `${API_BASE}/search/${encodeSearchPathSegment(query)}/all/${encodeSearchPathSegment(edition)}`,
+  if (request.juzNumber) {
+    const response = await fetch(
+      `${API_BASE}/juz/${request.juzNumber}/${encodeSearchPathSegment(request.edition)}`,
+      { signal },
+    );
+    if (!response.ok) throw new Error("Search failed");
+    const json: unknown = await response.json();
+    if (!isRecord(json) || !isRecord(json.data)) {
+      throw new Error("Invalid search response");
+    }
+    const edition = parseSearchEdition(json.data.edition);
+    if (!edition) throw new Error("Invalid search response");
+    return parseSearchMatches(json.data.ayahs, edition).filter(
+      (match) =>
+        (!request.surahNumber ||
+          match.surah.number === request.surahNumber) &&
+        normalizeSearchText(match.text).includes(query),
+    );
+  }
+
+  const scope = request.surahNumber ?? "all";
+  const response = await fetch(
+    `${API_BASE}/search/${encodeSearchPathSegment(query)}/${scope}/${encodeSearchPathSegment(request.edition)}`,
     { signal },
   );
-  if (!res.ok) throw new Error("Search failed");
+  if (!response.ok) throw new Error("Search failed");
 
-  const json = await res.json();
-  // json.data = { count, matches: [...] }
-  return json.data.matches as SearchMatch[];
+  const json: unknown = await response.json();
+  if (!isRecord(json) || !isRecord(json.data)) {
+    throw new Error("Invalid search response");
+  }
+  return parseSearchMatches(json.data.matches);
 }
 
 export interface Edition {

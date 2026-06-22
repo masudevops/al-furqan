@@ -19,14 +19,14 @@ const mockedSearchAyahs = vi.mocked(searchAyahs);
 
 function LocationProbe() {
   const location = useLocation();
-  return <output data-testid="location">{location.pathname}{location.hash}</output>;
+  return <output data-testid="location">{location.pathname}{location.search}{location.hash}</output>;
 }
 
-function renderSearch(onClose = vi.fn()) {
+function renderSearch(onClose = vi.fn(), initialEntry = "/") {
   return {
     onClose,
     ...render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[initialEntry]}>
         <SearchModal isOpen onClose={onClose} />
         <Routes>
           <Route path="*" element={<LocationProbe />} />
@@ -39,6 +39,7 @@ function renderSearch(onClose = vi.fn()) {
 describe("Quran search modal", () => {
   beforeEach(() => {
     mockedSearchAyahs.mockReset();
+    localStorage.clear();
   });
 
   it("renders provider text safely and supports keyboard result navigation", async () => {
@@ -54,7 +55,7 @@ describe("Quran search modal", () => {
     ]);
     const { container, onClose } = renderSearch();
 
-    await user.type(screen.getByRole("textbox", { name: "Search Quran" }), "(.*");
+    await user.type(screen.getByRole("searchbox", { name: "Search Quran" }), "(.*");
 
     expect(
       await screen.findByRole("button", { name: /al-fatihah/i }, { timeout: 2000 }),
@@ -68,7 +69,9 @@ describe("Quran search modal", () => {
     await user.keyboard("{Enter}");
 
     expect(onClose).toHaveBeenCalledOnce();
-    expect(screen.getByTestId("location")).toHaveTextContent("/quran/1#ayah-1");
+    expect(screen.getByTestId("location")).toHaveTextContent(
+      "/quran/1#ayah-1",
+    );
   });
 
   it("shows a recoverable message when the provider fails", async () => {
@@ -76,7 +79,7 @@ describe("Quran search modal", () => {
     mockedSearchAyahs.mockRejectedValue(new Error("Provider unavailable"));
     renderSearch();
 
-    await user.type(screen.getByRole("textbox", { name: "Search Quran" }), "mercy");
+    await user.type(screen.getByRole("searchbox", { name: "Search Quran" }), "mercy");
 
     await waitFor(
       () => {
@@ -86,5 +89,50 @@ describe("Quran search modal", () => {
       },
       { timeout: 2000 },
     );
+  });
+
+  it("hydrates shareable filters and sends a scoped request", async () => {
+    mockedSearchAyahs.mockResolvedValue([]);
+    renderSearch(
+      vi.fn(),
+      "/?q=mercy&edition=bn.bengali&surah=2&juz=1",
+    );
+
+    expect(screen.getByRole("searchbox", { name: "Search Quran" })).toHaveValue(
+      "mercy",
+    );
+    expect(screen.getByLabelText("Language")).toHaveValue("bn.bengali");
+    await waitFor(() => {
+      expect(screen.getByLabelText("Surah")).toHaveValue("2");
+    });
+    expect(screen.getByLabelText("Juz")).toHaveValue("1");
+
+    await waitFor(
+      () => {
+        expect(mockedSearchAyahs).toHaveBeenCalledWith(
+          {
+            query: "mercy",
+            edition: "bn.bengali",
+            surahNumber: 2,
+            juzNumber: 1,
+          },
+          expect.any(AbortSignal),
+        );
+      },
+      { timeout: 1500 },
+    );
+  });
+
+  it("shows and clears bounded local history", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(
+      "alFurqan.quran.searchHistory",
+      JSON.stringify(["mercy", "patience"]),
+    );
+    renderSearch();
+
+    expect(screen.getByText("Recent searches")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Clear" }));
+    expect(screen.queryByText("Recent searches")).not.toBeInTheDocument();
   });
 });

@@ -49,7 +49,7 @@ describe("global navigation", () => {
 
     await user.click(screen.getByRole("button", { name: /search/i }));
 
-    const input = screen.getByPlaceholderText(/search quran/i);
+    const input = screen.getByRole("searchbox", { name: /search quran/i });
     await user.type(input, "patience");
 
     expect(input).toHaveValue("patience");

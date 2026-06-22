@@ -209,9 +209,12 @@ export default function SurahDetail() {
               // Prevent race condition if user switched surah already
               if (!prev || prev.metadata.number !== currentSurahNumber) return prev;
 
-              const ayahsWithAudio = prev.ayahs.map((a, i) => ({
+              const audioByAyah = new Map(
+                audioData.map((item) => [item.number, item.audio]),
+              );
+              const ayahsWithAudio = prev.ayahs.map((a) => ({
                 ...a,
-                audioUrl: audioData[i]?.audio || "",
+                audioUrl: audioByAyah.get(a.ref.ayahNumber),
               }));
 
               return { ...prev, ayahs: ayahsWithAudio };
@@ -437,6 +440,7 @@ export default function SurahDetail() {
   const isCurrentSurahPlaying =
     isPlaying &&
     globalCurrentAyah?.surahNumber === surah.metadata.number;
+  const hasPlayableAudio = surah.ayahs.some((ayah) => Boolean(ayah.audioUrl));
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
@@ -564,8 +568,18 @@ export default function SurahDetail() {
                   </select>
                   <button
                     onClick={handlePlayAll}
+                    disabled={!hasPlayableAudio}
+                    aria-label={
+                      hasPlayableAudio
+                        ? isCurrentSurahPlaying
+                          ? "Pause Surah audio"
+                          : "Play Surah audio"
+                        : "Surah audio unavailable"
+                    }
                     className={`flex min-h-11 items-center gap-2 rounded-lg px-4 font-medium text-white ${
-                      isCurrentSurahPlaying
+                      !hasPlayableAudio
+                        ? "cursor-not-allowed bg-gray-400"
+                        : isCurrentSurahPlaying
                         ? "bg-red-500 hover:bg-red-600"
                         : "bg-emerald-600 hover:bg-emerald-700"
                     }`}
@@ -753,8 +767,18 @@ export default function SurahDetail() {
                       <div className="flex items-center gap-1 sm:gap-2">
                         <button
                           onClick={() => handlePlayAyah(ayah)}
+                          disabled={!ayah.audioUrl}
+                          aria-label={
+                            !ayah.audioUrl
+                              ? `Audio unavailable for ayah ${ayahNumber}`
+                              : isPlayingThis
+                              ? `Pause ayah ${ayahNumber}`
+                              : `Play ayah ${ayahNumber}`
+                          }
                           className={`min-h-10 min-w-10 rounded-full p-2 transition-colors ${
-                            isPlayingThis
+                            !ayah.audioUrl
+                              ? "cursor-not-allowed text-gray-300 dark:text-gray-600"
+                              : isPlayingThis
                               ? "bg-emerald-100 text-emerald-600"
                               : "text-gray-400 hover:bg-gray-50 hover:text-emerald-600 dark:hover:bg-gray-700"
                           }`}

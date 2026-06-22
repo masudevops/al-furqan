@@ -1,246 +1,332 @@
-// src/context/AudioContext.tsx
 import {
-    createContext,
-    useContext,
-    useState,
-    useRef,
-    type ReactNode,
-    useEffect
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
 } from "react";
+import {
+  clampSeekTime,
+  normalizeStartIndex,
+  sanitizeAudioPlaylist,
+  type AudioPlaybackError,
+  type AudioTrack,
+} from "../core/audio/contracts";
 
-
-export interface AudioAyah {
-    number: number; // Global ayah number or Surah-relative? Usually relative in this app context
-    text: string;
-    audio: string;
-    surahNumber: number;
-    surahName: string;
-}
+export type AudioAyah = AudioTrack;
 
 interface AudioContextType {
-    currentAyah: AudioAyah | null;
-    isPlaying: boolean;
-    isLoading: boolean;
-    playlist: AudioAyah[];
-    playAyah: (ayah: AudioAyah) => void;
-    playPlaylist: (playlist: AudioAyah[], startIndex?: number) => void;
-    togglePlay: () => void;
-    stop: () => void;
-    seek: (time: number) => void;
-    currentTime: number;
-    duration: number;
-    progress: number;
-    playNext: () => void;
-    playPrevious: () => void;
+  currentAyah: AudioAyah | null;
+  isPlaying: boolean;
+  isLoading: boolean;
+  error: AudioPlaybackError | null;
+  playlist: AudioAyah[];
+  playAyah: (ayah: AudioAyah) => void;
+  playPlaylist: (playlist: AudioAyah[], startIndex?: number) => void;
+  togglePlay: () => void;
+  stop: () => void;
+  seek: (time: number) => void;
+  clearError: () => void;
+  currentTime: number;
+  duration: number;
+  progress: number;
+  canPlayNext: boolean;
+  canPlayPrevious: boolean;
+  playNext: () => void;
+  playPrevious: () => void;
 }
 
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
 
-export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [currentAyah, setCurrentAyah] = useState<AudioAyah | null>(null);
-    const [playlist, setPlaylist] = useState<AudioAyah[]>([]);
-    const [currentIndex, setCurrentIndex] = useState<number>(-1);
+export function AudioProvider({ children }: { children: ReactNode }) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<AudioPlaybackError | null>(null);
+  const [playlist, setPlaylist] = useState<AudioAyah[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(-1);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const shouldAutoPlayRef = useRef(false);
+  const playlistLengthRef = useRef(0);
 
-    const [progress, setProgress] = useState(0);
-    const [duration, setDuration] = useState(0);
-    const [currentTime, setCurrentTime] = useState(0);
+  const currentAyah =
+    currentIndex >= 0 && currentIndex < playlist.length
+      ? playlist[currentIndex]
+      : null;
+  const canPlayPrevious = currentIndex > 0;
+  const canPlayNext =
+    currentIndex >= 0 && currentIndex + 1 < playlist.length;
+  const progress =
+    duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
 
-    const audioRef = useRef<HTMLAudioElement | null>(null);
+  useEffect(() => {
+    playlistLengthRef.current = playlist.length;
+  }, [playlist.length]);
 
-    // We use a ref to the latest state so the event listener (handleEnded)
-    // always has access to the most recent playlist and index.
-    const stateRef = useRef({ playlist, currentIndex });
-    useEffect(() => {
-        stateRef.current = { playlist, currentIndex };
-    }, [playlist, currentIndex]);
+  const resetProgress = useCallback(() => {
+    setCurrentTime(0);
+    setDuration(0);
+  }, []);
 
-    // Initialize Audio Object
-    useEffect(() => {
-        const audio = new Audio();
-        audio.preload = "auto";
-        audioRef.current = audio;
+  const clearError = useCallback(() => setError(null), []);
 
-        const handleEnded = () => {
-            const { playlist: currentPlaylist, currentIndex: currentIdx } = stateRef.current;
-            console.log("Audio Ended, checking for next. Current Index:", currentIdx, "List Length:", currentPlaylist.length);
+  const playNext = useCallback(() => {
+    setCurrentIndex((index) => {
+      if (index + 1 < playlistLengthRef.current) {
+        shouldAutoPlayRef.current = true;
+        return index + 1;
+      }
+      shouldAutoPlayRef.current = false;
+      setIsPlaying(false);
+      return index;
+    });
+  }, []);
 
-            if (currentIdx + 1 < currentPlaylist.length) {
-                setCurrentIndex(currentIdx + 1);
-            } else {
-                console.log("End of playlist reached.");
-                setIsPlaying(false);
-                setCurrentIndex(-1);
-            }
-        };
+  const playPrevious = useCallback(() => {
+    setCurrentIndex((index) => {
+      if (index > 0) {
+        shouldAutoPlayRef.current = true;
+        return index - 1;
+      }
+      return index;
+    });
+  }, []);
 
-        const handleTimeUpdate = () => {
-            if (!audio.duration) return;
-            setCurrentTime(audio.currentTime);
-            setDuration(audio.duration);
-            setProgress((audio.currentTime / audio.duration) * 100);
-        };
+  useEffect(() => {
+    const audio = new Audio();
+    audio.preload = "metadata";
+    audioRef.current = audio;
 
-        const handleWaiting = () => setIsLoading(true);
-        const handleCanPlay = () => setIsLoading(false);
-        const handleError = (e: any) => {
-            console.error("Audio Error", e);
-            setIsLoading(false);
-            setIsPlaying(false);
-        };
-
-        audio.addEventListener("ended", handleEnded);
-        audio.addEventListener("timeupdate", handleTimeUpdate);
-        audio.addEventListener("waiting", handleWaiting);
-        audio.addEventListener("canplay", handleCanPlay);
-        audio.addEventListener("error", handleError);
-
-        return () => {
-            audio.removeEventListener("ended", handleEnded);
-            audio.removeEventListener("timeupdate", handleTimeUpdate);
-            audio.removeEventListener("waiting", handleWaiting);
-            audio.removeEventListener("canplay", handleCanPlay);
-            audio.removeEventListener("error", handleError);
-            audio.pause();
-        };
-    }, []);
-
-    // Sync currentAyah with internal index
-    useEffect(() => {
-        if (currentIndex >= 0 && currentIndex < playlist.length) {
-            setCurrentAyah(playlist[currentIndex]);
-        } else if (currentIndex === -1) {
-            // Optional: Don't clear currentAyah immediately? 
-            // setcurrentAyah(null); 
-        }
-    }, [currentIndex, playlist]);
-
-    // Effect to load and play source when currentAyah changes
-    useEffect(() => {
-        if (!currentAyah || !audioRef.current) return;
-
-        const audio = audioRef.current;
-
-        // Force play if source changed OR if we just incremented index
-        if (audio.src !== currentAyah.audio) {
-            audio.src = currentAyah.audio;
-            audio.load();
-        }
-
-        audio.play()
-            .then(() => setIsPlaying(true))
-            .catch(e => {
-                console.warn("Play interrupted or failed (expected during rapid switching)", e);
-                // Don't set isPlaying=false if it was just an AbortError due to subsequent play
-            });
-
-        // Update Media Session Metadata (Mobile/Lock Screen controls)
-        if ('mediaSession' in navigator) {
-            navigator.mediaSession.metadata = new MediaMetadata({
-                title: `Ayah ${currentAyah.number}`,
-                artist: currentAyah.surahName,
-                album: 'Al-Furqan',
-            });
-
-            navigator.mediaSession.setActionHandler('play', togglePlay);
-            navigator.mediaSession.setActionHandler('pause', togglePlay);
-            navigator.mediaSession.setActionHandler('nexttrack', playNext);
-            navigator.mediaSession.setActionHandler('previoustrack', playPrevious);
-        }
-
-    }, [currentAyah]);
-
-    const togglePlay = () => {
-        if (!audioRef.current) return;
-        if (isPlaying) {
-            audioRef.current.pause();
-            setIsPlaying(false);
-        } else {
-            audioRef.current.play().catch(e => console.error(e));
-            setIsPlaying(true);
-        }
+    const handleLoadedMetadata = () => {
+      setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+      setIsLoading(false);
+    };
+    const handleTimeUpdate = () => {
+      setCurrentTime(Number.isFinite(audio.currentTime) ? audio.currentTime : 0);
+    };
+    const handleWaiting = () => setIsLoading(true);
+    const handleCanPlay = () => setIsLoading(false);
+    const handlePlay = () => {
+      setIsPlaying(true);
+      setIsLoading(false);
+      setError(null);
+    };
+    const handlePause = () => setIsPlaying(false);
+    const handleEnded = () => playNext();
+    const handleError = () => {
+      setError("media-unavailable");
+      setIsLoading(false);
+      setIsPlaying(false);
+      shouldAutoPlayRef.current = false;
     };
 
-    const playAyah = (ayah: AudioAyah) => {
-        // If playing just one ayah, we treat it as a playlist of size 1
-        // or append to start? Convention: Usually "click to play" means play specific.
-        // We'll replace playlist with just this one, unless we support "queueing".
-        // For simplicity: Replace playlist with this single item (or surah context).
-        // Actually, usually users want to play from this ayah onwards in the Surah.
+    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+    audio.addEventListener("timeupdate", handleTimeUpdate);
+    audio.addEventListener("waiting", handleWaiting);
+    audio.addEventListener("canplay", handleCanPlay);
+    audio.addEventListener("play", handlePlay);
+    audio.addEventListener("pause", handlePause);
+    audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("error", handleError);
 
-        // For now: Just play this single one. 
-        // Ideally, the caller should provide the full list if they want continuous playback.
-        // We will support a simple "Play single" mode by making a 1-item playlist.
-        setPlaylist([ayah]);
-        setCurrentIndex(0);
-        setIsPlaying(true);
+    return () => {
+      audio.pause();
+      audio.removeAttribute("src");
+      audio.load();
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
+      audio.removeEventListener("waiting", handleWaiting);
+      audio.removeEventListener("canplay", handleCanPlay);
+      audio.removeEventListener("play", handlePlay);
+      audio.removeEventListener("pause", handlePause);
+      audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("error", handleError);
+      audioRef.current = null;
     };
+  }, [playNext]);
 
-    const playPlaylist = (ayahs: AudioAyah[], startIndex = 0) => {
-        setPlaylist(ayahs);
-        setCurrentIndex(startIndex);
-        setIsPlaying(true);
-    };
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !currentAyah) return;
 
-    const playNext = () => {
-        if (currentIndex + 1 < playlist.length) {
-            setCurrentIndex(currentIndex + 1);
-        }
-    };
+    audio.pause();
+    resetProgress();
+    setError(null);
+    setIsLoading(true);
+    audio.src = currentAyah.audio;
+    audio.load();
 
-    const playPrevious = () => {
-        if (currentIndex > 0) {
-            setCurrentIndex(currentIndex - 1);
-        }
-    };
-
-    const stop = () => {
-        if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current.currentTime = 0;
-        }
+    if (shouldAutoPlayRef.current) {
+      void audio.play().catch(() => {
+        setError("playback-failed");
+        setIsLoading(false);
         setIsPlaying(false);
-        setCurrentAyah(null);
+        shouldAutoPlayRef.current = false;
+      });
+    }
+
+    if ("mediaSession" in navigator && typeof MediaMetadata !== "undefined") {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: `Ayah ${currentAyah.number}`,
+        artist: currentAyah.surahName,
+        album: "Al-Furqan",
+      });
+    }
+  }, [currentAyah, resetProgress]);
+
+  useEffect(() => {
+    if (!("mediaSession" in navigator)) return;
+    navigator.mediaSession.setActionHandler("play", () => {
+      void audioRef.current?.play().catch(() => {
+        setError("playback-failed");
+        setIsLoading(false);
+        setIsPlaying(false);
+      });
+    });
+    navigator.mediaSession.setActionHandler("pause", () => {
+      audioRef.current?.pause();
+    });
+    navigator.mediaSession.setActionHandler("nexttrack", playNext);
+    navigator.mediaSession.setActionHandler("previoustrack", playPrevious);
+
+    return () => {
+      navigator.mediaSession.setActionHandler("play", null);
+      navigator.mediaSession.setActionHandler("pause", null);
+      navigator.mediaSession.setActionHandler("nexttrack", null);
+      navigator.mediaSession.setActionHandler("previoustrack", null);
+    };
+  }, [playNext, playPrevious]);
+
+  const togglePlay = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio || !currentAyah) return;
+    setError(null);
+    if (audio.paused) {
+      setIsLoading(true);
+      void audio.play().catch(() => {
+        setError("playback-failed");
+        setIsLoading(false);
+        setIsPlaying(false);
+      });
+    } else {
+      audio.pause();
+    }
+  }, [currentAyah]);
+
+  const playPlaylist = useCallback(
+    (tracks: AudioAyah[], startIndex = 0) => {
+      const validTracks = sanitizeAudioPlaylist(tracks);
+      if (validTracks.length === 0) {
+        const audio = audioRef.current;
+        shouldAutoPlayRef.current = false;
+        if (audio) {
+          audio.pause();
+          audio.removeAttribute("src");
+          audio.load();
+        }
         setPlaylist([]);
         setCurrentIndex(-1);
-    };
+        resetProgress();
+        setError("invalid-source");
+        setIsLoading(false);
+        setIsPlaying(false);
+        return;
+      }
+      setError(null);
+      setPlaylist(validTracks);
+      setCurrentIndex(normalizeStartIndex(startIndex, validTracks.length));
+      shouldAutoPlayRef.current = true;
+    },
+    [resetProgress],
+  );
 
-    const seek = (time: number) => {
-        if (audioRef.current) {
-            audioRef.current.currentTime = time;
-            setCurrentTime(time);
-        }
+  const playAyah = useCallback(
+    (ayah: AudioAyah) => playPlaylist([ayah]),
+    [playPlaylist],
+  );
+
+  const stop = useCallback(() => {
+    const audio = audioRef.current;
+    shouldAutoPlayRef.current = false;
+    if (audio) {
+      audio.pause();
+      audio.removeAttribute("src");
+      audio.load();
     }
+    setIsPlaying(false);
+    setIsLoading(false);
+    setError(null);
+    setPlaylist([]);
+    setCurrentIndex(-1);
+    resetProgress();
+  }, [resetProgress]);
 
-    return (
-        <AudioContext.Provider
-            value={{
-                isPlaying,
-                isLoading,
-                currentAyah,
-                playlist,
-                togglePlay,
-                playAyah,
-                playPlaylist,
-                playNext,
-                playPrevious,
-                stop,
-                progress,
-                duration,
-                currentTime,
-                seek
-            }}
-        >
-            {children}
-        </AudioContext.Provider>
-    );
-};
+  const seek = useCallback(
+    (time: number) => {
+      const audio = audioRef.current;
+      if (!audio) return;
+      const nextTime = clampSeekTime(time, duration);
+      audio.currentTime = nextTime;
+      setCurrentTime(nextTime);
+    },
+    [duration],
+  );
 
-export const useAudio = () => {
-    const context = useContext(AudioContext);
-    if (context === undefined) {
-        throw new Error("useAudio must be used within an AudioProvider");
-    }
-    return context;
-};
+  const value = useMemo<AudioContextType>(
+    () => ({
+      currentAyah,
+      isPlaying,
+      isLoading,
+      error,
+      playlist,
+      playAyah,
+      playPlaylist,
+      togglePlay,
+      stop,
+      seek,
+      clearError,
+      currentTime,
+      duration,
+      progress,
+      canPlayNext,
+      canPlayPrevious,
+      playNext,
+      playPrevious,
+    }),
+    [
+      canPlayNext,
+      canPlayPrevious,
+      clearError,
+      currentAyah,
+      currentTime,
+      duration,
+      error,
+      isLoading,
+      isPlaying,
+      playAyah,
+      playNext,
+      playPlaylist,
+      playPrevious,
+      playlist,
+      progress,
+      seek,
+      stop,
+      togglePlay,
+    ],
+  );
+
+  return <AudioContext.Provider value={value}>{children}</AudioContext.Provider>;
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function useAudio() {
+  const context = useContext(AudioContext);
+  if (!context) {
+    throw new Error("useAudio must be used within an AudioProvider");
+  }
+  return context;
+}

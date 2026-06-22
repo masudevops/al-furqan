@@ -14,6 +14,7 @@ import {
   type QuranSearchRequest,
 } from "../core/quran/search";
 import { isNumber, isRecord, isString } from "../core/contracts/validation";
+import { isValidAudioUrl } from "../core/audio/contracts";
 
 const API_BASE = "https://api.alquran.cloud/v1";
 
@@ -96,19 +97,32 @@ export async function fetchReaderSurah(
 }
 
 // We only need a manual URL for Sheikh as-Sudâis; all other reciters use the API's endpoint.
-interface ApiAyah {
-  numberInSurah: number;
-  text: string;
-  audio: string;
-}
-interface ArabicApiAyah {
-  numberInSurah: number;
-  text: string;
-}
-
 const reciterBaseUrls: Record<string, string> = {
   "ar.sudais": "https://verses.quran.com/Sudais/mp3",
 };
+
+function parseAudioAyahs(value: unknown): Ayah[] {
+  if (!isRecord(value) || !Array.isArray(value.ayahs)) return [];
+
+  return value.ayahs.flatMap((ayah): Ayah[] => {
+    if (
+      !isRecord(ayah) ||
+      !isNumber(ayah.numberInSurah) ||
+      !isString(ayah.text) ||
+      !isString(ayah.audio) ||
+      !isValidAudioUrl(ayah.audio)
+    ) {
+      return [];
+    }
+    return [
+      {
+        number: ayah.numberInSurah,
+        text: ayah.text,
+        audio: ayah.audio,
+      },
+    ];
+  });
+}
 
 export async function fetchSurahAudio(
   surahNumber: string,
@@ -121,20 +135,38 @@ export async function fetchSurahAudio(
     try {
       const resMeta = await fetch(`${API_BASE}/surah/${surahNumber}/ar`);
       if (!resMeta.ok) throw new Error("Audio Meta fail");
-      const { data: arabicData } = await resMeta.json();
-      const rawAyahs = arabicData.ayahs as ArabicApiAyah[];
-      return rawAyahs.map(raw => {
+      const json: unknown = await resMeta.json();
+      if (
+        !isRecord(json) ||
+        !isRecord(json.data)
+      ) {
+        throw new Error("Invalid audio metadata");
+      }
+      const arabicData = json.data;
+      const rawAyahs = arabicData.ayahs;
+      if (!isNumber(arabicData.number) || !Array.isArray(rawAyahs)) {
+        throw new Error("Invalid audio metadata");
+      }
+      return rawAyahs.flatMap((raw): Ayah[] => {
+        if (
+          !isRecord(raw) ||
+          !isNumber(raw.numberInSurah) ||
+          !isString(raw.text)
+        ) {
+          return [];
+        }
         const idx = raw.numberInSurah;
         const fileName =
           String(arabicData.number).padStart(3, "0") +
           String(idx).padStart(3, "0") +
-          ".mp3"; // e.g. 001001.mp3
+          ".mp3";
+        const audio = `${reciterBaseUrls["ar.sudais"]}/${fileName}`;
 
-        return {
+        return [{
           number: idx,
           text: raw.text,
-          audio: `${reciterBaseUrls["ar.sudais"]}/${fileName}`,
-        };
+          audio,
+        }];
       });
     } catch (e) {
       console.warn("Sudais Audio metadata failed", e);
@@ -154,20 +186,19 @@ export async function fetchSurahAudio(
   // 2) All others → use the built-in /surah/{surahNumber}/{reciter} endpoint
   try {
     const controller = new AbortController();
-    const idTimeout = setTimeout(() => controller.abort(), 4000); // 4s timeout for audio
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
 
-    const res = await fetch(`${API_BASE}/surah/${surahNumber}/${reciter}`, { signal: controller.signal });
-    clearTimeout(idTimeout);
-
-    if (!res.ok) throw new Error("Failed to fetch recitation");
-    const { data } = await res.json();
-    const apiAyahs = data.ayahs as ApiAyah[];
-
-    return apiAyahs.map(a => ({
-      number: a.numberInSurah,
-      text: a.text,
-      audio: a.audio,
-    }));
+    try {
+      const res = await fetch(`${API_BASE}/surah/${surahNumber}/${reciter}`, {
+        signal: controller.signal,
+      });
+      if (!res.ok) throw new Error("Failed to fetch recitation");
+      const json: unknown = await res.json();
+      if (!isRecord(json)) return [];
+      return parseAudioAyahs(json.data);
+    } finally {
+      clearTimeout(timeoutId);
+    }
   } catch (e) {
     console.warn("Audio API failed", e);
     // Always return empty array on failure so page can load without audio

@@ -168,6 +168,14 @@ test("opens a Surah and reads Arabic with translation", async ({ page }) => {
   await expect(page.locator("#ayah-1")).toContainText("بِسْمِ");
   await expect(page.locator("#ayah-1")).toContainText("In the name of Allah");
 
+  await page.getByRole("button", { name: /play ayah 1/i }).click();
+  await expect(
+    page.getByRole("region", { name: /quran audio player/i }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("slider", { name: /audio progress/i }),
+  ).toBeVisible();
+
   await page.getByRole("button", { name: "Translation" }).click();
   await expect(page.locator("#ayah-1")).not.toContainText(
     "In the name of Allah",

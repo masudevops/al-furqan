@@ -48,7 +48,7 @@ Estimates are ranges, not delivery commitments. Any L, XL, or Program item must 
 | 1 | AF-005A Quran Search Safety | Completed | P0 | XS, 1–2 days | AF-003 | Raw HTML/regex risk removed; malformed queries covered by automated tests |
 | 2 | AF-004 Reading Continuity | Completed | P0 | M, 6–8 days | AF-003 | Versioned bookmarks, last-read resume, recent Surahs, corruption recovery |
 | 3 | AF-005B Quran Search 2.0 | Completed | P1 | L, 12–18 days | AF-005A | Arabic/translation search, normalization, filters, accessible results, shareable query state |
-| 4 | AF-006A Audio Reliability | Planned | P1 | M, 8–10 days | AF-003 | Stabilize existing playback lifecycle, invalid sources, errors, and accessibility |
+| 4 | AF-006A Audio Reliability | Completed | P1 | M, 8–10 days | AF-003 | Stabilize existing playback lifecycle, invalid sources, errors, and accessibility |
 
 ### Next — Quran understanding and listening
 
@@ -189,6 +189,8 @@ Estimates are ranges, not delivery commitments. Any L, XL, or Program item must 
 
 ### AF-006A — Audio Reliability
 
+**Status:** Completed June 22, 2026
+
 **Priority:** P1  
 **Effort:** M, 8–10 engineer-days  
 **Dependency:** AF-003
@@ -221,9 +223,9 @@ Estimates are ranges, not delivery commitments. Any L, XL, or Program item must 
 
 ## Recommended next story
 
-### AF-006A — Audio Reliability
+### AF-006B — Audio Experience
 
-The Quran reader, continuity, and search foundations are now stable. AF-006A should isolate and harden the existing audio lifecycle before adding repeat, speed, queues, downloads, or background playback.
+The existing audio lifecycle is now validated, accessible, and testable. AF-006B can safely add repeat, speed, queue controls, sleep timer, and platform-aware playback preferences on top of that boundary.
 
 ## Backlog risks and decision points
 

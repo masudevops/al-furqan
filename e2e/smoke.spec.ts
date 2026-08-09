@@ -175,6 +175,29 @@ test("opens a Surah and reads Arabic with translation", async ({ page }) => {
   await expect(
     page.getByRole("slider", { name: /audio progress/i }),
   ).toBeVisible();
+  await page
+    .getByRole("button", { name: /audio options and queue/i })
+    .click();
+  await expect(
+    page.getByRole("combobox", { name: /playback speed/i }),
+  ).toBeVisible();
+  await page
+    .getByRole("combobox", { name: /playback speed/i })
+    .selectOption("1.25");
+  await page
+    .getByRole("combobox", { name: /^repeat$/i })
+    .selectOption("ayah");
+  await page
+    .getByRole("combobox", { name: /sleep timer/i })
+    .selectOption("5");
+  await expect(page.getByText(/queue · 2 ayahs/i)).toBeVisible();
+  const audioPreferences = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("alFurqan.audio.preferences") || "{}"),
+  );
+  expect(audioPreferences).toEqual({
+    playbackSpeed: 1.25,
+    repeatMode: "ayah",
+  });
 
   await page.getByRole("button", { name: "Translation" }).click();
   await expect(page.locator("#ayah-1")).not.toContainText(

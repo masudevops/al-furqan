@@ -117,7 +117,11 @@ describe("reader preferences", () => {
     );
     expect(loadReaderPreferences(storage)).toEqual({
       arabicFontSize: 52,
+      translationFontSize: 18,
       showTranslation: false,
+      showTransliteration: false,
+      showWordByWord: false,
+      memorizationMode: false,
       density: "compact",
     });
   });

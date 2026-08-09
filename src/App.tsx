@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import GlobalPlayer from "./components/GlobalPlayer";
@@ -9,27 +10,32 @@ import { useFeatureFlags } from "./hooks/useFeatureFlags";
 
 // Pages
 import Home from "./pages/Home";
-import AlQuranPage from "./pages/AlQuranPage";
-import SurahDetail from "./pages/SurahDetail";
-import MushafPage from "./pages/MushafPage";
-import Bookmarks from "./pages/Bookmarks";
+const AlQuranPage = lazy(() => import("./pages/AlQuranPage"));
+const SurahDetail = lazy(() => import("./pages/SurahDetail"));
+const MushafPage = lazy(() => import("./pages/MushafPage"));
+const Bookmarks = lazy(() => import("./pages/Bookmarks"));
 
 // New Pages (We will create these next, placeholders for now so build fails safely if not found, 
 // so I will create them empty first or just comment out/inline component)
 // Ideally I should create them first. 
 // I will assume they will exist in next steps.
 // To avoid build error NOW, I will define simple types or imports
-import HadithHome from "./pages/HadithHome";
-import HadithCollection from "./pages/HadithCollection";
-import HadithBook from "./pages/HadithBook";
+const HadithHome = lazy(() => import("./pages/HadithHome"));
+const HadithCollection = lazy(() => import("./pages/HadithCollection"));
+const HadithBook = lazy(() => import("./pages/HadithBook"));
 
 // Placeholder imports for new files I haven't written yet
-import TafseerPage from "./pages/TafseerPage";
-import IslamicLibraryPage from "./pages/IslamicLibraryPage";
-import BookDetailPage from "./pages/BookDetailPage";
-import SalahTimesPage from "./pages/SalahTimesPage";
-import HisnulMuslim from "./pages/HisnulMuslim";
-import NotFound from "./pages/NotFound";
+const TafseerPage = lazy(() => import("./pages/TafseerPage"));
+const IslamicLibraryPage = lazy(() => import("./pages/IslamicLibraryPage"));
+const BookDetailPage = lazy(() => import("./pages/BookDetailPage"));
+const SalahTimesPage = lazy(() => import("./pages/SalahTimesPage"));
+const HisnulMuslim = lazy(() => import("./pages/HisnulMuslim"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const QiblaPage = lazy(() => import("./pages/Qibla"));
+const CompanionPage = lazy(() => import("./pages/CompanionPage"));
+const OfflineAudioPage = lazy(() => import("./pages/OfflineAudioPage"));
+const NamesOfAllahPage = lazy(() => import("./pages/NamesOfAllahPage"));
+const LegalPage = lazy(() => import("./pages/LegalPage"));
 
 function AppRoutes() {
   const { mushafView } = useFeatureFlags();
@@ -65,6 +71,11 @@ function AppRoutes() {
 
       {/* Hisnul Muslim */}
       <Route path="/hisnul" element={<HisnulMuslim />} />
+      <Route path="/companion" element={<CompanionPage />} />
+      <Route path="/qibla" element={<QiblaPage />} />
+      <Route path="/offline-audio" element={<OfflineAudioPage />} />
+      <Route path="/names" element={<NamesOfAllahPage />} />
+      <Route path="/legal" element={<LegalPage />} />
 
       <Route path="/bookmarks" element={<Bookmarks />} />
       <Route path="*" element={<NotFound />} />
@@ -77,10 +88,10 @@ function App() {
     <AudioProvider>
       <SettingsProvider>
         <Router>
-          <div className="min-h-screen flex flex-col bg-white dark:bg-gray-900 transition-colors duration-300 font-sans">
+          <div className="min-h-screen flex flex-col bg-stone-50 text-stone-900 dark:bg-[#071713] dark:text-stone-100 transition-colors duration-300 font-sans">
             <Header />
-            <main className="flex-grow animate-fadeIn">
-              <AppRoutes />
+            <main id="main-content" className="flex-grow pb-20 md:pb-0 animate-fadeIn">
+              <Suspense fallback={<div className="mx-auto max-w-7xl px-5 py-20 text-center text-stone-500" role="status">Opening…</div>}><AppRoutes /></Suspense>
             </main>
             <GlobalPlayer />
             <Footer />

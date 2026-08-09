@@ -5,6 +5,10 @@ interface SettingsState {
     translation: string;
     setReciter: (id: string) => void;
     setTranslation: (id: string) => void;
+    uiLanguage: "en" | "ar";
+    setUiLanguage: (language: "en" | "ar") => void;
+    readableFont: boolean;
+    setReadableFont: (enabled: boolean) => void;
 }
 
 const SettingsContext = createContext<SettingsState | undefined>(undefined);
@@ -13,6 +17,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     // Load from local storage or default
     const [reciter, setReciter] = useState(() => localStorage.getItem("reciter") || "ar.alafasy");
     const [translation, setTranslation] = useState(() => localStorage.getItem("translation") || "en.sahih");
+    const [uiLanguage, setUiLanguage] = useState<"en" | "ar">(() => localStorage.getItem("uiLanguage") === "ar" ? "ar" : "en");
+    const [readableFont, setReadableFont] = useState(() => localStorage.getItem("readableFont") === "true");
 
     // Persist changes
     useEffect(() => {
@@ -23,10 +29,21 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("translation", translation);
     }, [translation]);
 
+    useEffect(() => {
+        localStorage.setItem("uiLanguage", uiLanguage);
+        document.documentElement.lang = uiLanguage;
+        document.documentElement.dir = uiLanguage === "ar" ? "rtl" : "ltr";
+    }, [uiLanguage]);
+
+    useEffect(() => {
+        localStorage.setItem("readableFont", String(readableFont));
+        document.documentElement.classList.toggle("readable-font", readableFont);
+    }, [readableFont]);
+
     // Sync logic (optional, if we wanted to sync across tabs)
 
     return (
-        <SettingsContext.Provider value={{ reciter, translation, setReciter, setTranslation }}>
+        <SettingsContext.Provider value={{ reciter, translation, setReciter, setTranslation, uiLanguage, setUiLanguage, readableFont, setReadableFont }}>
             {children}
         </SettingsContext.Provider>
     );

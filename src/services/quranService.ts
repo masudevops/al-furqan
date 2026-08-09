@@ -76,9 +76,10 @@ export async function fetchReaderSurah(
   );
   if (!metadata) throw new Error("Surah not found");
 
-  const [arabicResult, translationResult] = await Promise.allSettled([
+  const [arabicResult, translationResult, transliterationResult] = await Promise.allSettled([
     fetchQuranEditionSurah(surahNumber, "ar"),
     fetchQuranEditionSurah(surahNumber, translationEdition),
+    fetchQuranEditionSurah(surahNumber, "en.transliteration"),
   ]);
 
   if (arabicResult.status === "rejected") {
@@ -88,12 +89,20 @@ export async function fetchReaderSurah(
   const translation =
     translationResult.status === "fulfilled" ? translationResult.value : null;
 
-  return mergeReaderSurah(
+  const reader = mergeReaderSurah(
     metadata,
     arabicResult.value,
     translation,
     translationEdition,
   );
+  const transliteration = transliterationResult.status === "fulfilled" ? transliterationResult.value : null;
+  return {
+    ...reader,
+    ayahs: reader.ayahs.map((ayah, index) => ({
+      ...ayah,
+      transliterationText: transliteration?.ayahs[index]?.text,
+    })),
+  };
 }
 
 // We only need a manual URL for Sheikh as-Sudâis; all other reciters use the API's endpoint.
@@ -399,4 +408,16 @@ export async function fetchEditions(
   if (!res.ok) throw new Error("Failed to fetch editions");
   const json = await res.json();
   return json.data as Edition[];
+}
+
+export type QuranNavigationUnit = "juz" | "manzil" | "ruku" | "hizbQuarter";
+
+export async function fetchNavigationStart(unit: QuranNavigationUnit, number: number): Promise<{ surahNumber: number; ayahNumber: number }> {
+  const response = await fetch(`${API_BASE}/${unit}/${number}/ar`);
+  if (!response.ok) throw new Error("Navigation point unavailable");
+  const payload: unknown = await response.json();
+  if (!isRecord(payload) || !isRecord(payload.data) || !Array.isArray(payload.data.ayahs)) throw new Error("Invalid navigation response");
+  const first = payload.data.ayahs[0];
+  if (!isRecord(first) || !isNumber(first.numberInSurah) || !isRecord(first.surah) || !isNumber(first.surah.number)) throw new Error("Invalid navigation response");
+  return { surahNumber: first.surah.number, ayahNumber: first.numberInSurah };
 }

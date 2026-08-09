@@ -1,142 +1,87 @@
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { FaBars, FaTimes, FaSearch, FaCog } from "react-icons/fa";
+import { BookOpen, Bookmark, Clock3, Heart, Home, Menu, Search, Settings, X } from "lucide-react";
 import SearchModal from "./SearchModal";
 import SettingsModal from "./SettingsModal";
+import { useSettings } from "../context/SettingsContext";
+
+const primaryLinks = [
+  { name: "Quran", path: "/al-quran", icon: BookOpen },
+  { name: "Prayer Times", path: "/salah", icon: Clock3 },
+  { name: "Hisnul Muslim", path: "/hisnul", icon: Heart },
+  { name: "Bookmarks", path: "/bookmarks", icon: Bookmark },
+];
+
+const moreLinks = [
+  { name: "Tafseer", path: "/tafseer" },
+  { name: "Hadith", path: "/hadith" },
+  { name: "Islamic Books", path: "/library" },
+  { name: "Qibla", path: "/qibla" },
+  { name: "Companion", path: "/companion" },
+  { name: "Offline Audio", path: "/offline-audio" },
+  { name: "99 Names", path: "/names" },
+];
 
 export default function Header() {
-  const [isOpen, setIsOpen] = useState(false);
+  const { uiLanguage } = useSettings();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const location = useLocation();
   const [searchParams] = useSearchParams();
 
-  const links = [
-    { name: "Quran", path: "/al-quran" },
-    { name: "Hadith", path: "/hadith" },
-    { name: "Tafseer", path: "/tafseer" },
-    { name: "Prayer Times", path: "/salah" },
-    { name: "Hisnul Muslim", path: "/hisnul" },
-    { name: "Bookmarks", path: "/bookmarks" },
-    { name: "Islamic Books", path: "/library" },
-  ];
-
-  /* New State for Search & Settings */
-  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-
   useEffect(() => {
-    if (searchParams.get("q")) {
-      setIsSearchModalOpen(true);
-    }
+    if (searchParams.get("q")) setSearchOpen(true);
   }, [searchParams]);
 
-  const handleLinkClick = () => setIsOpen(false);
+  const active = (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`);
+
+  const label = (english: string) => uiLanguage === "ar" ? ({ "Quran": "القرآن", "Prayer Times": "الصلاة", "Hisnul Muslim": "الأذكار", "Bookmarks": "المحفوظات", "Tafseer": "التفسير", "Hadith": "الحديث", "Islamic Books": "المكتبة", "Qibla": "القبلة", "Companion": "الرفيق", "Offline Audio": "الصوت دون اتصال", "99 Names": "أسماء الله الحسنى", "Home": "الرئيسية" }[english] || english) : english;
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 shadow-sm transition-colors duration-300">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          {/* Logo */}
-          <Link
-            to="/"
-            className="text-2xl font-bold flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-arabic"
-            onClick={handleLinkClick}
-          >
-            Al-Furqan
+      <a href="#main-content" className="skip-link">Skip to content</a>
+      <header className="sticky top-0 z-40 border-b border-stone-200/80 bg-stone-50/92 backdrop-blur-xl dark:border-white/10 dark:bg-[#071713]/92">
+        <div className="mx-auto flex h-16 max-w-7xl items-center gap-5 px-4 sm:px-6">
+          <Link to="/" className="flex shrink-0 items-center gap-3" aria-label="Al-Furqan home">
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-900 text-lg text-amber-200 shadow-sm" aria-hidden="true">ف</span>
+            <span className="text-lg font-semibold tracking-tight">Al-Furqan</span>
           </Link>
 
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-6">
-            {links.map((link) => {
-              const isActive = location.pathname === link.path;
-              return (
-                <Link
-                  key={link.name}
-                  to={link.path}
-                  className={`text-sm font-medium transition-colors hover:text-emerald-500 ${isActive
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-gray-600 dark:text-gray-300"
-                    }`}
-                >
-                  {link.name}
-                </Link>
-              );
-            })}
-
-            {/* Search Trigger (Desktop) */}
-            <button
-              onClick={() => setIsSearchModalOpen(true)}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/50 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors"
-            >
-              <FaSearch size={14} />
-              <span className="opacity-70">Search...</span>
-            </button>
-
-            {/* Settings Trigger (Desktop) */}
-            <button
-              onClick={() => setIsSettingsModalOpen(true)}
-              className="p-2 text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-              title="Settings"
-            >
-              <FaCog size={18} />
-            </button>
+          <nav className="hidden flex-1 items-center justify-center gap-1 lg:flex" aria-label="Primary navigation">
+            {[...primaryLinks, ...moreLinks].map((link) => (
+              <Link key={link.path} to={link.path} className={`rounded-full px-3 py-2 text-sm font-medium transition ${active(link.path) ? "bg-emerald-900 text-white dark:bg-emerald-200 dark:text-emerald-950" : "text-stone-600 hover:bg-stone-200/70 hover:text-stone-950 dark:text-stone-300 dark:hover:bg-white/10"}`}>
+                {label(link.name)}
+              </Link>
+            ))}
           </nav>
 
-          {/* Mobile Actions */}
-          <div className="flex items-center gap-4 md:hidden">
-            <button
-              onClick={() => setIsSearchModalOpen(true)}
-              className="text-gray-600 dark:text-gray-300 p-2"
-            >
-              <FaSearch size={20} />
-            </button>
-
-            <button
-              onClick={() => setIsSettingsModalOpen(true)}
-              className="text-gray-600 dark:text-gray-300 p-2"
-            >
-              <FaCog size={20} />
-            </button>
-
-            {/* Mobile Toggle */}
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="text-gray-600 dark:text-gray-300 focus:outline-none"
-            >
-              {isOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
-            </button>
+          <div className="ml-auto flex items-center gap-1">
+            <button type="button" onClick={() => setSearchOpen(true)} className="icon-button" aria-label="Search Quran"><Search size={19} /></button>
+            <button type="button" onClick={() => setSettingsOpen(true)} className="icon-button" aria-label="Open settings"><Settings size={19} /></button>
+            <button type="button" onClick={() => setMenuOpen((value) => !value)} className="icon-button lg:hidden" aria-expanded={menuOpen} aria-label="Open navigation menu">{menuOpen ? <X size={21} /> : <Menu size={21} />}</button>
           </div>
         </div>
 
-        {/* Mobile Menu */}
-        {isOpen && (
-          <div className="md:hidden bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 animate-fadeIn absolute w-full left-0 top-16 shadow-lg">
-            <div className="flex flex-col p-4 space-y-4">
-              {links.map((link) => {
-                const isActive = location.pathname === link.path;
-                return (
-                  <Link
-                    key={link.name}
-                    to={link.path}
-                    onClick={handleLinkClick}
-                    className={`text-base font-medium transition-colors hover:text-emerald-500 ${isActive
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-gray-600 dark:text-gray-300"
-                      }`}
-                  >
-                    {link.name}
-                  </Link>
-                );
-              })}
+        {menuOpen && (
+          <nav className="border-t border-stone-200 bg-stone-50 p-4 dark:border-white/10 dark:bg-[#071713] lg:hidden" aria-label="Expanded navigation">
+            <div className="mx-auto grid max-w-2xl grid-cols-2 gap-2">
+              {[...primaryLinks, ...moreLinks].map((link) => (
+                <Link key={link.path} to={link.path} onClick={() => setMenuOpen(false)} className={`rounded-xl px-4 py-3 text-sm font-medium ${active(link.path) ? "bg-emerald-900 text-white" : "bg-white text-stone-700 dark:bg-white/5 dark:text-stone-200"}`}>{label(link.name)}</Link>
+              ))}
             </div>
-          </div>
+          </nav>
         )}
       </header>
 
-      {/* Global Search Modal */}
-      <SearchModal isOpen={isSearchModalOpen} onClose={() => setIsSearchModalOpen(false)} />
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-stone-200 bg-stone-50/95 px-1 pb-[max(.35rem,env(safe-area-inset-bottom))] pt-1 backdrop-blur-xl dark:border-white/10 dark:bg-[#071713]/95 md:hidden" aria-label="Mobile navigation">
+        {[{ name: "Home", path: "/", icon: Home }, ...primaryLinks].map(({ name, path, icon: Icon }) => (
+          <Link key={path} to={path} aria-label={`${name} mobile navigation`} className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-[.68rem] font-medium ${active(path) ? "text-emerald-800 dark:text-emerald-200" : "text-stone-500 dark:text-stone-400"}`}><Icon size={19} aria-hidden="true" /><span aria-hidden="true">{uiLanguage === "ar" ? label(name) : name === "Prayer Times" ? "Prayer" : name === "Hisnul Muslim" ? "Duas" : name}</span></Link>
+        ))}
+      </nav>
 
-      {/* Settings Modal (New) */}
-      <SettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} />
+      <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </>
   );
 }

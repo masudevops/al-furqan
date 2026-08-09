@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { FaTimes, FaCog, FaMicrophone, FaBookOpen, FaSpinner } from "react-icons/fa";
 import { useSettings } from "../context/SettingsContext";
 import { fetchEditions, type Edition } from "../services/quranService";
+import { useTheme } from "../context/ThemeContext";
 
 interface SettingsModalProps {
     isOpen: boolean;
@@ -9,7 +10,8 @@ interface SettingsModalProps {
 }
 
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-    const { reciter, translation, setReciter, setTranslation } = useSettings();
+    const { reciter, translation, setReciter, setTranslation, uiLanguage, setUiLanguage, readableFont, setReadableFont } = useSettings();
+    const { mode, setMode } = useTheme();
 
     const [audioEditions, setAudioEditions] = useState<Edition[]>([]);
     const [textEditions, setTextEditions] = useState<Edition[]>([]);
@@ -79,12 +81,21 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         </div>
                     ) : (
                         <>
+                            <div>
+                                <label htmlFor="ui-language" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Interface language</label>
+                                <select id="ui-language" value={uiLanguage} onChange={(event) => setUiLanguage(event.target.value as "en" | "ar")} className="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl">
+                                    <option value="en">English</option>
+                                    <option value="ar">العربية</option>
+                                </select>
+                            </div>
+                            <label className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 p-3 text-sm font-semibold dark:border-gray-600">Simplified readable font<input type="checkbox" checked={readableFont} onChange={(event) => setReadableFont(event.target.checked)} className="h-5 w-5 accent-emerald-600" /></label>
+                            <div><label htmlFor="reading-appearance" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Reading appearance</label><select id="reading-appearance" value={mode} onChange={(event) => setMode(event.target.value as "light" | "dark" | "sepia")} className="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl"><option value="light">Light</option><option value="dark">Night</option><option value="sepia">Sepia</option></select></div>
                             {/* Reciter Selection */}
                             <div>
-                                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                <label htmlFor="preferred-reciter" className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                                     <FaMicrophone className="text-emerald-500" /> Preferred Reciter
                                 </label>
-                                <select
+                                <select id="preferred-reciter"
                                     value={reciter}
                                     onChange={(e) => setReciter(e.target.value)}
                                     className="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
@@ -108,10 +119,10 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
                             {/* Translation Selection */}
                             <div>
-                                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                <label htmlFor="preferred-translation" className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                                     <FaBookOpen className="text-blue-500" /> Translation
                                 </label>
-                                <select
+                                <select id="preferred-translation"
                                     value={translation}
                                     onChange={(e) => setTranslation(e.target.value)}
                                     className="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"

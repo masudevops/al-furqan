@@ -22,6 +22,7 @@ The web adapter defaults to `/api/providers`. A separately deployed gateway can 
 |---|---|---|---|
 | Quran metadata | Local `surah-list.json` | None | Local bundle |
 | Quran text, translations, editions, search | `api.alquran.cloud` | Public/keyless | Direct client access |
+| Word-by-word meanings | `apis.quran.foundation` | **OAuth2 client credentials** | `/api/quran-words` |
 | Quran audio | `api.alquran.cloud`, `verses.quran.com` | Public/keyless | Direct client/media access |
 | Mushaf ayah images | `cdn.islamic.network` | Public/keyless | Direct image access |
 | Standalone tafsir | jsDelivr mirror of `spa5k/tafsir_api` | Public/keyless | Direct client access |
@@ -43,6 +44,9 @@ Server-only:
 ```bash
 HADITH_API_KEY=
 ISLAMHOUSE_API_KEY=
+QF_CLIENT_ID=
+QF_CLIENT_SECRET=
+QF_ENV=prelive
 ```
 
 Optional:
@@ -71,7 +75,9 @@ Unit and smoke tests do not need real credentials and must never call credential
 
 ### Vercel
 
-Configure `HADITH_API_KEY` and `ISLAMHOUSE_API_KEY` as encrypted project environment variables for each required environment. The same-origin `/api/providers` default routes to standard Fetch API functions under `api/providers/`. See the [Vercel Functions documentation](https://vercel.com/docs/functions).
+Configure `HADITH_API_KEY`, `ISLAMHOUSE_API_KEY`, `QF_CLIENT_ID`, and `QF_CLIENT_SECRET` as encrypted project environment variables for each required environment. Set `QF_ENV=production` only after Quran Foundation approves production access. The same-origin server functions keep all credentials out of the browser. See the [Vercel Functions documentation](https://vercel.com/docs/functions).
+
+Quran Foundation access tokens are cached in server memory and refreshed before expiry. Word data is normalized at the gateway, receives a six-day browser cache lifetime, and is stored in IndexedDB for no longer than six days to remain below the provider's one-week caching limit.
 
 Vercel's automatic npm install uses the checked-in `.npmrc`. This currently enables `legacy-peer-deps` for the known React 19 / `react-helmet-async@2` peer-range mismatch; no custom Vercel install command is required.
 

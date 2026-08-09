@@ -27,6 +27,7 @@ const QiblaPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [distance, setDistance] = useState<number>(0);
   const [permissionRequested, setPermissionRequested] = useState<boolean>(false);
+  const [deviceHeading, setDeviceHeading] = useState<number>(0);
   const compassRef = useRef<HTMLDivElement>(null);
 
   // Calculate distance between two coordinates in km
@@ -91,6 +92,27 @@ const QiblaPage: React.FC = () => {
     }
   }, []);
 
+  useEffect(() => {
+    const handleOrientation = (event: DeviceOrientationEvent) => {
+      const iosHeading = (event as DeviceOrientationEvent & { webkitCompassHeading?: number }).webkitCompassHeading;
+      if (typeof iosHeading === "number") setDeviceHeading(iosHeading);
+      else if (typeof event.alpha === "number") setDeviceHeading((360 - event.alpha) % 360);
+    };
+    window.addEventListener("deviceorientation", handleOrientation, true);
+    return () => window.removeEventListener("deviceorientation", handleOrientation, true);
+  }, []);
+
+  const setManualLocation = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const lat = Number(data.get("latitude"));
+    const lng = Number(data.get("longitude"));
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+      setError("Enter valid latitude and longitude values."); return;
+    }
+    setPosition({ lat, lng }); setBearing(calculateQiblaDirection(lat, lng)); setDistance(calculateDistance(lat, lng, KAABA.lat, KAABA.lng)); setError(""); setPermissionRequested(true);
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="w-full max-w-md bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-gray-100 dark:border-gray-700">
@@ -102,7 +124,7 @@ const QiblaPage: React.FC = () => {
           Find the direction to the Kaaba in Makkah
         </p>
 
-        {!permissionRequested && !position && !error && (
+        {!permissionRequested && !position && (
           <div className="flex flex-col items-center justify-center py-12">
             <button
               onClick={getLocation}
@@ -114,6 +136,11 @@ const QiblaPage: React.FC = () => {
             <p className="mt-6 text-gray-500 dark:text-gray-400 text-center max-w-sm">
               We'll ask for your location permission to calculate the Qibla direction
             </p>
+            <form onSubmit={setManualLocation} className="mt-8 grid w-full grid-cols-2 gap-2 border-t border-stone-200 pt-6 dark:border-white/10">
+              <label className="text-left text-xs font-semibold">Latitude<input name="latitude" type="number" step="any" required className="mt-1 w-full rounded-lg border border-stone-300 bg-transparent px-3 py-2 dark:border-white/20" placeholder="41.8781" /></label>
+              <label className="text-left text-xs font-semibold">Longitude<input name="longitude" type="number" step="any" required className="mt-1 w-full rounded-lg border border-stone-300 bg-transparent px-3 py-2 dark:border-white/20" placeholder="-87.6298" /></label>
+              <button className="secondary-action col-span-2 !min-h-10 !py-2" type="submit">Use coordinates</button>
+            </form>
           </div>
         )}
 
@@ -154,7 +181,7 @@ const QiblaPage: React.FC = () => {
                 ref={compassRef}
                 className="absolute top-1/2 left-1/2 w-3 h-40 bg-gradient-to-t from-red-600 to-red-400 origin-bottom rounded-full shadow-lg"
                 style={{
-                  transform: `translate(-50%, -100%) rotate(${bearing}deg)`,
+                  transform: `translate(-50%, -100%) rotate(${bearing - deviceHeading}deg)`,
                 }}
               >
                 <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 -translate-y-full flex flex-col items-center">
@@ -184,6 +211,7 @@ const QiblaPage: React.FC = () => {
                   <p className="font-semibold text-gray-800 dark:text-gray-200">
                     {bearing.toFixed(2)}° from North
                   </p>
+                  {deviceHeading > 0 && <p className="text-xs text-gray-500">Live compass adjusted</p>}
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Distance to Kaaba</p>

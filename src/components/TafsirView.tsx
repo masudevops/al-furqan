@@ -1,6 +1,6 @@
 // src/components/TafsirView.tsx
 import { useState, useEffect } from "react";
-import { fetchTafsir, AVAILABLE_TAFSIRS, type TafsirAyah } from "../services/tafsirService";
+import { fetchTafseerForAyah, formatTafseerText, getTafseerSources, type TafseerResponse } from "../services/quranTafseerService";
 
 interface TafsirViewProps {
     surahNumber: number;
@@ -8,8 +8,8 @@ interface TafsirViewProps {
 }
 
 export default function TafsirView({ surahNumber, ayahNumber }: TafsirViewProps) {
-    const [edition, setEdition] = useState("en.ibnkathir");
-    const [data, setData] = useState<TafsirAyah | null>(null);
+    const [edition, setEdition] = useState(() => localStorage.getItem("alFurqan.tafsirEdition") || "en-tafisr-ibn-kathir");
+    const [data, setData] = useState<TafseerResponse | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -21,7 +21,7 @@ export default function TafsirView({ surahNumber, ayahNumber }: TafsirViewProps)
             setError(null);
             setData(null);
 
-            const result = await fetchTafsir(surahNumber, ayahNumber, edition);
+            const result = await fetchTafseerForAyah(surahNumber, ayahNumber, edition);
 
             if (!cancelled) {
                 if (result) {
@@ -38,6 +38,8 @@ export default function TafsirView({ surahNumber, ayahNumber }: TafsirViewProps)
         return () => { cancelled = true; };
     }, [surahNumber, ayahNumber, edition]);
 
+    useEffect(() => { localStorage.setItem("alFurqan.tafsirEdition", edition); }, [edition]);
+
     return (
         <div className="mt-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-6 border border-gray-200 dark:border-gray-600 animate-fadeIn">
             <div className="flex items-center justify-between mb-4">
@@ -49,7 +51,7 @@ export default function TafsirView({ surahNumber, ayahNumber }: TafsirViewProps)
                     onChange={(e) => setEdition(e.target.value)}
                     className="bg-white dark:bg-gray-700 text-sm border border-gray-300 dark:border-gray-500 rounded px-3 py-1 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 >
-                    {AVAILABLE_TAFSIRS.map((t) => (
+                    {getTafseerSources().map((t) => (
                         <option key={t.identifier} value={t.identifier}>
                             {t.englishName}
                         </option>
@@ -72,7 +74,7 @@ export default function TafsirView({ surahNumber, ayahNumber }: TafsirViewProps)
                   Caution: API might return HTML or plain text depending on edition. 
                   Al-Quran Cloud usually returns text but might contain newlines.
                */}
-                        <p style={{ whiteSpace: "pre-wrap" }}>{data?.text}</p>
+                        <p style={{ whiteSpace: "pre-wrap" }}>{data ? formatTafseerText(data.ayah.text) : ""}</p>
                     </div>
                 )}
             </div>

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import PageView from "../components/PageView";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
-import { fetchSurahList, type Surah } from "../services/quranService";
+import { fetchNavigationStart, fetchSurahList, type QuranNavigationUnit, type Surah } from "../services/quranService";
 import { FaSearch } from "react-icons/fa";
 import SEO from "../components/SEO";
 import { useFeatureFlags } from "../hooks/useFeatureFlags";
@@ -79,11 +80,20 @@ function FileSurahList() {
 }
 
 export default function AlQuranPage() {
+    const navigate = useNavigate();
     const { mushafView } = useFeatureFlags();
     const [activeTab, setActiveTab] = useState<"list" | "mushaf">(mushafView ? "list" : "list");
     const [continuity] = useState<ReadingContinuityState>(() =>
         getWebReadingContinuityRepository().getState(),
     );
+    const [jumpError, setJumpError] = useState("");
+
+    const jumpToUnit = async (unit: QuranNavigationUnit, value: string) => {
+        if (!value) return;
+        setJumpError("");
+        try { const ref = await fetchNavigationStart(unit, Number(value)); navigate(`/quran/${ref.surahNumber}#ayah-${ref.ayahNumber}`); }
+        catch { setJumpError("That navigation point could not be loaded. Try again while online."); }
+    };
 
     return (
         <>
@@ -125,6 +135,7 @@ export default function AlQuranPage() {
                         )}
                     </section>
                 )}
+                <section aria-labelledby="jump-title" className="mb-8 rounded-2xl border border-stone-200 bg-white p-5 dark:border-white/10 dark:bg-white/5"><h1 id="jump-title" className="text-xl font-bold">Jump to a Quran division</h1><div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{([{ label: "Juz", unit: "juz", count: 30 }, { label: "Manzil", unit: "manzil", count: 7 }, { label: "Ruku", unit: "ruku", count: 556 }, { label: "Hizb quarter", unit: "hizbQuarter", count: 240 }] as const).map((item) => <label key={item.unit} className="text-xs font-semibold text-stone-600 dark:text-stone-300">{item.label}<select defaultValue="" onChange={(event) => void jumpToUnit(item.unit, event.target.value)} className="mt-1 min-h-11 w-full rounded-xl border border-stone-300 bg-stone-50 px-3 dark:border-white/15 dark:bg-stone-900"><option value="" disabled>Select…</option>{Array.from({ length: item.count }, (_, index) => <option key={index + 1} value={index + 1}>{item.label} {index + 1}</option>)}</select></label>)}</div>{jumpError && <p role="alert" className="mt-3 text-sm text-red-600">{jumpError}</p>}</section>
                 <div className="flex gap-4 border-b border-gray-200 dark:border-gray-700 mb-6">
                     <button
                         onClick={() => setActiveTab("list")}

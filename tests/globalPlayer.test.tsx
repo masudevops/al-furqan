@@ -1,6 +1,8 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import GlobalPlayer from "../src/components/GlobalPlayer";
+import type { AudioTrack } from "../src/core/audio/contracts";
 
 const audioState = {
   currentAyah: {
@@ -13,9 +15,15 @@ const audioState = {
   isPlaying: false,
   isLoading: false,
   error: null,
-  playlist: [],
+  playlist: [] as AudioTrack[],
+  currentIndex: 0,
+  playbackSpeed: 1,
+  repeatMode: "off",
+  repeatRange: null,
+  sleepTimerMinutes: null,
   playAyah: vi.fn(),
   playPlaylist: vi.fn(),
+  playAtIndex: vi.fn(),
   togglePlay: vi.fn(),
   stop: vi.fn(),
   seek: vi.fn(),
@@ -27,6 +35,10 @@ const audioState = {
   canPlayPrevious: false,
   playNext: vi.fn(),
   playPrevious: vi.fn(),
+  setPlaybackSpeed: vi.fn(),
+  setRepeatMode: vi.fn(),
+  setRepeatRange: vi.fn(),
+  setSleepTimer: vi.fn(),
 };
 
 vi.mock("../src/context/AudioContext", () => ({
@@ -49,5 +61,28 @@ describe("GlobalPlayer", () => {
     expect(screen.getByRole("button", { name: /next ayah/i })).toBeEnabled();
     expect(screen.getByRole("button", { name: /play audio/i })).toBeEnabled();
     expect(screen.getByText("0:30 / 2:00")).toBeInTheDocument();
+  });
+
+  it("opens audio experience controls", async () => {
+    const user = userEvent.setup();
+    audioState.playlist = [
+      audioState.currentAyah,
+      { ...audioState.currentAyah, number: 3 },
+    ];
+    render(<GlobalPlayer />);
+
+    await user.click(
+      screen.getByRole("button", { name: /audio options and queue/i }),
+    );
+    expect(
+      screen.getByRole("combobox", { name: /playback speed/i }),
+    ).toHaveValue("1");
+    expect(screen.getByRole("combobox", { name: /^repeat$/i })).toHaveValue(
+      "off",
+    );
+    expect(
+      screen.getByRole("combobox", { name: /sleep timer/i }),
+    ).toHaveValue("");
+    expect(screen.getByText(/queue · 2 ayahs/i)).toBeInTheDocument();
   });
 });

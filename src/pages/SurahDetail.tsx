@@ -20,6 +20,7 @@ import {
 import type { QuranBookmark } from "../core/quran/readingContinuity";
 import { getWebReadingContinuityRepository } from "../platform/web/readingContinuity";
 import QuranReaderControls from "../components/quran/QuranReaderControls";
+import WordByWordView from "../components/quran/WordByWordView";
 import { useAudio, type AudioAyah } from "../context/AudioContext";
 import { useSettings } from "../context/SettingsContext";
 import {
@@ -40,6 +41,8 @@ import {
 import PageView from "../components/PageView";
 import TafsirView from "../components/TafsirView";
 import { FeatureGate } from "../components/FeatureGate";
+import { CheckCircle2, Eye, EyeOff, NotebookPen } from "lucide-react";
+import { createPersonalStudyRepository } from "../core/quran/personalStudy";
 
 // Mushaf page lookup (not relevant to audio logic)
 const SURAH_TO_PAGE: Record<number, number> = {
@@ -94,6 +97,10 @@ export default function SurahDetail() {
   });
 
   const [activeTafsirAyah, setActiveTafsirAyah] = useState<number | null>(null);
+  const studyRepository = useMemo(() => createPersonalStudyRepository(localStorage), []);
+  const [studyState, setStudyState] = useState(() => studyRepository.getState());
+  const [activeNoteAyah, setActiveNoteAyah] = useState<number | null>(null);
+  const [revealedAyahs, setRevealedAyahs] = useState<Set<number>>(new Set());
 
   const [isSurahDropdownOpen, setIsSurahDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -544,6 +551,9 @@ export default function SurahDetail() {
                     className="min-h-11 rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-800 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
                   >
                     <option value="en.sahih">English</option>
+                    <option value="en.khattab">English — Mustafa Khattab</option>
+                    <option value="en.yusufali">English — Yusuf Ali</option>
+                    <option value="en.pickthall">English — Pickthall</option>
                     <option value="bn.bengali">Bengali</option>
                     <option value="ur.jalandhry">Urdu</option>
                     <option value="fr.hamidullah">French</option>
@@ -695,6 +705,10 @@ export default function SurahDetail() {
                 surah.metadata.number,
                 ayahNumber,
               );
+              const refKey = `${surah.metadata.number}:${ayahNumber}`;
+              const note = studyState.notes.find((item) => `${item.ref.surahNumber}:${item.ref.ayahNumber}` === refKey);
+              const memorized = studyState.memorized.includes(refKey);
+              const hiddenForRecall = readerPreferences.memorizationMode && !revealedAyahs.has(ayahNumber);
 
               return (
                 <article
@@ -762,6 +776,15 @@ export default function SurahDetail() {
                         >
                           <FaBookmark aria-hidden="true" />
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => setStudyState(studyRepository.toggleMemorized(ayah.ref))}
+                          aria-label={`${memorized ? "Remove" : "Mark"} ayah ${ayahNumber} ${memorized ? "from" : "as"} memorized`}
+                          aria-pressed={memorized}
+                          className={`min-h-10 min-w-10 rounded-full p-2 ${memorized ? "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-200" : "text-gray-400 hover:text-teal-600"}`}
+                        >
+                          <CheckCircle2 size={17} aria-hidden="true" />
+                        </button>
                       </div>
 
                       <div className="flex items-center gap-1 sm:gap-2">
@@ -806,6 +829,15 @@ export default function SurahDetail() {
                           <FaBookOpen size={14} />
                         </button>
                         <button
+                          type="button"
+                          onClick={() => setActiveNoteAyah((current) => current === ayahNumber ? null : ayahNumber)}
+                          aria-label={`${note ? "Edit" : "Add"} private note for ayah ${ayahNumber}`}
+                          aria-expanded={activeNoteAyah === ayahNumber}
+                          className={`min-h-10 min-w-10 rounded-full p-2 ${note ? "text-emerald-600" : "text-gray-400 hover:text-emerald-600"}`}
+                        >
+                          <NotebookPen size={16} aria-hidden="true" />
+                        </button>
+                        <button
                           onClick={() => copyAyah(ayah)}
                           className="min-h-10 min-w-10 rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                           title="Copy"
@@ -826,6 +858,7 @@ export default function SurahDetail() {
                       </div>
                     </div>
 
+                    <div className="relative">
                     <p
                       className="quran-arabic-text py-2 text-right text-gray-900 dark:text-gray-100"
                       lang="ar"
@@ -834,17 +867,44 @@ export default function SurahDetail() {
                         fontSize: `${readerPreferences.arabicFontSize}px`,
                       }}
                     >
-                      {ayah.arabicText}
+                      {hiddenForRecall ? "••••••••••••••••" : ayah.arabicText}
                     </p>
+                    {readerPreferences.memorizationMode && (
+                      <button type="button" onClick={() => setRevealedAyahs((current) => { const next = new Set(current); if (next.has(ayahNumber)) next.delete(ayahNumber); else next.add(ayahNumber); return next; })} className="secondary-action !min-h-10 !px-4 !py-2" aria-label={`${hiddenForRecall ? "Reveal" : "Hide"} ayah ${ayahNumber}`}>
+                        {hiddenForRecall ? <Eye size={16} /> : <EyeOff size={16} />} {hiddenForRecall ? "Reveal" : "Hide"}
+                      </button>
+                    )}
+                    </div>
 
-                    {readerPreferences.showTranslation &&
+                    {readerPreferences.showTransliteration && ayah.transliterationText && !hiddenForRecall && (
+                      <p className="border-t border-gray-100 pt-4 text-base italic leading-8 text-emerald-800 dark:border-gray-700 dark:text-emerald-200">{ayah.transliterationText}</p>
+                    )}
+
+                    {readerPreferences.showTranslation && !hiddenForRecall &&
                       ayah.translationText && (
                         <div className="border-t border-gray-100 pt-4 dark:border-gray-700">
-                          <p className="text-base leading-8 text-gray-700 dark:text-gray-300 sm:text-lg">
+                          <p className="leading-8 text-gray-700 dark:text-gray-300" style={{ fontSize: `${readerPreferences.translationFontSize}px` }}>
                             {ayah.translationText}
                           </p>
                         </div>
                       )}
+
+                    {readerPreferences.showWordByWord && !hiddenForRecall && (
+                      <WordByWordView
+                        surahNumber={surah.metadata.number}
+                        ayahNumber={ayahNumber}
+                      />
+                    )}
+
+                    {activeNoteAyah === ayahNumber && (
+                      <form className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-900 dark:bg-emerald-950/20" onSubmit={(event) => { event.preventDefault(); const data = new FormData(event.currentTarget); setStudyState(studyRepository.saveNote(ayah.ref, String(data.get("note") || ""), String(data.get("tags") || "").split(","))); setActiveNoteAyah(null); }}>
+                        <label className="block text-sm font-semibold" htmlFor={`note-${ayahNumber}`}>Private reflection</label>
+                        <textarea id={`note-${ayahNumber}`} name="note" defaultValue={note?.text || ""} rows={4} maxLength={10000} className="mt-2 w-full rounded-xl border border-stone-300 bg-white p-3 dark:border-white/15 dark:bg-stone-900" placeholder="Write a private note…" />
+                        <label className="mt-3 block text-xs font-medium" htmlFor={`tags-${ayahNumber}`}>Tags, separated by commas</label>
+                        <input id={`tags-${ayahNumber}`} name="tags" defaultValue={note?.tags.join(", ") || ""} className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 dark:border-white/15 dark:bg-stone-900" placeholder="Ramadan, gratitude" />
+                        <div className="mt-3 flex gap-2"><button className="primary-action !min-h-10 !px-4 !py-2" type="submit">Save privately</button>{note && <button className="secondary-action !min-h-10 !px-4 !py-2" type="button" onClick={() => { setStudyState(studyRepository.saveNote(ayah.ref, "")); setActiveNoteAyah(null); }}>Delete note</button>}</div>
+                      </form>
+                    )}
 
                     {isTafsirOpen && (
                       <div className="border-t border-gray-100 pt-4 dark:border-gray-700">

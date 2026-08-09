@@ -37,6 +37,42 @@ export default function QuranReaderControls({
       >
         A−
       </button>
+      <button
+        type="button"
+        aria-pressed={preferences.showTransliteration}
+        onClick={() => onChange({ ...preferences, showTransliteration: !preferences.showTransliteration })}
+        className={`min-h-10 rounded-lg px-3 text-sm font-medium ${preferences.showTransliteration ? "bg-emerald-600 text-white" : "border border-gray-200 bg-white text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"}`}
+      >
+        Transliteration
+      </button>
+      <button
+        type="button"
+        aria-pressed={preferences.memorizationMode}
+        onClick={() => onChange({ ...preferences, memorizationMode: !preferences.memorizationMode })}
+        className={`min-h-10 rounded-lg px-3 text-sm font-medium ${preferences.memorizationMode ? "bg-amber-600 text-white" : "border border-gray-200 bg-white text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"}`}
+      >
+        Memorize
+      </button>
+      <button
+        type="button"
+        aria-pressed={preferences.showWordByWord}
+        onClick={() => onChange({ ...preferences, showWordByWord: !preferences.showWordByWord })}
+        className={`min-h-10 rounded-lg px-3 text-sm font-medium ${preferences.showWordByWord ? "bg-emerald-600 text-white" : "border border-gray-200 bg-white text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"}`}
+      >
+        Word by word
+      </button>
+      <label className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-xs dark:border-gray-600 dark:bg-gray-800">
+        Translation size
+        <input
+          aria-label="Translation font size"
+          type="range"
+          min="14"
+          max="28"
+          step="1"
+          value={preferences.translationFontSize}
+          onChange={(event) => onChange({ ...preferences, translationFontSize: Number(event.target.value) })}
+        />
+      </label>
       <span
         aria-label={`Arabic font size ${preferences.arabicFontSize}`}
         className="min-w-12 text-center text-xs text-gray-500 dark:text-gray-400"

@@ -157,7 +157,13 @@ const createLiveSafeFetch = (fetchImpl: typeof fetch) => async (url: string, opt
     }
   }
 
-  return fetchImpl(requestUrl.toString(), options);
+  return fetchImpl(requestUrl.toString(), {
+    ...options,
+    // Next.js extends fetch with a persistent server Data Cache. OAuth token
+    // responses and bearer-authenticated Quran.Foundation requests must never
+    // be reused across function instances or credentials.
+    cache: "no-store",
+  });
 };
 
 interface SessionStorageAdapter {

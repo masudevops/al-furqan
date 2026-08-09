@@ -89,6 +89,18 @@ const toArray = (value: unknown, keys: string[] = []): JsonObject[] => {
 
 const formatError = (error: unknown): string => String((error as Error)?.message ?? error);
 
+const TAJWEED_CLASSES = new Set(["ham_wasl", "laam_shamsiyah", "madda_normal", "madda_permissible", "madda_necessary", "qalaqah", "ikhafa_shafawi", "ikhafa", "idgham_shafawi", "idgham_ghunnah", "idgham_wo_ghunnah", "iqlab", "ghunnah"]);
+
+export const sanitizeTajweedMarkup = (value: unknown): string | null => {
+  if (typeof value !== "string" || !value) return null;
+  const escaped = value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return escaped
+    .replace(/&lt;tajweed class=(?:&quot;|["'])?([a-z_]+)(?:&quot;|["'])?&gt;/g, (_match, rule: string) => TAJWEED_CLASSES.has(rule) ? `<tajweed class="${rule}">` : "")
+    .replace(/&lt;\/tajweed&gt;/g, "</tajweed>")
+    .replace(/&lt;span class=(?:&quot;|["'])?end(?:&quot;|["'])?&gt;/g, "<span class=\"end\">")
+    .replace(/&lt;\/span&gt;/g, "</span>");
+};
+
 const withReaderStage = async <T>(stage: string, operation: () => Promise<T>): Promise<T> => {
   try {
     return await operation();
@@ -600,6 +612,7 @@ export const loadReaderData = async (
       withReaderStage(`verse page ${index + 1}`, () => serverClient.content.v4.verses.byChapter(chapterId, {
         fields: {
           textUthmani: true,
+          textUthmaniTajweed: true,
         },
         page: index + 1,
         perPage: READER_PAGE_SIZE,
@@ -644,6 +657,7 @@ export const loadReaderData = async (
         ),
         translationName: translation.name,
         translationText: translation.text,
+        tajweedHtml: sanitizeTajweedMarkup(verse.textUthmaniTajweed ?? verse.text_uthmani_tajweed),
         verseKey: asNullableString(verse.verseKey),
         verseNumber: asNullableNumber(verse.verseNumber),
       };

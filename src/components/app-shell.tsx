@@ -5,6 +5,8 @@ import { useParams, usePathname, useRouter } from "next/navigation";
 import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
 
+import PrayerTimes from "@/components/prayer-times";
+import HadithBrowser from "@/components/hadith-browser";
 import type {
   ContentPreviewItem,
   ReaderPayload,
@@ -52,15 +54,16 @@ function Icon({ name }: { name: "home" | "quran" | "saved" | "more" }) {
 
 export default function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const params = useParams<{ chapterId?: string; verseNumber?: string }>();
+  const params = useParams<{ chapterId?: string; verseNumber?: string; collection?: string; number?: string }>();
   const router = useRouter();
-  const route = pathname === "/" ? "home" : pathname.startsWith("/quran") ? "quran" : pathname.startsWith("/search") ? "search" : "other";
+  const route = pathname === "/" ? "home" : pathname.startsWith("/quran") ? "quran" : pathname.startsWith("/hadith") ? "hadith" : pathname.startsWith("/search") ? "search" : "other";
   const chapterId = params?.chapterId;
   const verseNumber = params?.verseNumber;
   const [theme, setTheme] = useState<Theme>("light");
   const [arabicSize, setArabicSize] = useState(40);
   const [translationSize, setTranslationSize] = useState(17);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [tajweedEnabled, setTajweedEnabled] = useState(false);
   const [filter, setFilter] = useState("");
   const [lastRead, setLastRead] = useState<LastRead | null>(null);
   const [selectedTranslation, setSelectedTranslation] = useState<number | null>(null);
@@ -86,6 +89,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
     const savedLastRead = localStorage.getItem("af-last-read");
     const savedArabic = Number(localStorage.getItem("af-arabic-size"));
     const savedTranslation = Number(localStorage.getItem("af-translation-size"));
+    setTajweedEnabled(localStorage.getItem("af-tajweed") === "true");
     const initialTheme = savedTheme ?? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
     setTheme(initialTheme);
     document.documentElement.dataset.theme = initialTheme;
@@ -191,6 +195,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       </article>
       <Link className={styles.entryCard} href="/quran"><span className={styles.entryIcon}><Icon name="quran"/></span><div><p className={styles.label}>Quran</p><h2>Browse all 114 Surahs</h2><p>Arabic text and trusted translations from Quran.Foundation.</p></div><b>→</b></Link>
     </section>
+    <PrayerTimes/>
     <section className={styles.promise}><p className={styles.label}>Our promise</p><h2>No ads. No paywalls. No generated scripture.</h2><p>Every Quran verse and translation in Al-Furqan comes from an identified authoritative source.</p></section>
   </main>;
 
@@ -209,7 +214,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
     {reader ? <>
       <header className={styles.readerHeader}><div><Link href="/quran">← All Surahs</Link><p>Surah {reader.chapter.id}</p><h1>{reader.chapter.nameSimple}</h1><span>{reader.chapter.translatedName} · {reader.chapter.versesCount} Ayahs</span></div><strong lang="ar" dir="rtl" translate="no">{reader.chapter.nameArabic}</strong></header>
       <div className={styles.readerTools}><form onSubmit={jump}><label>Jump to Ayah <input name="verse" type="number" min="1" max={reader.chapter.versesCount ?? undefined} defaultValue={verseNumber ?? "1"}/></label><button>Go</button></form><label className={styles.translationPicker}>Translation <select aria-label="Quran translation" value={selectedTranslation ?? ""} onChange={event => changeTranslation(Number(event.target.value))}>{translations?.items.map(item => <option key={item.id} value={item.id}>{item.name}{item.authorName ? ` — ${item.authorName}` : ""}</option>)}</select></label><label className={styles.recitationPicker}>Reciter <select aria-label="Quran reciter" value={selectedRecitation ?? ""} onChange={event => changeRecitation(Number(event.target.value))}>{recitations?.items.map(item => <option key={item.id} value={item.id}>{item.name}{item.style ? ` — ${item.style}` : ""}</option>)}</select></label><button onClick={() => setSettingsOpen(true)}>Aa <span>Reader settings</span></button></div>
-      <section className={styles.verses} aria-label={`${reader.chapter.nameSimple} verses`}>{reader.verses.map(verse => <article id={`verse-${verse.verseNumber}`} className={styles.verse} key={verse.id}><div className={styles.verseMeta}><a href={`#verse-${verse.verseNumber}`}>{verse.verseKey}</a><div>{verse.audioUrl ? <button className={styles.playVerse} aria-label={`${playingVerseKey === verse.verseKey ? "Pause" : "Play"} recitation of Ayah ${verse.verseNumber}`} onClick={() => playVerse(verse.verseKey)}>{playingVerseKey === verse.verseKey ? "❚❚" : "▶"}</button> : null}<Link aria-label={`Open Ayah ${verse.verseNumber}`} href={`/quran/${reader.chapter.id}/${verse.verseNumber}`}>•••</Link></div></div><p className={styles.arabic} lang="ar" dir="rtl" translate="no">{verse.arabicText}</p>{verse.translationText ? <><div className={styles.translation} lang="en" translate="no" dangerouslySetInnerHTML={{__html: verse.translationText}}/>{verse.translationName || selectedTranslationResource ? <p className={styles.attribution}>Translation: {verse.translationName ?? selectedTranslationResource?.name}{selectedTranslationResource?.authorName ? ` — ${selectedTranslationResource.authorName}` : ""}</p> : null}</> : <p className={styles.unavailable}>The selected translation is unavailable for this Ayah.</p>}</article>)}</section>
+      {tajweedEnabled ? <aside className={styles.tajweedLegend} aria-label="Tajweed color legend"><strong>Tajweed colors</strong><span><i className={styles.tjMadd}/>Madd</span><span><i className={styles.tjGhunnah}/>Ghunnah</span><span><i className={styles.tjIkhfa}/>Ikhfa</span><span><i className={styles.tjIdgham}/>Idgham</span><span><i className={styles.tjQalqalah}/>Qalqalah</span><span><i className={styles.tjSilent}/>Silent letters</span></aside> : null}
+      <section className={styles.verses} aria-label={`${reader.chapter.nameSimple} verses`}>{reader.verses.map(verse => <article id={`verse-${verse.verseNumber}`} className={styles.verse} key={verse.id}><div className={styles.verseMeta}><a href={`#verse-${verse.verseNumber}`}>{verse.verseKey}</a><div>{verse.audioUrl ? <button className={styles.playVerse} aria-label={`${playingVerseKey === verse.verseKey ? "Pause" : "Play"} recitation of Ayah ${verse.verseNumber}`} onClick={() => playVerse(verse.verseKey)}>{playingVerseKey === verse.verseKey ? "❚❚" : "▶"}</button> : null}<Link aria-label={`Open Ayah ${verse.verseNumber}`} href={`/quran/${reader.chapter.id}/${verse.verseNumber}`}>•••</Link></div></div>{tajweedEnabled && verse.tajweedHtml ? <p className={`${styles.arabic} ${styles.tajweed}`} lang="ar" dir="rtl" translate="no" dangerouslySetInnerHTML={{__html: verse.tajweedHtml}}/> : <p className={styles.arabic} lang="ar" dir="rtl" translate="no">{verse.arabicText}</p>}{verse.translationText ? <><div className={styles.translation} lang="en" translate="no" dangerouslySetInnerHTML={{__html: verse.translationText}}/>{verse.translationName || selectedTranslationResource ? <p className={styles.attribution}>Translation: {verse.translationName ?? selectedTranslationResource?.name}{selectedTranslationResource?.authorName ? ` — ${selectedTranslationResource.authorName}` : ""}</p> : null}</> : <p className={styles.unavailable}>The selected translation is unavailable for this Ayah.</p>}</article>)}</section>
       {playingVerseKey ? <div className={styles.audioPlayer}><span>Reciting {playingVerseKey}</span><audio ref={audioRef} controls autoPlay src={reader.verses.find(verse => verse.verseKey === playingVerseKey)?.audioUrl ?? undefined} onEnded={playNextVerse} onError={() => setPlayingVerseKey(null)}>Your browser does not support audio playback.</audio><button aria-label="Close audio player" onClick={() => { audioRef.current?.pause(); setPlayingVerseKey(null); }}>×</button></div> : null}
       <nav className={styles.chapterNav}>{reader.chapter.id > 1 ? <Link href={`/quran/${reader.chapter.id-1}`}>← Previous Surah</Link> : <span/>}{reader.chapter.id < 114 ? <Link href={`/quran/${reader.chapter.id+1}`}>Next Surah →</Link> : null}</nav>
     </> : null}
@@ -224,10 +230,10 @@ export default function AppShell({ children }: { children: ReactNode }) {
   </main>;
 
   return <div className={styles.app}>
-    <header className={styles.topbar}><Link className={styles.brand} href="/"><span>ف</span><div><strong>Al-Furqan</strong><small>الفرقان</small></div></Link><nav><Link className={route === "home" ? styles.active : ""} href="/">Home</Link><Link className={route === "quran" ? styles.active : ""} href="/quran">Quran</Link></nav><div className={styles.actions}><button aria-label="Toggle reading theme" onClick={() => changeTheme(theme === "light" ? "dark" : theme === "dark" ? "sepia" : "light")}>◐</button><button onClick={() => setSettingsOpen(true)}>Aa</button></div></header>
-    {route === "home" ? renderHome() : route === "quran" && !chapterId ? renderLibrary() : route === "quran" ? renderReader() : route === "search" ? renderSearch() : children}
-    <nav className={styles.mobileNav}><Link className={route === "home" ? styles.active : ""} href="/"><Icon name="home"/><span>Home</span></Link><Link className={route === "quran" ? styles.active : ""} href="/quran"><Icon name="quran"/><span>Quran</span></Link></nav>
-    {settingsOpen ? <div className={styles.scrim} onMouseDown={() => setSettingsOpen(false)}><aside className={styles.settings} role="dialog" aria-modal="true" aria-labelledby="reader-settings" onMouseDown={e => e.stopPropagation()}><header><h2 id="reader-settings">Reader settings</h2><button aria-label="Close settings" onClick={() => setSettingsOpen(false)}>×</button></header><fieldset><legend>Reading theme</legend><div className={styles.themeOptions}>{(["light","dark","sepia"] as Theme[]).map(value=><button className={theme===value?styles.selected:""} onClick={()=>changeTheme(value)} key={value}><i className={styles[value]}/>{value}</button>)}</div></fieldset><label>Arabic text size <output>{arabicSize}px</output><input type="range" min="30" max="64" value={arabicSize} onChange={e=>changeSize("arabic", Number(e.target.value))}/></label><label>Translation size <output>{translationSize}px</output><input type="range" min="14" max="26" value={translationSize} onChange={e=>changeSize("translation", Number(e.target.value))}/></label><p>Text is provided by Quran.Foundation. Quran and translation content is protected from automatic browser translation.</p></aside></div> : null}
+    <header className={styles.topbar}><Link className={styles.brand} href="/"><span>ف</span><div><strong>Al-Furqan</strong><small>الفرقان</small></div></Link><nav><Link className={route === "home" ? styles.active : ""} href="/">Home</Link><Link className={route === "quran" ? styles.active : ""} href="/quran">Quran</Link><Link className={route === "hadith" ? styles.active : ""} href="/hadith">Hadith</Link></nav><div className={styles.actions}><button aria-label="Toggle reading theme" onClick={() => changeTheme(theme === "light" ? "dark" : theme === "dark" ? "sepia" : "light")}>◐</button><button onClick={() => setSettingsOpen(true)}>Aa</button></div></header>
+    {route === "home" ? renderHome() : route === "quran" && !chapterId ? renderLibrary() : route === "quran" ? renderReader() : route === "hadith" ? <HadithBrowser collectionId={params?.collection} hadithNumber={params?.number}/> : route === "search" ? renderSearch() : children}
+    <nav className={styles.mobileNav}><Link className={route === "home" ? styles.active : ""} href="/"><Icon name="home"/><span>Home</span></Link><Link className={route === "quran" ? styles.active : ""} href="/quran"><Icon name="quran"/><span>Quran</span></Link><Link className={route === "hadith" ? styles.active : ""} href="/hadith"><Icon name="saved"/><span>Hadith</span></Link></nav>
+    {settingsOpen ? <div className={styles.scrim} onMouseDown={() => setSettingsOpen(false)}><aside className={styles.settings} role="dialog" aria-modal="true" aria-labelledby="reader-settings" onMouseDown={e => e.stopPropagation()}><header><h2 id="reader-settings">Reader settings</h2><button aria-label="Close settings" onClick={() => setSettingsOpen(false)}>×</button></header><fieldset><legend>Reading theme</legend><div className={styles.themeOptions}>{(["light","dark","sepia"] as Theme[]).map(value=><button className={theme===value?styles.selected:""} onClick={()=>changeTheme(value)} key={value}><i className={styles[value]}/>{value}</button>)}</div></fieldset><label className={styles.toggleSetting}>Tajweed colors <input type="checkbox" checked={tajweedEnabled} onChange={event => { setTajweedEnabled(event.target.checked); localStorage.setItem("af-tajweed", String(event.target.checked)); }}/></label><label>Arabic text size <output>{arabicSize}px</output><input type="range" min="30" max="64" value={arabicSize} onChange={e=>changeSize("arabic", Number(e.target.value))}/></label><label>Translation size <output>{translationSize}px</output><input type="range" min="14" max="26" value={translationSize} onChange={e=>changeSize("translation", Number(e.target.value))}/></label><p>Text and tajweed annotations are provided by Quran.Foundation. Quran and translation content is protected from automatic browser translation.</p></aside></div> : null}
   </div>;
 }
 

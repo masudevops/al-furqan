@@ -11,6 +11,7 @@ Verified against official documentation on 2026-08-09. “Verified” means docu
 | Recitations/audio | Content v4 | App | content | Yes | Implemented; reciters discovered dynamically, per-Ayah audio with continuous playback |
 | Pages/Juz/Hizb/Rub/Ruku/Manzil | Content v4 | App | content | Yes | Planned |
 | Word-by-word | Content v4 verses | App | content | Yes | Planned |
+| Tajweed-annotated Uthmani text | Content v4 verses | App | content | Yes | Implemented as optional sanitized color lens in verse mode |
 | Search | Search v1 | App | search | Yes | UI and server adapter complete; client token exchange rejected in production and pre-live on 2026-08-09; owner approval required |
 | Bookmarks | User | User | bookmark | Yes | Server route inherited; owner approval required |
 | Notes | User | User | note | Yes | Server route inherited; owner approval required |
@@ -26,6 +27,7 @@ Requested v1 scopes: `openid offline_access user note collection bookmark goal p
 ## Environment verification
 
 - Production Content v4 returned all 114 chapters, authoritative Uthmani verse text, and 145 discoverable translation resources across available languages on 2026-08-09.
+- Official documentation exposes both QCF V4 Tajweed (Mushaf 19) for page/font rendering and `text_uthmani_tajweed` annotations. Phase 2 uses the annotated text in the existing verse renderer; exact QCF page layout is not claimed.
 - Production Content v4 returned 12 Ayah-by-Ayah reciters. Al-Fatihah recitation ID 7 returned seven HTTPS audio files; the first asset responded `206 audio/mpeg` during playback verification on 2026-08-09.
 - Production and pre-live Search v1 both rejected the app-token request with HTTP 400. The application displays a sourced-feature unavailable state and does not substitute results. The owner must confirm that the `search` scope is approved for the exact client and environment.
 - Production and pre-live credentials are separate configurations. Do not combine an OAuth host or user session from one environment with API credentials from the other.

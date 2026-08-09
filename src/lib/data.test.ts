@@ -10,6 +10,7 @@ import {
   loadTranslationResources,
   parsePositiveInteger,
   parseVerseKey,
+  sanitizeTajweedMarkup,
 } from "@/lib/data";
 
 const sdkMocks = vi.hoisted(() => ({
@@ -45,6 +46,20 @@ describe("buildReaderUrlFromKey", () => {
 
   it("returns null for invalid keys", () => {
     expect(buildReaderUrlFromKey("bad-value")).toBeNull();
+  });
+});
+
+describe("sanitizeTajweedMarkup", () => {
+  it("preserves only Quran.Foundation tajweed annotations", () => {
+    expect(sanitizeTajweedMarkup("<tajweed class=ghunnah>نّ</tajweed><span class=end>١</span>"))
+      .toBe('<tajweed class="ghunnah">نّ</tajweed><span class="end">١</span>');
+  });
+
+  it("escapes executable or unknown markup", () => {
+    const output = sanitizeTajweedMarkup('<script>alert(1)</script><tajweed class="unknown">x</tajweed>');
+    expect(output).not.toContain("<script>");
+    expect(output).not.toContain('<tajweed class="unknown">');
+    expect(output).toContain("&lt;script&gt;");
   });
 });
 
@@ -103,6 +118,7 @@ describe("loadReaderData", () => {
       return Array.from({ length: count }, (_value, index) => ({
         id: start + index + 1,
         textUthmani: `Verse ${start + index + 1}`,
+        textUthmaniTajweed: `<tajweed class=ghunnah>Verse ${start + index + 1}</tajweed>`,
         translations: [{ resourceId: 131, text: `Translation ${start + index + 1}` }],
         verseKey: `2:${start + index + 1}`,
         verseNumber: start + index + 1,
@@ -141,6 +157,7 @@ describe("loadReaderData", () => {
     );
     expect(data.verses).toHaveLength(60);
     expect(data.verses[59]).toMatchObject({
+      tajweedHtml: '<tajweed class="ghunnah">Verse 60</tajweed>',
       translationText: "Translation 60",
       verseKey: "2:60",
     });

@@ -1,7 +1,11 @@
-# Hadith source research
+# Hadith source and integrity policy
 
-Status: research only; no Hadith corpus ships in this milestone.
+Status: Phase 2 ships a constrained browser backed by `fawazahmed0/hadith-api` through jsDelivr.
 
-Quran.Foundation Content API v4 currently documents Hadith reference records linked to specific Ayahs. Those records include collection and numbering identifiers, and are appropriate for future source-resolved Quran study links. This is not evidence of a complete, browsable Kutub al-Sittah corpus with verified Arabic, translations, book/chapter hierarchy, grading provenance, license, and storage rights.
+The repository supplies multiple collections and language editions, collection/book structure, references, and grade metadata. Its repository license is the Unlicense. The app never infers a grade from a collection name and never asks an LLM to complete or translate a record. A record is published only when the selected provider response contains Arabic, English translation, collection, book, Hadith/reference numbers, and at least one grade with the named grader. This deliberately excludes some well-known collection records whose current provider payload has an empty `grades` array.
 
-Before implementing `/hadith`, verify whether Foundation has expanded the corpus. Otherwise evaluate reputable structured providers directly and obtain written license/storage/attribution terms. Required acceptance fields: Arabic provenance, translation rights, canonical numbering, book/chapter metadata, grading and grader attribution, correction/update process, API reliability, and cache rights. GitHub datasets and scraped sites are not acceptable by availability alone.
+`HadithSourceAdapter` isolates catalog, list/search, and detail operations. A Sunnah.com adapter can replace or dual-source the current provider without changing the UI. Requesting a Sunnah.com key through the owner's GitHub/account is still an owner action and was not performed by this build.
+
+Bookmarks are local and keyed by provider collection plus Hadith number. They are not sent through Quran.Foundation's Quran bookmark schema because that would misrepresent external content. Cross-device synchronization needs an explicitly supported external-content schema and approved user scope before it can be enabled.
+
+Source: <https://github.com/fawazahmed0/hadith-api>. CDN: jsDelivr pinned to repository release tag `1`, with a one-day Next.js revalidation interval.

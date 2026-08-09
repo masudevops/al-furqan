@@ -75,6 +75,7 @@ export interface ReaderVerse {
   id: string;
   translationName: string | null;
   translationText: string | null;
+  tajweedHtml: string | null;
   verseKey: string | null;
   verseNumber: number | null;
 }

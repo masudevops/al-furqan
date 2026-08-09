@@ -9,11 +9,7 @@ describe("Quran reader controls", () => {
     const onChange = vi.fn();
     const preferences = {
       arabicFontSize: 38,
-      translationFontSize: 18,
       showTranslation: true,
-      showTransliteration: false,
-      showWordByWord: false,
-      memorizationMode: false,
       density: "comfortable" as const,
     };
 

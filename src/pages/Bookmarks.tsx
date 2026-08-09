@@ -6,18 +6,12 @@ import type { SurahMetadata } from "../core/quran/contracts";
 import { getWebReadingContinuityRepository } from "../platform/web/readingContinuity";
 import { fetchSurahList } from "../services/quranService";
 
-const BOOKMARK_META_KEY = "alFurqan.quran.bookmarkMetadata.v1";
-type BookmarkMetadata = Record<string, { folder: string; tags: string[] }>;
-
 export default function Bookmarks(): JSX.Element {
   const repository = useMemo(getWebReadingContinuityRepository, []);
   const [bookmarks, setBookmarks] = useState<QuranBookmark[]>(() =>
     repository.getState().bookmarks,
   );
   const [surahs, setSurahs] = useState<Map<number, SurahMetadata>>(new Map());
-  const [bookmarkMetadata, setBookmarkMetadata] = useState<BookmarkMetadata>(() => { try { return JSON.parse(localStorage.getItem(BOOKMARK_META_KEY) || "{}"); } catch { return {}; } });
-
-  useEffect(() => { localStorage.setItem(BOOKMARK_META_KEY, JSON.stringify(bookmarkMetadata)); }, [bookmarkMetadata]);
 
   useEffect(() => {
     void fetchSurahList().then((items) => {
@@ -58,8 +52,6 @@ export default function Bookmarks(): JSX.Element {
           {bookmarks.map((bookmark) => {
             const metadata = surahs.get(bookmark.ref.surahNumber);
             const destination = `/quran/${bookmark.ref.surahNumber}#ayah-${bookmark.ref.ayahNumber}`;
-            const key = `${bookmark.ref.surahNumber}:${bookmark.ref.ayahNumber}`;
-            const details = bookmarkMetadata[key] || { folder: "Favorites", tags: [] };
 
             return (
               <li
@@ -104,7 +96,6 @@ export default function Bookmarks(): JSX.Element {
                 >
                   Open ayah <ExternalLink size={15} aria-hidden="true" />
                 </Link>
-                <details className="mt-4 rounded-xl bg-stone-50 p-3 dark:bg-white/5"><summary className="cursor-pointer text-sm font-semibold">Organize bookmark</summary><div className="mt-3 grid gap-3 sm:grid-cols-2"><label className="text-xs font-medium">Folder<input aria-label={`Folder for Surah ${bookmark.ref.surahNumber} ayah ${bookmark.ref.ayahNumber}`} value={details.folder} onChange={(event) => setBookmarkMetadata((current) => ({ ...current, [key]: { ...details, folder: event.target.value.slice(0, 60) } }))} className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 dark:border-white/15 dark:bg-stone-900" /></label><label className="text-xs font-medium">Tags<input aria-label={`Tags for Surah ${bookmark.ref.surahNumber} ayah ${bookmark.ref.ayahNumber}`} value={details.tags.join(", ")} onChange={(event) => setBookmarkMetadata((current) => ({ ...current, [key]: { ...details, tags: event.target.value.split(",").map((tag) => tag.trim()).filter(Boolean).slice(0, 8) } }))} placeholder="Ramadan, gratitude" className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 dark:border-white/15 dark:bg-stone-900" /></label></div></details>
               </li>
             );
           })}

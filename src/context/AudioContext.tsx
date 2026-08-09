@@ -15,14 +15,6 @@ import {
   type AudioPlaybackError,
   type AudioTrack,
 } from "../core/audio/contracts";
-import {
-  loadAudioPreferences,
-  normalizeRepeatRange,
-  saveAudioPreferences,
-  type PlaybackSpeed,
-  type RepeatMode,
-} from "../core/audio/preferences";
-import { getDownloadedAudio } from "../platform/web/audioDownloads";
 
 export type AudioAyah = AudioTrack;
 
@@ -32,14 +24,8 @@ interface AudioContextType {
   isLoading: boolean;
   error: AudioPlaybackError | null;
   playlist: AudioAyah[];
-  currentIndex: number;
-  playbackSpeed: PlaybackSpeed;
-  repeatMode: RepeatMode;
-  repeatRange: { startIndex: number; endIndex: number } | null;
-  sleepTimerMinutes: number | null;
   playAyah: (ayah: AudioAyah) => void;
   playPlaylist: (playlist: AudioAyah[], startIndex?: number) => void;
-  playAtIndex: (index: number) => void;
   togglePlay: () => void;
   stop: () => void;
   seek: (time: number) => void;
@@ -51,10 +37,6 @@ interface AudioContextType {
   canPlayPrevious: boolean;
   playNext: () => void;
   playPrevious: () => void;
-  setPlaybackSpeed: (speed: PlaybackSpeed) => void;
-  setRepeatMode: (mode: RepeatMode) => void;
-  setRepeatRange: (startIndex: number, endIndex: number) => void;
-  setSleepTimer: (minutes: number | null) => void;
 }
 
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
@@ -67,22 +49,9 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
-  const [preferences, setPreferences] = useState(() =>
-    loadAudioPreferences(localStorage),
-  );
-  const [repeatRange, setRepeatRangeState] = useState<{
-    startIndex: number;
-    endIndex: number;
-  } | null>(null);
-  const [sleepTimerMinutes, setSleepTimerMinutes] = useState<number | null>(
-    null,
-  );
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const shouldAutoPlayRef = useRef(false);
   const playlistLengthRef = useRef(0);
-  const currentIndexRef = useRef(-1);
-  const repeatModeRef = useRef<RepeatMode>(preferences.repeatMode);
-  const repeatRangeRef = useRef(repeatRange);
 
   const currentAyah =
     currentIndex >= 0 && currentIndex < playlist.length
@@ -97,19 +66,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     playlistLengthRef.current = playlist.length;
   }, [playlist.length]);
-
-  useEffect(() => {
-    currentIndexRef.current = currentIndex;
-  }, [currentIndex]);
-
-  useEffect(() => {
-    repeatModeRef.current = preferences.repeatMode;
-    saveAudioPreferences(localStorage, preferences);
-  }, [preferences]);
-
-  useEffect(() => {
-    repeatRangeRef.current = repeatRange;
-  }, [repeatRange]);
 
   const resetProgress = useCallback(() => {
     setCurrentTime(0);
@@ -129,35 +85,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       return index;
     });
   }, []);
-
-  const handleTrackEnded = useCallback(() => {
-    const audio = audioRef.current;
-    const index = currentIndexRef.current;
-
-    if (repeatModeRef.current === "ayah" && audio) {
-      audio.currentTime = 0;
-      shouldAutoPlayRef.current = true;
-      void audio.play().catch(() => {
-        setError("playback-failed");
-        setIsLoading(false);
-        setIsPlaying(false);
-      });
-      return;
-    }
-
-    const range = repeatRangeRef.current;
-    if (repeatModeRef.current === "range" && range) {
-      const nextIndex =
-        index < range.startIndex || index >= range.endIndex
-          ? range.startIndex
-          : index + 1;
-      shouldAutoPlayRef.current = true;
-      setCurrentIndex(nextIndex);
-      return;
-    }
-
-    playNext();
-  }, [playNext]);
 
   const playPrevious = useCallback(() => {
     setCurrentIndex((index) => {
@@ -189,7 +116,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       setError(null);
     };
     const handlePause = () => setIsPlaying(false);
-    const handleEnded = () => handleTrackEnded();
+    const handleEnded = () => playNext();
     const handleError = () => {
       setError("media-unavailable");
       setIsLoading(false);
@@ -220,22 +147,27 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       audio.removeEventListener("error", handleError);
       audioRef.current = null;
     };
-  }, [handleTrackEnded]);
+  }, [playNext]);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !currentAyah) return;
-    let objectUrl: string | null = null;
-    let cancelled = false;
-    const loadSource = async () => {
-      audio.pause(); resetProgress(); setError(null); setIsLoading(true);
-      const downloaded = await getDownloadedAudio(currentAyah).catch(() => null);
-      if (cancelled) return;
-      objectUrl = downloaded ? URL.createObjectURL(downloaded) : null;
-      audio.src = objectUrl || currentAyah.audio; audio.load();
-      if (shouldAutoPlayRef.current) void audio.play().catch(() => { setError("playback-failed"); setIsLoading(false); setIsPlaying(false); shouldAutoPlayRef.current = false; });
-    };
-    void loadSource();
+
+    audio.pause();
+    resetProgress();
+    setError(null);
+    setIsLoading(true);
+    audio.src = currentAyah.audio;
+    audio.load();
+
+    if (shouldAutoPlayRef.current) {
+      void audio.play().catch(() => {
+        setError("playback-failed");
+        setIsLoading(false);
+        setIsPlaying(false);
+        shouldAutoPlayRef.current = false;
+      });
+    }
 
     if ("mediaSession" in navigator && typeof MediaMetadata !== "undefined") {
       navigator.mediaSession.metadata = new MediaMetadata({
@@ -244,14 +176,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         album: "Al-Furqan",
       });
     }
-    return () => { cancelled = true; if (objectUrl) URL.revokeObjectURL(objectUrl); };
   }, [currentAyah, resetProgress]);
-
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.playbackRate = preferences.playbackSpeed;
-    }
-  }, [preferences.playbackSpeed]);
 
   useEffect(() => {
     if (!("mediaSession" in navigator)) return;
@@ -313,43 +238,10 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       }
       setError(null);
       setPlaylist(validTracks);
-      const normalizedIndex = normalizeStartIndex(
-        startIndex,
-        validTracks.length,
-      );
-      setCurrentIndex(normalizedIndex);
-      setRepeatRangeState(
-        normalizeRepeatRange(
-          normalizedIndex,
-          validTracks.length - 1,
-          validTracks.length,
-        ),
-      );
+      setCurrentIndex(normalizeStartIndex(startIndex, validTracks.length));
       shouldAutoPlayRef.current = true;
     },
     [resetProgress],
-  );
-
-  const playAtIndex = useCallback(
-    (index: number) => {
-      const normalizedIndex = normalizeStartIndex(index, playlist.length);
-      if (normalizedIndex < 0) return;
-      if (normalizedIndex === currentIndexRef.current) {
-        const audio = audioRef.current;
-        if (!audio) return;
-        audio.currentTime = 0;
-        shouldAutoPlayRef.current = true;
-        void audio.play().catch(() => {
-          setError("playback-failed");
-          setIsLoading(false);
-          setIsPlaying(false);
-        });
-        return;
-      }
-      shouldAutoPlayRef.current = true;
-      setCurrentIndex(normalizedIndex);
-    },
-    [playlist.length],
   );
 
   const playAyah = useCallback(
@@ -370,8 +262,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     setError(null);
     setPlaylist([]);
     setCurrentIndex(-1);
-    setRepeatRangeState(null);
-    setSleepTimerMinutes(null);
     resetProgress();
   }, [resetProgress]);
 
@@ -386,46 +276,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     [duration],
   );
 
-  const setPlaybackSpeed = useCallback((speed: PlaybackSpeed) => {
-    setPreferences((current) => ({ ...current, playbackSpeed: speed }));
-  }, []);
-
-  const setRepeatMode = useCallback((mode: RepeatMode) => {
-    setPreferences((current) => ({ ...current, repeatMode: mode }));
-  }, []);
-
-  const setRepeatRange = useCallback(
-    (startIndex: number, endIndex: number) => {
-      const nextRange = normalizeRepeatRange(
-        startIndex,
-        endIndex,
-        playlist.length,
-      );
-      setRepeatRangeState(nextRange);
-      if (nextRange) {
-        setPreferences((current) => ({ ...current, repeatMode: "range" }));
-      }
-    },
-    [playlist.length],
-  );
-
-  const setSleepTimer = useCallback((minutes: number | null) => {
-    setSleepTimerMinutes(
-      minutes && Number.isFinite(minutes) && minutes > 0 ? minutes : null,
-    );
-  }, []);
-
-  useEffect(() => {
-    if (!sleepTimerMinutes) return;
-    const timeout = window.setTimeout(() => {
-      audioRef.current?.pause();
-      shouldAutoPlayRef.current = false;
-      setIsPlaying(false);
-      setSleepTimerMinutes(null);
-    }, sleepTimerMinutes * 60_000);
-    return () => window.clearTimeout(timeout);
-  }, [sleepTimerMinutes]);
-
   const value = useMemo<AudioContextType>(
     () => ({
       currentAyah,
@@ -433,14 +283,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       isLoading,
       error,
       playlist,
-      currentIndex,
-      playbackSpeed: preferences.playbackSpeed,
-      repeatMode: preferences.repeatMode,
-      repeatRange,
-      sleepTimerMinutes,
       playAyah,
       playPlaylist,
-      playAtIndex,
       togglePlay,
       stop,
       seek,
@@ -452,10 +296,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       canPlayPrevious,
       playNext,
       playPrevious,
-      setPlaybackSpeed,
-      setRepeatMode,
-      setRepeatRange,
-      setSleepTimer,
     }),
     [
       canPlayNext,
@@ -463,28 +303,18 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       clearError,
       currentAyah,
       currentTime,
-      currentIndex,
       duration,
       error,
       isLoading,
       isPlaying,
       playAyah,
-      playAtIndex,
       playNext,
       playPlaylist,
       playPrevious,
       playlist,
-      preferences.playbackSpeed,
-      preferences.repeatMode,
       progress,
-      repeatRange,
       seek,
       stop,
-      sleepTimerMinutes,
-      setPlaybackSpeed,
-      setRepeatMode,
-      setRepeatRange,
-      setSleepTimer,
       togglePlay,
     ],
   );

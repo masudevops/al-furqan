@@ -54,7 +54,7 @@ Estimates are ranges, not delivery commitments. Any L, XL, or Program item must 
 
 | Story | Priority | Effort | Dependency | Outcome |
 |---|---|---:|---|---|
-| AF-006B Audio Experience (Completed) | P1 | L, 12–18 days | AF-006A | Repeat, speed, queue, sleep timer, and platform-neutral playback contracts |
+| AF-006B Audio Experience | P1 | L, 12–18 days | AF-006A | Repeat, speed, queue, sleep timer, and platform-neutral playback contracts |
 | AF-008 Tafsir Foundation | P1 | L, 12–18 days | AF-002, AF-003 | Unified contracts, provenance, validation, source switching |
 | AF-009 Tafsir Reader | P1 | L, 12–18 days | AF-008 | Responsive Tafsir drawer/reader, deep links, persistent position |
 | AF-010 Tafsir Search | P2 | L, 12–18 days | AF-008, AF-005B | Search across approved Tafsir sources |
@@ -199,8 +199,6 @@ Estimates are ranges, not delivery commitments. Any L, XL, or Program item must 
 
 ### AF-006B — Audio Experience
 
-**Status:** Completed June 22, 2026
-
 **Priority:** P1  
 **Effort:** L, 12–18 engineer-days  
 **Dependency:** AF-006A
@@ -225,9 +223,9 @@ Estimates are ranges, not delivery commitments. Any L, XL, or Program item must 
 
 ## Recommended next story
 
-### AF-008 — Tafsir Foundation
+### AF-006B — Audio Experience
 
-Quran reading, continuity, search, and audio now have stable foundations. AF-008 should establish canonical, provenance-aware Tafsir contracts before expanding the Tafsir reader UI.
+The existing audio lifecycle is now validated, accessible, and testable. AF-006B can safely add repeat, speed, queue controls, sleep timer, and platform-aware playback preferences on top of that boundary.
 
 ## Backlog risks and decision points
 

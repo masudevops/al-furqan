@@ -1,13 +1,6 @@
 # 📖 Al-Furqan
 
-**Al-Furqan** is a free, ad-free, privacy-first Quran and worship companion. Core reading works without an account; bookmarks, reading position, preferences, goals, and tasbih state are stored locally on the device.
-
-## Product commitments
-
-- No advertising, premium tier, account requirement, or behavioral tracking.
-- Quran reading remains the primary experience; supporting tools avoid guilt and attention traps.
-- Personal reading state is local-first and can be cleared through browser storage controls.
-- Keyboard focus, reduced-motion preferences, readable contrast, and mobile-safe touch targets are core requirements.
+**Al-Furqan** is a premium, comprehensive Islamic portal providing an all-in-one experience for Quranic study, Hadith research, Prayer Times, and scholarly literature. Built with modern technology and a focus on premium visual excellence.
 
 ---
 
@@ -20,9 +13,6 @@
 - **📖 Islamic Books**: A curated digital library from IslamHouse for downloading and reading quality Islamic literature.
 - **🛡️ Hisnul Muslim**: Comprehensive collection of daily Azkar and Duas.
 - **🔖 Personalizations**: Bookmark Ayahs, Hadiths, and Books for later study.
-- **🧭 Daily Companion**: Hijri date, private tasbih counter, and a gentle local reading goal.
-- **📱 PWA**: Installable shell with offline caching for previously opened Quran content and translations.
-- **🔎 Word by word**: On-demand Quran Foundation word meanings and transliteration with tap-to-explore cards and bounded offline caching.
 
 ---
 
@@ -76,7 +66,6 @@ The application centralizes diverse data sources to provide real-time informatio
 | Feature | Provider | Endpoint | Purpose |
 |---------|----------|----------|---------|
 | **Quran** | Al-Quran Cloud | `api.alquran.cloud` | Text, Translations, Reciter Lists |
-| **Word meanings** | Quran Foundation | Server-side Content API | Word translation and transliteration |
 | **Hadith** | HadithAPI | `hadithapi.com` | Comprehensive Hadith Collections |
 | **Tafseer** | spa5k (CDN) | `jsdelivr.net/gh/spa5k/tafsir_api` | High-quality scholarship text |
 | **Prayer Times** | Aladhan | `api.aladhan.com` | Precise location-based timings |
@@ -104,8 +93,6 @@ Start the local development server:
 npm run dev
 ```
 
-Word-by-word content requires server-only Quran Foundation credentials. Copy `.env.example` to `.env.local`, set `QF_CLIENT_ID` and `QF_CLIENT_SECRET`, keep `QF_ENV=prelive` during development, and run a server-function-aware environment such as `vercel dev`. Never prefix these credentials with `VITE_`.
-
 ### Production Build
 Generate optimized files for deployment:
 ```bash
@@ -129,9 +116,3 @@ If an external API changes, you only need to update the `BASE_URL` or relevant f
 
 ## 📄 License
 This project is open-source and available under the MIT License.
-
-## Content provenance and known gaps
-
-The application fetches provider content incrementally rather than redistributing a complete bundled corpus. [Al Quran Cloud's current terms](https://alquran.cloud/terms-and-conditions) permit non-commercial Quran-text display and personal/educational recitation downloads with edition attribution; Al-Furqan retains provider identifiers and is free/non-commercial. Exact translation attribution must still be surfaced more prominently in the reader. Quran Foundation word translation and transliteration are now integrated through a server-only OAuth2 gateway, attributed in the reader, and cached for six days under its [developer terms](https://qf-api-docs.pages.dev/legal/developer-terms/). The documented Content API does not provide morphology roots, so the interface states that limitation. The Quranic Arabic Corpus morphology download is GPL-licensed and requires a contact-email download flow, so it has not been silently copied into this MIT repository. The bundled Hisnul Muslim JSON still needs a documented upstream version and license in the release inventory.
-
-Web background audio and scheduled adhan remain constrained by browser/PWA lifecycle and notification policies, especially on iOS: Media Session playback works where supported, but a closed browser cannot guarantee scheduled adhan. Offline audio now uses IndexedDB with per-Surah removal, though a proactive quota estimate and full-Surah batch downloader remain follow-ups. Word-by-word meaning/transliteration is activation-ready but needs issued Quran Foundation credentials in each deployment; morphology roots remain unavailable from the documented Content API. Dua transliterations, verified source citations for every bundled entry, 99 Names audio, complete Arabic translation of every legacy page, and optional account sync also remain follow-up work. See `docs/PRODUCT_BACKLOG.md`; licensing and scholarly review are release gates, not items to bypass.

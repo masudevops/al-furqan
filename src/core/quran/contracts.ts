@@ -41,7 +41,6 @@ export interface ReaderAyah {
   ref: AyahReference;
   arabicText: string;
   translationText?: string;
-  transliterationText?: string;
   pageNumber?: number;
   audioUrl?: string;
 }

@@ -32,7 +32,6 @@ interface Dua {
   arabic: string;
   translation: string;
   audioUrl?: string | null;
-  reference?: string;
 }
 
 interface Category {
@@ -203,7 +202,6 @@ export default function HisnulMuslim() {
       ID: string | number;
       ARABIC_TEXT: string;
       TRANSLATED_TEXT: string;
-      LANGUAGE_ARABIC_TRANSLATED_TEXT?: string;
       AUDIO?: string | null;
     };
     type RawCategory = {
@@ -223,8 +221,7 @@ export default function HisnulMuslim() {
               id: d.ID.toString(),
               arabic: d.ARABIC_TEXT,
               translation: d.TRANSLATED_TEXT,
-              reference: d.LANGUAGE_ARABIC_TRANSLATED_TEXT,
-              audioUrl: d.AUDIO?.replace(/^http:\/\//, "https://") || null,
+              audioUrl: d.AUDIO || null,
             }))
           : [],
       }));
@@ -404,7 +401,6 @@ export default function HisnulMuslim() {
                                   <p className="text-gray-700 dark:text-gray-300 mb-2 text-lg">
                                     {dua.translation}
                                   </p>
-                                  {dua.reference && <p className="mb-2 text-sm font-medium text-emerald-700 dark:text-emerald-300">{dua.reference}</p>}
                                   {dua.audioUrl && (
                                     <audio
                                       src={dua.audioUrl}
@@ -493,7 +489,6 @@ export default function HisnulMuslim() {
                             <p className="text-gray-700 dark:text-gray-300 mb-2 text-lg">
                               {dua.translation}
                             </p>
-                            {dua.reference && <p className="mb-2 text-sm font-medium text-emerald-700 dark:text-emerald-300">{dua.reference}</p>}
                             {dua.audioUrl && (
                               <audio
                                 src={dua.audioUrl}
@@ -560,7 +555,6 @@ export default function HisnulMuslim() {
                     <p className="text-gray-700 dark:text-gray-300 mb-2 text-lg">
                       {dua.translation}
                     </p>
-                    {dua.reference && <p className="mb-2 text-sm font-medium text-emerald-700 dark:text-emerald-300">{dua.reference}</p>}
                     {dua.audioUrl && (
                       <audio
                         src={dua.audioUrl}

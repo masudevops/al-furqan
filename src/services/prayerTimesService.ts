@@ -56,11 +56,10 @@ export interface PrayerTimesResponse {
 export async function fetchPrayerTimes(
     city: string,
     country: string = "UK",
-    method: number = 2,
-    school: 0 | 1 = 0,
+    method: number = 2 // Islamic Society of North America
 ): Promise<PrayerTimesData | null> {
     try {
-        const url = `${ALADHAN_API_BASE}/timingsByCity?city=${encodeURIComponent(city)}&country=${encodeURIComponent(country)}&method=${method}&school=${school}`;
+        const url = `${ALADHAN_API_BASE}/timingsByCity?city=${encodeURIComponent(city)}&country=${encodeURIComponent(country)}&method=${method}`;
 
         console.log(`Fetching prayer times for ${city}, ${country} from: ${url}`);
 
@@ -80,11 +79,10 @@ export async function fetchPrayerTimes(
 export async function fetchPrayerTimesByCoords(
     latitude: number,
     longitude: number,
-    method: number = 3,
-    school: 0 | 1 = 0,
+    method: number = 3 // Muslim World League
 ): Promise<PrayerTimesData | null> {
     try {
-        const url = `${ALADHAN_API_BASE}/timings?latitude=${latitude}&longitude=${longitude}&method=${method}&school=${school}`;
+        const url = `${ALADHAN_API_BASE}/timings?latitude=${latitude}&longitude=${longitude}&method=${method}`;
 
         console.log(`Fetching prayer times for coords ${latitude}, ${longitude} from: ${url}`);
 
@@ -99,21 +97,6 @@ export async function fetchPrayerTimesByCoords(
         console.error("Error fetching prayer times by coords:", error);
         return null;
     }
-}
-
-export async function fetchMonthlyPrayerTimes(
-    city: string,
-    country: string,
-    year: number,
-    month: number,
-    method: number,
-    school: 0 | 1,
-): Promise<PrayerTimesData[]> {
-    const url = `${ALADHAN_API_BASE}/calendarByCity/${year}/${month}?city=${encodeURIComponent(city)}&country=${encodeURIComponent(country)}&method=${method}&school=${school}`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error("Failed to fetch monthly prayer calendar");
-    const json = await response.json() as { data?: PrayerTimesData[] };
-    return Array.isArray(json.data) ? json.data : [];
 }
 
 export async function reverseGeocode(lat: number, lon: number): Promise<{ city: string; country: string } | null> {

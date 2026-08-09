@@ -13,7 +13,6 @@ class FakeAudio extends EventTarget {
   preload = "";
   currentTime = 0;
   duration = 120;
-  playbackRate = 1;
   paused = true;
   failPlay = false;
 
@@ -64,9 +63,6 @@ function AudioHarness() {
       <output data-testid="track">{audio.currentAyah?.number ?? "none"}</output>
       <output data-testid="playing">{String(audio.isPlaying)}</output>
       <output data-testid="error">{audio.error ?? "none"}</output>
-      <output data-testid="speed">{audio.playbackSpeed}</output>
-      <output data-testid="repeat">{audio.repeatMode}</output>
-      <output data-testid="sleep">{audio.sleepTimerMinutes ?? "off"}</output>
       <button
         onClick={() => audio.playPlaylist([firstTrack, secondTrack])}
       >
@@ -81,10 +77,6 @@ function AudioHarness() {
       </button>
       <button onClick={audio.playNext}>Next</button>
       <button onClick={audio.togglePlay}>Toggle</button>
-      <button onClick={() => audio.setPlaybackSpeed(1.5)}>Speed</button>
-      <button onClick={() => audio.setRepeatMode("ayah")}>Repeat ayah</button>
-      <button onClick={() => audio.setRepeatRange(0, 1)}>Repeat range</button>
-      <button onClick={() => audio.setSleepTimer(5)}>Sleep</button>
     </>
   );
 }
@@ -92,7 +84,6 @@ function AudioHarness() {
 describe("AudioProvider", () => {
   beforeEach(() => {
     FakeAudio.instances = [];
-    localStorage.clear();
     vi.stubGlobal("Audio", FakeAudio);
   });
 
@@ -147,87 +138,5 @@ describe("AudioProvider", () => {
 
     expect(screen.getByTestId("playing")).toHaveTextContent("false");
     expect(screen.getByTestId("error")).toHaveTextContent("playback-failed");
-  });
-
-  it("persists playback preferences and applies speed", async () => {
-    const user = userEvent.setup();
-    render(
-      <AudioProvider>
-        <AudioHarness />
-      </AudioProvider>,
-    );
-
-    await user.click(screen.getByRole("button", { name: "Start" }));
-    await user.click(screen.getByRole("button", { name: "Speed" }));
-    await user.click(screen.getByRole("button", { name: "Repeat ayah" }));
-
-    expect(screen.getByTestId("speed")).toHaveTextContent("1.5");
-    expect(screen.getByTestId("repeat")).toHaveTextContent("ayah");
-    expect(FakeAudio.instances[0].playbackRate).toBe(1.5);
-    expect(localStorage.getItem("alFurqan.audio.preferences")).toContain(
-      '"repeatMode":"ayah"',
-    );
-  });
-
-  it("replays the current ayah when repeat ayah is enabled", async () => {
-    const user = userEvent.setup();
-    render(
-      <AudioProvider>
-        <AudioHarness />
-      </AudioProvider>,
-    );
-    await user.click(screen.getByRole("button", { name: "Start" }));
-    await user.click(screen.getByRole("button", { name: "Repeat ayah" }));
-
-    act(() => {
-      FakeAudio.instances[0].currentTime = 90;
-      FakeAudio.instances[0].dispatchEvent(new Event("ended"));
-    });
-
-    expect(screen.getByTestId("track")).toHaveTextContent("1");
-    expect(FakeAudio.instances[0].currentTime).toBe(0);
-  });
-
-  it("wraps within a selected repeat range", async () => {
-    const user = userEvent.setup();
-    render(
-      <AudioProvider>
-        <AudioHarness />
-      </AudioProvider>,
-    );
-    await user.click(screen.getByRole("button", { name: "Start" }));
-    await user.click(screen.getByRole("button", { name: "Repeat range" }));
-
-    act(() => {
-      FakeAudio.instances[0].dispatchEvent(new Event("ended"));
-    });
-    expect(screen.getByTestId("track")).toHaveTextContent("2");
-
-    act(() => {
-      FakeAudio.instances[0].dispatchEvent(new Event("ended"));
-    });
-    expect(screen.getByTestId("track")).toHaveTextContent("1");
-  });
-
-  it("stops playback when the sleep timer expires", () => {
-    vi.useFakeTimers();
-    render(
-      <AudioProvider>
-        <AudioHarness />
-      </AudioProvider>,
-    );
-
-    act(() => {
-      screen.getByRole("button", { name: "Start" }).click();
-      screen.getByRole("button", { name: "Sleep" }).click();
-    });
-    expect(screen.getByTestId("sleep")).toHaveTextContent("5");
-
-    act(() => {
-      vi.advanceTimersByTime(5 * 60_000);
-    });
-    expect(screen.getByTestId("playing")).toHaveTextContent("false");
-    expect(screen.getByTestId("sleep")).toHaveTextContent("off");
-    vi.useRealTimers();
   });
 });

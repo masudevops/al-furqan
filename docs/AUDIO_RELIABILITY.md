@@ -29,6 +29,11 @@
 - Progress uses a native range input with an elapsed/total time description.
 - Loading and playback errors are conveyed in text.
 
-## Follow-up
+## Deferred to AF-006B
 
-AF-006B adds repeat, playback speed, queue controls, sleep timer, and persisted preferences. Download management, background-playback guarantees, and queue restoration remain deferred.
+- Repeat ayah/range
+- Playback speed
+- Sleep timer
+- Download management
+- Background playback guarantees across platforms
+- Persistent playback preferences and queue restoration

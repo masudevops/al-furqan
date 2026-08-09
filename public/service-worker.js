@@ -1,7 +1,6 @@
 // public/service-worker.js
 
-const CACHE_NAME = 'al-furqan-shell-v3';
-const QURAN_CACHE_NAME = 'al-furqan-quran-v1';
+const CACHE_NAME = 'al-furqan-v2';
 const ASSETS = [
   '/',               
   '/index.html',
@@ -45,7 +44,7 @@ self.addEventListener('activate', event => {
       .then(cacheNames => {
         return Promise.all(
           cacheNames
-            .filter(cacheName => ![CACHE_NAME, QURAN_CACHE_NAME].includes(cacheName))
+            .filter(cacheName => cacheName !== CACHE_NAME)
             .map(cacheName => {
               console.log('Deleting old cache:', cacheName);
               return caches.delete(cacheName);
@@ -70,29 +69,6 @@ self.addEventListener('fetch', event => {
   // Don't cache non-GET requests
   if (req.method !== 'GET') {
     event.respondWith(fetch(req));
-    return;
-  }
-
-  // Prayer data is time-sensitive and location-sensitive. Never persist it in
-  // a long-lived application cache.
-  if ((url.hostname.includes('aladhan.com') && !url.pathname.includes('asmaAlHusna')) || url.hostname.includes('bigdatacloud.net')) {
-    event.respondWith(fetch(req));
-    return;
-  }
-
-  // Quran editions and tafsir are immutable provider content. Previously
-  // opened passages use stale-while-revalidate so they remain available offline.
-  if (url.hostname.includes('alquran.cloud') || url.hostname.includes('jsdelivr.net') || url.pathname.includes('asmaAlHusna')) {
-    event.respondWith(
-      caches.open(QURAN_CACHE_NAME).then(async cache => {
-        const cached = await cache.match(req);
-        const network = fetch(req).then(response => {
-          if (response.ok) cache.put(req, response.clone());
-          return response;
-        });
-        return cached || network;
-      })
-    );
     return;
   }
 

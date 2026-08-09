@@ -3,41 +3,40 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 
 interface ThemeContextType {
   darkMode: boolean;
-  mode: "light" | "dark" | "sepia";
-  setMode: (mode: "light" | "dark" | "sepia") => void;
   toggleDarkMode: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
   darkMode: false,
-  mode: "light",
-  setMode: () => {},
   toggleDarkMode: () => {},
 });
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [mode, setMode] = useState<"light" | "dark" | "sepia">(() => {
+  const [darkMode, setDarkMode] = useState(() => {
     // Check for saved preference or system preference
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("theme");
-      if (saved === "dark" || saved === "sepia" || saved === "light") return saved;
-      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      if (saved) return saved === "dark";
+      return window.matchMedia("(prefers-color-scheme: dark)").matches;
     }
-    return "light";
+    return false;
   });
-  const darkMode = mode === "dark";
 
   useEffect(() => {
     // Apply class to document
-    document.documentElement.classList.toggle("dark", mode === "dark");
-    document.documentElement.classList.toggle("sepia", mode === "sepia");
-    localStorage.setItem("theme", mode);
-  }, [mode]);
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [darkMode]);
 
-  const toggleDarkMode = () => setMode((current) => current === "dark" ? "light" : "dark");
+  const toggleDarkMode = () => setDarkMode((prev) => !prev);
 
   return (
-    <ThemeContext.Provider value={{ darkMode, mode, setMode, toggleDarkMode }}>
+    <ThemeContext.Provider value={{ darkMode, toggleDarkMode }}>
       {children}
     </ThemeContext.Provider>
   );

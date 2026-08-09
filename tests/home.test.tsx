@@ -3,13 +3,12 @@ import { MemoryRouter } from "react-router-dom";
 import { axe } from "jest-axe";
 import { describe, expect, it } from "vitest";
 import Home from "../src/pages/Home";
-import { SettingsProvider } from "../src/context/SettingsContext";
 
 describe("landing page", () => {
   it("renders the primary landing content", () => {
     render(
       <MemoryRouter>
-        <SettingsProvider><Home /></SettingsProvider>
+        <Home />
       </MemoryRouter>,
     );
 
@@ -25,7 +24,7 @@ describe("landing page", () => {
   it("has no critical automatically detectable accessibility violations", async () => {
     const { container } = render(
       <MemoryRouter>
-        <SettingsProvider><Home /></SettingsProvider>
+        <Home />
       </MemoryRouter>,
     );
 

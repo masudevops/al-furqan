@@ -12,6 +12,12 @@ export async function GET(
 ) {
   const sessionContext = await getSession(request);
   const chapterId = parsePositiveInteger(context.params.chapterId);
+  const translationId = parsePositiveInteger(
+    request.nextUrl.searchParams.get("translation"),
+  );
+  const recitationId = parsePositiveInteger(
+    request.nextUrl.searchParams.get("recitation"),
+  );
 
   if (!chapterId || chapterId > 114) {
     return withSessionJson(
@@ -25,7 +31,12 @@ export async function GET(
   }
 
   try {
-    const payload = await loadReaderData(sessionContext.session, String(chapterId));
+    const payload = await loadReaderData(
+      sessionContext.session,
+      String(chapterId),
+      translationId ?? undefined,
+      recitationId ?? undefined,
+    );
     return withSessionJson(sessionContext, payload);
   } catch (error) {
     return withSessionJson(sessionContext, {

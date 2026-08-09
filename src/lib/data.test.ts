@@ -5,7 +5,9 @@ import {
   ensureUserScope,
   getGrantedScopes,
   loadReaderData,
+  loadRecitationResources,
   loadSearchData,
+  loadTranslationResources,
   parsePositiveInteger,
   parseVerseKey,
 } from "@/lib/data";
@@ -183,6 +185,28 @@ describe("loadReaderData", () => {
       versesCount: 1,
     });
   });
+
+  it("maps authoritative verse audio for the selected recitation", async () => {
+    sdkMocks.serverClient = {
+      content: { v4: {
+        audio: { verseRecitation: { byChapter: vi.fn(async () => ({ audioFiles: [{ verseKey: "1:1", audioUrl: "https://verses.quran.com/example.mp3" }] })) } },
+        chapters: { get: vi.fn(async () => ({ id: 1, nameSimple: "Al-Fatihah", versesCount: 1 })) },
+        verses: { byChapter: vi.fn(async () => [{ id: 1, textUthmani: "Verse 1", translations: [{ resourceId: 85, text: "Translation 1" }], verseKey: "1:1", verseNumber: 1 }]) },
+      } },
+    };
+
+    const data = await loadReaderData({} as never, "1", 85, 7);
+
+    expect(data.recitationId).toBe(7);
+    expect(data.verses[0].audioUrl).toBe("https://verses.quran.com/example.mp3");
+  });
+});
+
+describe("loadRecitationResources", () => {
+  it("normalizes the dynamic reciter catalog", async () => {
+    sdkMocks.serverClient = { content: { v4: { resources: { recitations: { list: vi.fn(async () => [{ id: 7, reciterName: "Mishari Rashid al-`Afasy", style: null }]) } } } } };
+    await expect(loadRecitationResources({} as never)).resolves.toEqual({ error: null, items: [{ id: 7, name: "Mishari Rashid al-`Afasy", style: null }] });
+  });
 });
 
 describe("loadSearchData", () => {
@@ -213,6 +237,34 @@ describe("loadSearchData", () => {
       readerUrl: "/quran/1/1",
       text: "All praise is for Allah.",
       verseKey: "1:1",
+    });
+  });
+
+  it("does not expose an upstream token error", async () => {
+    sdkMocks.serverClient = {
+      search: { v1: { query: vi.fn(async () => { throw new Error("Token request failed: 400"); }) } },
+    };
+
+    const result = await loadSearchData({} as never, "mercy");
+
+    expect(result.error).toContain("not enabled for this API client");
+    expect(result.error).not.toContain("400");
+  });
+});
+
+describe("loadTranslationResources", () => {
+  it("normalizes the dynamically discovered translation catalog", async () => {
+    sdkMocks.serverClient = {
+      content: { v4: { resources: { translations: { list: vi.fn(async () => ({
+        translations: [{ id: 131, name: "Clear Quran", author_name: "Mustafa Khattab", language_name: "English" }],
+      })) } } } },
+    };
+
+    const result = await loadTranslationResources({} as never);
+
+    expect(result).toEqual({
+      error: null,
+      items: [{ id: 131, name: "Clear Quran", authorName: "Mustafa Khattab", languageName: "English" }],
     });
   });
 });

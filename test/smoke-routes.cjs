@@ -129,7 +129,8 @@ const run = async () => {
     const homeText = await homeResponse.text();
     if (
       !homeResponse.ok ||
-      (!homeText.includes("QF Starter") && !homeText.includes("Quran Foundation"))
+      !homeText.includes("Al-Furqan") ||
+      !homeText.includes("No generated scripture")
     ) {
       throw new Error("Home page failed smoke check.");
     }

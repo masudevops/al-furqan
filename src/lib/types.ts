@@ -56,9 +56,24 @@ export interface ContentPreviewItem {
   versesCount: number | null;
 }
 
+export interface TranslationResource {
+  authorName: string | null;
+  id: number;
+  languageName: string | null;
+  name: string;
+}
+
+export interface RecitationResource {
+  id: number;
+  name: string;
+  style: string | null;
+}
+
 export interface ReaderVerse {
   arabicText: string;
+  audioUrl: string | null;
   id: string;
+  translationName: string | null;
   translationText: string | null;
   verseKey: string | null;
   verseNumber: number | null;
@@ -73,6 +88,7 @@ export interface ReaderPayload {
     versesCount: number | null;
   };
   translationIds: number[];
+  recitationId: number | null;
   verses: ReaderVerse[];
 }
 

@@ -14,7 +14,9 @@ import type {
   FeedItem,
   NoteItem,
   ReaderPayload,
+  RecitationResource,
   SearchItem,
+  TranslationResource,
 } from "@/lib/types";
 
 type JsonObject = Record<string, unknown>;
@@ -105,18 +107,20 @@ const formatTimestamp = (value: unknown): string | null => {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 };
 
-const getTranslationText = (
+const getTranslation = (
   translations: unknown,
   preferredResourceId: number,
-): string | null => {
+): { name: string | null; text: string | null } => {
   const items = Array.isArray(translations) ? translations : [];
   if (items.length === 0) {
-    return null;
+    return { name: null, text: null };
   }
 
   const preferred = items.find((item) => {
     const translation = asObject(item);
-    const resourceId = asNullableNumber(translation.resourceId);
+    const resourceId = asNullableNumber(
+      translation.resourceId ?? translation.resource_id,
+    );
     const text = asNullableString(translation.text);
     return resourceId === preferredResourceId && Boolean(text);
   });
@@ -125,7 +129,12 @@ const getTranslationText = (
     const translation = asObject(preferred);
     const text = asNullableString(translation.text);
     if (text) {
-      return text;
+      return {
+        name: asNullableString(
+          translation.resourceName ?? translation.resource_name,
+        ),
+        text,
+      };
     }
   }
 
@@ -134,10 +143,16 @@ const getTranslationText = (
   );
 
   if (!firstWithText) {
-    return null;
+    return { name: null, text: null };
   }
 
-  return asNullableString(asObject(firstWithText).text);
+  const translation = asObject(firstWithText);
+  return {
+    name: asNullableString(
+      translation.resourceName ?? translation.resource_name,
+    ),
+    text: asNullableString(translation.text),
+  };
 };
 
 export const buildReaderUrlFromKey = (key: string | null | undefined): string | null => {
@@ -449,6 +464,57 @@ export const loadContentPreviewData = async (
   return payload;
 };
 
+export const loadTranslationResources = async (
+  session: StoredSession,
+): Promise<{ error: string | null; items: TranslationResource[] }> => {
+  const { serverClient } = await createClients(session);
+
+  try {
+    const response = await serverClient.content.v4.resources.translations.list({
+      language: "en",
+    });
+    const items = toArray(response, ["data", "translations"])
+      .map((resource) => ({
+        authorName: asNullableString(
+          resource.authorName ?? resource.author_name,
+        ),
+        id: Number(asNullableNumber(resource.id) ?? 0),
+        languageName: asNullableString(
+          resource.languageName ?? resource.language_name,
+        ),
+        name: asString(
+          resource.name ?? resource.translatedName ?? resource.translated_name,
+          "Unnamed translation",
+        ),
+      }))
+      .filter((resource) => resource.id > 0);
+
+    return { error: null, items };
+  } catch (error) {
+    return { error: formatError(error), items: [] };
+  }
+};
+
+export const loadRecitationResources = async (
+  session: StoredSession,
+): Promise<{ error: string | null; items: RecitationResource[] }> => {
+  const { serverClient } = await createClients(session);
+
+  try {
+    const response = await serverClient.content.v4.resources.recitations.list({ language: "en" });
+    const items = toArray(response, ["data", "recitations"])
+      .map((resource) => ({
+        id: Number(asNullableNumber(resource.id) ?? 0),
+        name: asString(resource.reciterName ?? resource.reciter_name, "Unnamed reciter"),
+        style: asNullableString(resource.style),
+      }))
+      .filter((resource) => resource.id > 0);
+    return { error: null, items };
+  } catch (error) {
+    return { error: formatError(error), items: [] };
+  }
+};
+
 export const loadSearchData = async (
   session: StoredSession,
   query: string | null,
@@ -476,7 +542,10 @@ export const loadSearchData = async (
     return normalizeSearchResults(response, normalizedQuery);
   } catch (error) {
     return {
-      error: formatError(error),
+      error:
+        error instanceof Error && error.message.includes("Token request failed")
+          ? "Quran search is not enabled for this API client yet. The application owner must ask Quran.Foundation to approve the search scope."
+          : formatError(error),
       navigationItems: [],
       query: normalizedQuery,
       verseItems: [],
@@ -487,8 +556,13 @@ export const loadSearchData = async (
 export const loadReaderData = async (
   session: StoredSession,
   chapterId: string,
+  requestedTranslationId?: number,
+  requestedRecitationId?: number,
 ): Promise<ReaderPayload> => {
   const config = getConfig();
+  const translationIds = requestedTranslationId
+    ? [requestedTranslationId]
+    : config.translationIds;
   const { serverClient } = await createClients(session);
 
   const chapterResponse = await serverClient.content.v4.chapters.get(chapterId);
@@ -507,23 +581,51 @@ export const loadReaderData = async (
         },
         page: index + 1,
         perPage: READER_PAGE_SIZE,
-        translations: config.translationIds,
+        translations: translationIds,
         words: false,
       }),
     ),
   );
+  const audioByVerse = new Map<string, string>();
+  if (requestedRecitationId) {
+    const audioPageResponses = await Promise.all(
+      Array.from({ length: totalVersePages }, (_value, index) =>
+        serverClient.content.v4.audio.verseRecitation.byChapter(
+          chapterId,
+          String(requestedRecitationId),
+          { page: index + 1, perPage: READER_PAGE_SIZE },
+        ),
+      ),
+    );
+    for (const audio of audioPageResponses.flatMap((response) => toArray(response, ["data", "audioFiles", "audio_files"]))) {
+      const key = asNullableString(audio.verseKey ?? audio.verse_key);
+      const url = asNullableString(audio.audioUrl ?? audio.audio_url ?? audio.url);
+      if (key && url) audioByVerse.set(key, url);
+    }
+  }
 
   const verses = versePageResponses
     .flatMap((response) => toArray(response, ["data", "verses"]))
-    .map((verse) => ({
-      arabicText: asString(verse.textUthmani),
-      id: asString(
-        verse.id ?? verse.verseKey ?? `${chapterId}-${asString(verse.verseNumber, "verse")}`,
-      ),
-      translationText: getTranslationText(verse.translations, config.translationIds[0]),
-      verseKey: asNullableString(verse.verseKey),
-      verseNumber: asNullableNumber(verse.verseNumber),
-    }));
+    .map((verse) => {
+      const translation = getTranslation(
+        verse.translations,
+        translationIds[0],
+      );
+
+      return {
+        arabicText: asString(verse.textUthmani),
+        audioUrl: audioByVerse.get(asString(verse.verseKey)) ?? null,
+        id: asString(
+          verse.id ??
+            verse.verseKey ??
+            `${chapterId}-${asString(verse.verseNumber, "verse")}`,
+        ),
+        translationName: translation.name,
+        translationText: translation.text,
+        verseKey: asNullableString(verse.verseKey),
+        verseNumber: asNullableNumber(verse.verseNumber),
+      };
+    });
 
   return {
     chapter: {
@@ -533,7 +635,8 @@ export const loadReaderData = async (
       translatedName: asNullableString(asObject(chapter.translatedName).name),
       versesCount,
     },
-    translationIds: config.translationIds,
+    translationIds,
+    recitationId: requestedRecitationId ?? null,
     verses,
   };
 };

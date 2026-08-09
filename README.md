@@ -1,6 +1,6 @@
 # Al-Furqan · الفرقان
 
-Al-Furqan is a free, ad-free, privacy-respecting Quran and Islamic worship companion. The current greenfield milestone provides a polished public Quran path built on the official Quran.Foundation Next.js starter: Home → all 114 Surahs → authoritative Arabic and translation → local last-read resume.
+Al-Furqan is a free, ad-free, privacy-respecting Quran and Islamic worship companion. The current greenfield milestone provides a polished public Quran path built on the official Quran.Foundation Next.js starter: Home → all 114 Surahs → authoritative Arabic, dynamically selectable translations, and continuous Ayah recitation → local last-read resume.
 
 Religious content is never generated or substituted. Quran content is fetched from Quran.Foundation through a server-only SDK boundary and protected from automatic browser translation.
 
@@ -58,7 +58,7 @@ A complete Hadith source has not been selected. Quran.Foundation documents Ayah-
 
 ## Known limitations
 
-- Real Quran API rendering needs owner-provided Quran.Foundation credentials.
-- Dynamic translation/font resource selectors, Search UI, Tafsir, audio, localization/Arabic UI, accounts, and PWA are subsequent phases.
+- Search UI is implemented, but Quran.Foundation rejected the Search app-token exchange in both production and pre-live during verification. Search-scope approval for the exact client is **OWNER CONFIRMATION REQUIRED**.
+- Dynamic Quran font resources, Tafsir, audio, localization/Arabic UI, accounts, and PWA are subsequent phases.
 - Exact Mushaf/page rendering is not claimed.
 - The official starter currently resolves to dependencies with known audit findings; these require compatibility-aware remediation rather than blind forced upgrades.

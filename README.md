@@ -1,118 +1,64 @@
-# 📖 Al-Furqan
+# Al-Furqan · الفرقان
 
-**Al-Furqan** is a premium, comprehensive Islamic portal providing an all-in-one experience for Quranic study, Hadith research, Prayer Times, and scholarly literature. Built with modern technology and a focus on premium visual excellence.
+Al-Furqan is a free, ad-free, privacy-respecting Quran and Islamic worship companion. The current greenfield milestone provides a polished public Quran path built on the official Quran.Foundation Next.js starter: Home → all 114 Surahs → authoritative Arabic, dynamically selectable translations, and continuous Ayah recitation → local last-read resume.
 
----
+Religious content is never generated or substituted. Quran content is fetched from Quran.Foundation through a server-only SDK boundary and protected from automatic browser translation.
 
-## ✨ Key Features
+## Stack and architecture
 
-- **🕋 Al-Quran**: Read and listen to the Holy Quran with multiple translations, reciters, and Mushaf (Madani) views.
-- **📚 Hadith Collections**: Search and explore authentic Hadith from major collections including Bukhari, Muslim, and more.
-- **📝 Tafseer**: High-quality scholarship with explanations from Ibn Kathir, Al-Muyassar, and other renowned sources.
-- **🕌 Prayer Times**: Dynamic, location-based prayer timings with automatic detection and manual search.
-- **📖 Islamic Books**: A curated digital library from IslamHouse for downloading and reading quality Islamic literature.
-- **🛡️ Hisnul Muslim**: Comprehensive collection of daily Azkar and Duas.
-- **🔖 Personalizations**: Bookmark Ayahs, Hadiths, and Books for later study.
+- Next.js App Router, React, TypeScript, npm
+- `@quranjs/api/server` for confidential Content, Search, OAuth, and User API work
+- `@quranjs/api/public` only for browser-safe OAuth initiation
+- server-owned sessions with opaque HttpOnly cookies; optional Redis for shared production storage
+- SWR for same-origin browser data loading
+- locally persisted theme, reader text sizes, and last-read position
 
----
+See [architecture](docs/ARCHITECTURE.md), [Quran.Foundation capability matrix](docs/QURAN-FOUNDATION.md), and [source registry](docs/DATA-SOURCES.md).
 
-## 🛠️ Project Architecture
+## Setup
 
-The application follows a modular architecture that separates UI, state, and data fetching:
+Use a supported Node LTS release and npm.
 
-```mermaid
-graph TD
-    User([User]) <--> UI[React UI Components]
-    UI <--> Context[Context API - State Management]
-    UI --> Services[Service Layer - src/services]
-    Context --> Cache[(Local Storage - Bookmarks)]
-    
-    subgraph "External APIs"
-    Services --> QuranAPI[Al-Quran Cloud]
-    Services --> HadithAPI[HadithAPI.com]
-    Services --> TafseerAPI[spa5k/Tafsir CDN]
-    Services --> PrayerAPI[Aladhan.com]
-    Services --> GeocodeAPI[BigDataCloud]
-    Services --> BooksAPI[IslamHouse]
-    end
-    
-    UI -- "Audio Control" --> AudioContext[Audio Context]
-    AudioContext --> Storage[(Asset URLs)]
-```
-
-### Core Stack
-- **Frontend**: [React 19](https://react.dev/) using [Vite](https://vite.dev/) for lightning-fast development and building.
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/) for a responsive, modern glassmorphic UI.
-- **Animations**: [Framer Motion](https://www.framer.com/motion/) for smooth transitions and micro-interactions.
-- **Icons**: [Lucide React](https://lucide.dev/) and [React Icons](https://react-icons.github.io/react-icons/) for a sharp, consistent visual language.
-- **Routing**: [React Router 7](https://reactrouter.com/) for seamless navigation.
-
-### Repository Structure
-```text
-src/
-├── components/   # Reusable UI elements (Buttons, Cards, Modals)
-├── context/      # Global state management (Audio, Bookmarks)
-├── pages/        # Main screen components (Home, Quran, Hadith, etc.)
-├── services/     # Centralized API logic and data fetching
-└── data/         # Local static data and fallback JSON files
-```
-
----
-
-## 🌐 API Integrations
-
-The application centralizes diverse data sources to provide real-time information:
-
-| Feature | Provider | Endpoint | Purpose |
-|---------|----------|----------|---------|
-| **Quran** | Al-Quran Cloud | `api.alquran.cloud` | Text, Translations, Reciter Lists |
-| **Hadith** | HadithAPI | `hadithapi.com` | Comprehensive Hadith Collections |
-| **Tafseer** | spa5k (CDN) | `jsdelivr.net/gh/spa5k/tafsir_api` | High-quality scholarship text |
-| **Prayer Times** | Aladhan | `api.aladhan.com` | Precise location-based timings |
-| **Books** | IslamHouse | `islamhouse.com` | E-Books and Scholarly Downloads |
-| **Geocoding** | BigDataCloud | `api.bigdatacloud.net` | Human-readable city names |
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-- [Node.js](https://nodejs.org/) (v18 or higher)
-- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
-
-### Installation
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-### Development
-Start the local development server:
 ```bash
+npm install
+cp .env.example .env.local
 npm run dev
 ```
 
-### Production Build
-Generate optimized files for deployment:
-```bash
-npm run build
+Required environment values:
+
+```text
+APP_BASE_URL=http://localhost:3000
+CLIENT_ID=
+CLIENT_SECRET=
+SESSION_SECRET=
+SCOPES=openid offline_access user note collection bookmark goal preference reading_session
 ```
 
----
+Generate a high-entropy `SESSION_SECRET`. Never use `NEXT_PUBLIC_*` for secrets and never commit `.env.local`. Optional `REDIS_URL` enables shared sessions. OAuth scopes must exactly match those approved for the application; all feature-scope approvals are currently **OWNER CONFIRMATION REQUIRED**.
 
-## 📝 Maintenance Guide
+## Commands
 
-### Adding New Islamic Modules
-1. **Service**: Create a new file in `src/services/` to handle data fetching from the external API.
-2. **Page**: Create a new component in `src/pages/` to display the features.
-3. **Route**: Add the new page to the `Routes` component in `src/App.tsx`.
-4. **Header**: update `src/components/Header.tsx` to include the new section in navigation.
+```bash
+npm run dev
+npm run lint
+npm run typecheck
+npm test
+npm run build
+npm run smoke:config
+npm run smoke:routes
+npm run sdk:status
+```
 
-### Updating API Endpoints
-If an external API changes, you only need to update the `BASE_URL` or relevant function in the corresponding file inside `src/services/`.
+## Data, licensing, and offline limits
 
----
+Quran, translations, Tafsir, recitations, and Quran metadata come from Quran.Foundation. Current Developer Terms prohibit storing QF Content longer than one week without express permission, so this build intentionally does not contain permanent offline Quran downloads. See [offline strategy](docs/OFFLINE-STRATEGY.md).
 
-## 📄 License
-This project is open-source and available under the MIT License.
+A complete Hadith source has not been selected. Quran.Foundation documents Ayah-linked Hadith references, but the required complete corpus/license has not yet been verified; no Hadith feature is presented as complete. See [Hadith research](docs/HADITH-SOURCE.md).
+
+## Known limitations
+
+- Search UI is implemented, but Quran.Foundation rejected the Search app-token exchange in both production and pre-live during verification. Search-scope approval for the exact client is **OWNER CONFIRMATION REQUIRED**.
+- Dynamic Quran font resources, Tafsir, audio, localization/Arabic UI, accounts, and PWA are subsequent phases.
+- Exact Mushaf/page rendering is not claimed.
+- The official starter currently resolves to dependencies with known audit findings; these require compatibility-aware remediation rather than blind forced upgrades.

@@ -89,6 +89,14 @@ const toArray = (value: unknown, keys: string[] = []): JsonObject[] => {
 
 const formatError = (error: unknown): string => String((error as Error)?.message ?? error);
 
+const withReaderStage = async <T>(stage: string, operation: () => Promise<T>): Promise<T> => {
+  try {
+    return await operation();
+  } catch (error) {
+    throw new Error(`Reader ${stage} failed: ${formatError(error)}`, { cause: error });
+  }
+};
+
 const containsArabic = (value: string | null): boolean =>
   Boolean(value && /[\u0600-\u06ff]/.test(value));
 
@@ -565,7 +573,21 @@ export const loadReaderData = async (
     : config.translationIds;
   const { serverClient } = await createClients(session);
 
-  const chapterResponse = await serverClient.content.v4.chapters.get(chapterId);
+  let chapterResponse: unknown;
+  try {
+    chapterResponse = await serverClient.content.v4.chapters.get(chapterId);
+  } catch (_error) {
+    const chapters = await withReaderStage("chapter catalog fallback", () =>
+      serverClient.content.v4.chapters.list(),
+    );
+    const chapterFromCatalog = toArray(chapters, ["data", "chapters"]).find(
+      (item) => asNullableNumber(item.id) === Number(chapterId),
+    );
+    if (!chapterFromCatalog) {
+      throw new Error(`Reader chapter metadata failed: chapter ${chapterId} was not found.`);
+    }
+    chapterResponse = chapterFromCatalog;
+  }
   const chapterPayload = asObject(chapterResponse);
   const chapter = asObject(chapterPayload.chapter ?? chapterPayload);
   const versesCount = asNullableNumber(chapter.versesCount);
@@ -575,7 +597,7 @@ export const loadReaderData = async (
   );
   const versePageResponses = await Promise.all(
     Array.from({ length: totalVersePages }, (_value, index) =>
-      serverClient.content.v4.verses.byChapter(chapterId, {
+      withReaderStage(`verse page ${index + 1}`, () => serverClient.content.v4.verses.byChapter(chapterId, {
         fields: {
           textUthmani: true,
         },
@@ -583,18 +605,18 @@ export const loadReaderData = async (
         perPage: READER_PAGE_SIZE,
         translations: translationIds,
         words: false,
-      }),
+      })),
     ),
   );
   const audioByVerse = new Map<string, string>();
   if (requestedRecitationId) {
     const audioPageResponses = await Promise.all(
       Array.from({ length: totalVersePages }, (_value, index) =>
-        serverClient.content.v4.audio.verseRecitation.byChapter(
+        withReaderStage(`audio page ${index + 1}`, () => serverClient.content.v4.audio.verseRecitation.byChapter(
           chapterId,
           String(requestedRecitationId),
           { page: index + 1, perPage: READER_PAGE_SIZE },
-        ),
+        )),
       ),
     );
     for (const audio of audioPageResponses.flatMap((response) => toArray(response, ["data", "audioFiles", "audio_files"]))) {

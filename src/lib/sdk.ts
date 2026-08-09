@@ -1,5 +1,9 @@
 import "server-only";
 
+import { SearchMode } from "@quranjs/api";
+import { createPublicClient } from "@quranjs/api/public";
+import { createServerClient } from "@quranjs/api/server";
+
 import { getConfig } from "@/lib/env";
 import type { StoredSession } from "@/lib/session/store";
 
@@ -113,11 +117,6 @@ interface RuntimeSplitSdk {
   createServerClient: (options: UnknownRecord) => ServerClient;
 }
 
-const dynamicImport = new Function(
-  "modulePath",
-  "return import(modulePath)",
-) as (modulePath: string) => Promise<Record<string, unknown>>;
-
 let cachedSdk: RuntimeSplitSdk | null = null;
 
 const loadRuntimeSplitSdk = async (): Promise<RuntimeSplitSdk> => {
@@ -125,35 +124,16 @@ const loadRuntimeSplitSdk = async (): Promise<RuntimeSplitSdk> => {
     return cachedSdk;
   }
 
-  try {
-    const publicModule = await dynamicImport("@quranjs/api/public");
-    const serverModule = await dynamicImport("@quranjs/api/server");
-    const createPublicClient = publicModule.createPublicClient;
-    const createServerClient = serverModule.createServerClient;
-
-    if (typeof createPublicClient !== "function") {
-      throw new Error("createPublicClient is not available.");
-    }
-
-    if (typeof createServerClient !== "function") {
-      throw new Error("createServerClient is not available.");
-    }
-
-    cachedSdk = {
-      createPublicClient: createPublicClient as (
+  cachedSdk = {
+      createPublicClient: createPublicClient as unknown as (
         options: UnknownRecord,
       ) => PublicClient,
-      createServerClient: createServerClient as (
+      createServerClient: createServerClient as unknown as (
         options: UnknownRecord,
       ) => ServerClient,
-    };
+  };
 
-    return cachedSdk;
-  } catch (_error) {
-    throw new Error(
-      "The installed @quranjs/api package does not expose @quranjs/api/public and @quranjs/api/server yet. Install a local SDK build with `npm run sdk:local -- /path/to/api-js/packages/api`, or install a published runtime-split release.",
-    );
-  }
+  return cachedSdk;
 };
 
 const createLiveSafeFetch = (fetchImpl: typeof fetch) => async (url: string, options?: RequestInit) => {
@@ -232,16 +212,5 @@ export const createClients = async (session: StoredSession) => {
 };
 
 export const getSearchModeQuick = async (): Promise<string> => {
-  try {
-    const runtimeModule = await dynamicImport("@quranjs/api");
-    const searchMode = runtimeModule.SearchMode as
-      | { Quick?: unknown }
-      | undefined;
-
-    return typeof searchMode?.Quick === "string"
-      ? searchMode.Quick
-      : "quick";
-  } catch (_error) {
-    return "quick";
-  }
+  return typeof SearchMode?.Quick === "string" ? SearchMode.Quick : "quick";
 };

@@ -39,6 +39,12 @@ export async function GET(
     );
     return withSessionJson(sessionContext, payload);
   } catch (error) {
+    console.error("Reader API request failed", {
+      chapterId,
+      message: error instanceof Error ? error.message : "Unknown reader error",
+      recitationId,
+      translationId,
+    });
     return withSessionJson(sessionContext, {
       message: "Quran content is unavailable right now. No substitute content has been used.",
       ok: false,

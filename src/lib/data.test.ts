@@ -186,6 +186,23 @@ describe("loadReaderData", () => {
     });
   });
 
+  it("falls back to the chapter catalog when the chapter detail endpoint fails", async () => {
+    sdkMocks.serverClient = {
+      content: { v4: {
+        chapters: {
+          get: vi.fn(async () => { throw new Error("Chapter detail unavailable"); }),
+          list: vi.fn(async () => [{ id: 1, nameArabic: "الفاتحة", nameSimple: "Al-Fatihah", versesCount: 1 }]),
+        },
+        verses: { byChapter: vi.fn(async () => [{ id: 1, textUthmani: "Verse 1", translations: [{ resourceId: 85, text: "Translation 1" }], verseKey: "1:1", verseNumber: 1 }]) },
+      } },
+    };
+
+    const data = await loadReaderData({} as never, "1", 85);
+
+    expect(data.chapter).toMatchObject({ id: 1, nameSimple: "Al-Fatihah" });
+    expect(data.verses[0].translationText).toBe("Translation 1");
+  });
+
   it("maps authoritative verse audio for the selected recitation", async () => {
     sdkMocks.serverClient = {
       content: { v4: {

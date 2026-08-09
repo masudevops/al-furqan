@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
-import { jsDelivrHadithAdapter } from "@/lib/hadith";
+import { HADITH_ENABLED } from "@/lib/feature-flags";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  try { return NextResponse.json({ error: null, items: await jsDelivrHadithAdapter.collections() }); }
-  catch { return NextResponse.json({ error: "Hadith collections are unavailable right now.", items: [] }, { status: 502 }); }
+  if (!HADITH_ENABLED) {
+    return NextResponse.json({ error: "Hadith is disabled pending verified Sunnah.com integration.", items: [] }, { status: 503 });
+  }
+  return NextResponse.json({ error: "Sunnah.com integration is not configured.", items: [] }, { status: 501 });
 }

@@ -15,3 +15,4 @@
 @media(prefers-reduced-motion:reduce){.app *{scroll-behavior:auto!important;animation:none!important}}
 @media(max-width:760px){.recitationPicker{width:100%}.recitationPicker select{flex:1;max-width:none}.audioPlayer{bottom:82px;grid-template-columns:1fr auto}.audioPlayer span{grid-column:1/-1}.mobileNav{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:760px){.translationPicker{min-width:0}.translationPicker select{max-width:100%;min-width:0;width:100%}}
+@media(max-width:760px){.mobileNav{grid-template-columns:repeat(2,1fr)}}

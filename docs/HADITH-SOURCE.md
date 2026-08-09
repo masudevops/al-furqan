@@ -1,11 +1,11 @@
 # Hadith source and integrity policy
 
-Status: Phase 2 ships a constrained browser backed by `fawazahmed0/hadith-api` through jsDelivr.
+Status: disabled. No Hadith provider is published while Sunnah.com API access is pending.
 
-The repository supplies multiple collections and language editions, collection/book structure, references, and grade metadata. Its repository license is the Unlicense. The app never infers a grade from a collection name and never asks an LLM to complete or translate a record. A record is published only when the selected provider response contains Arabic, English translation, collection, book, Hadith/reference numbers, and at least one grade with the named grader. This deliberately excludes some well-known collection records whose current provider payload has an empty `grades` array.
+The initial `fawazahmed0/hadith-api` adapter remains in the working tree as non-public scaffolding, but its feature flag is off, navigation is hidden, and all same-origin Hadith API routes return HTTP 503 without contacting that provider. It must not be enabled in production.
 
-`HadithSourceAdapter` isolates catalog, list/search, and detail operations. A Sunnah.com adapter can replace or dual-source the current provider without changing the UI. Requesting a Sunnah.com key through the owner's GitHub/account is still an owner action and was not performed by this build.
+`HadithSourceAdapter` isolates catalog, list/search, and detail operations so a verified Sunnah.com adapter can replace the disabled provider without rewriting the UI. The owner has initiated the Sunnah.com API-key request. When access is granted, the server adapter, response mappings, attribution, caching limits, and production behavior must be verified before the feature flag changes.
 
-Bookmarks are local and keyed by provider collection plus Hadith number. They are not sent through Quran.Foundation's Quran bookmark schema because that would misrepresent external content. Cross-device synchronization needs an explicitly supported external-content schema and approved user scope before it can be enabled.
+Hadith bookmarks are also disabled. They must not be sent through Quran.Foundation's Quran bookmark schema because that would misrepresent external content. Cross-device synchronization needs an explicitly supported external-content schema before it can be enabled.
 
-Source: <https://github.com/fawazahmed0/hadith-api>. CDN: jsDelivr pinned to repository release tag `1`, with a one-day Next.js revalidation interval.
+Planned source documentation: <https://sunnah.stoplight.io/docs/api/skano6c6wbtl5-sunnah-com-api>.

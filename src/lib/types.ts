@@ -160,11 +160,13 @@ export type QuranScript = "uthmani" | "uthmani_simple" | "imlaei" | "indopak" | 
 export interface QuranReflectItem {
   authorName: string | null;
   bodyHtml: string;
+  excerpt: string;
   id: number;
   languageName: string | null;
   postType: string;
   publishedAt: string | null;
   references: Array<{ chapterId: number; from: number; to: number }>;
+  title: string | null;
   verified: boolean;
 }
 

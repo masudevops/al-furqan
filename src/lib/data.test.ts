@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   buildReaderUrlFromKey,
+  deriveReflectPresentation,
   ensureUserScope,
   getGrantedScopes,
   loadMushafPage,
@@ -90,6 +91,21 @@ describe("provider HTML sanitization", () => {
     expect(html).not.toContain("style=");
     expect(html).not.toContain("&lt;span");
     expect(html).not.toContain("&amp;nbsp;");
+  });
+});
+
+describe("Quran Reflect presentation", () => {
+  it("uses the provider's first line as a title and creates a bounded verbatim excerpt", () => {
+    const body = `A Provider Title\n\n${"Provider reflection words ".repeat(30)}`;
+    const result = deriveReflectPresentation(body);
+    expect(result.title).toBe("A Provider Title");
+    expect(result.excerpt).toMatch(/^Provider reflection words/);
+    expect(result.excerpt.endsWith("…")).toBe(true);
+    expect(result.excerpt.length).toBeLessThanOrEqual(241);
+  });
+
+  it("does not duplicate a short provider title when there is no body", () => {
+    expect(deriveReflectPresentation("A Short Reflection")).toEqual({ excerpt: "", title: "A Short Reflection" });
   });
 });
 

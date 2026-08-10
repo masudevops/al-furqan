@@ -219,6 +219,32 @@ export const sanitizeTranslationMarkup = (value: string) => {
   return { footnotes, html };
 };
 
+export const deriveReflectPresentation = (value: unknown): { excerpt: string; title: string | null } => {
+  const cleaned = decodeSourceEntities(asString(value))
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<br\s*\/?\s*>/gi, "\n")
+    .replace(/<\/(p|h1|h2|h3|li|blockquote)>/gi, "\n")
+    .replace(/<[^>]+>/g, " ");
+  const lines = cleaned.split(/\r?\n/).map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean);
+  const firstLine = lines[0] ?? "";
+  const title = firstLine.length >= 8 && firstLine.length <= 140 ? firstLine : null;
+  const excerptSource = (title ? lines.slice(1) : lines).join(" ");
+  if (excerptSource.length <= 240) return { excerpt: excerptSource, title };
+  const shortened = excerptSource.slice(0, 241);
+  const lastSpace = shortened.lastIndexOf(" ");
+  return { excerpt: `${shortened.slice(0, lastSpace > 180 ? lastSpace : 240).trimEnd()}…`, title };
+};
+
+const reflectBodyWithoutRepeatedTitle = (value: unknown, title: string | null) => {
+  const source = asString(value);
+  if (!title) return source;
+  const leadingWhitespace = source.match(/^\s*/)?.[0].length ?? 0;
+  return source.slice(leadingWhitespace).startsWith(title)
+    ? source.slice(leadingWhitespace + title.length).replace(/^\s+/, "")
+    : source;
+};
+
 const plainSourceText = (value: unknown): string | null => {
   const text = asNullableString(value);
   if (!text) return null;
@@ -864,7 +890,8 @@ export const loadQuranReflectFeed = async (session: StoredSession, page = 1): Pr
     const items = toArray(root.data).filter((post) => post.removed !== true && post.hidden !== true).map((post) => {
       const author = asObject(post.author);
       const displayName = asNullableString(author.displayName ?? author.display_name) ?? ([asNullableString(author.firstName ?? author.first_name), asNullableString(author.lastName ?? author.last_name)].filter(Boolean).join(" ") || asNullableString(author.username));
-      return { authorName: displayName || null, bodyHtml: sanitizeSourceHtml(post.body), id: Number(asNullableNumber(post.id) ?? 0), languageName: asNullableString(post.languageName ?? post.language_name), postType: asString(post.postTypeName ?? post.post_type_name, Number(post.postTypeId ?? post.post_type_id) === 2 ? "lesson" : "reflection"), publishedAt: asNullableString(post.publishedAt ?? post.published_at), references: toArray(post.references).map((reference) => ({ chapterId: Number(asNullableNumber(reference.chapterId ?? reference.chapter_id) ?? 0), from: Number(asNullableNumber(reference.from) ?? 0), to: Number(asNullableNumber(reference.to ?? reference.from) ?? 0) })).filter((reference) => reference.chapterId > 0 && reference.from > 0), verified: post.verified === true };
+      const presentation = deriveReflectPresentation(post.body);
+      return { authorName: displayName || null, bodyHtml: sanitizeSourceHtml(reflectBodyWithoutRepeatedTitle(post.body, presentation.title)), excerpt: presentation.excerpt, id: Number(asNullableNumber(post.id) ?? 0), languageName: asNullableString(post.languageName ?? post.language_name), postType: asString(post.postTypeName ?? post.post_type_name, Number(post.postTypeId ?? post.post_type_id) === 2 ? "lesson" : "reflection"), publishedAt: asNullableString(post.publishedAt ?? post.published_at), references: toArray(post.references).map((reference) => ({ chapterId: Number(asNullableNumber(reference.chapterId ?? reference.chapter_id) ?? 0), from: Number(asNullableNumber(reference.from) ?? 0), to: Number(asNullableNumber(reference.to ?? reference.from) ?? 0) })).filter((reference) => reference.chapterId > 0 && reference.from > 0), title: presentation.title, verified: post.verified === true };
     }).filter((post) => post.id > 0 && post.bodyHtml);
     return { error: null, items, page: Number(asNullableNumber(root.currentPage ?? root.current_page) ?? page), pages: Number(asNullableNumber(root.pages) ?? 1) };
   } catch (error) {
@@ -880,14 +907,17 @@ export const loadQuranReflectPost = async (session: StoredSession, id: number) =
   if (post.removed === true || post.hidden === true || !asNullableString(post.body)) throw new Error("Reflection is unavailable.");
   const author = asObject(post.author);
   const authorName = asNullableString(author.displayName ?? author.display_name) ?? ([asNullableString(author.firstName ?? author.first_name), asNullableString(author.lastName ?? author.last_name)].filter(Boolean).join(" ") || asNullableString(author.username));
+  const presentation = deriveReflectPresentation(post.body);
   return {
     authorName: authorName || null,
-    bodyHtml: sanitizeSourceHtml(post.body),
+    bodyHtml: sanitizeSourceHtml(reflectBodyWithoutRepeatedTitle(post.body, presentation.title)),
+    excerpt: presentation.excerpt,
     id: Number(asNullableNumber(post.id) ?? id),
     languageName: asNullableString(post.languageName ?? post.language_name),
     postType: asString(post.postTypeName ?? post.post_type_name, Number(post.postTypeId ?? post.post_type_id) === 2 ? "lesson" : "reflection"),
     publishedAt: asNullableString(post.publishedAt ?? post.published_at),
     references: toArray(post.references).map((reference) => ({ chapterId: Number(asNullableNumber(reference.chapterId ?? reference.chapter_id) ?? 0), from: Number(asNullableNumber(reference.from) ?? 0), to: Number(asNullableNumber(reference.to ?? reference.from) ?? 0) })).filter((reference) => reference.chapterId > 0 && reference.from > 0),
+    title: presentation.title,
     verified: post.verified === true,
   };
 };

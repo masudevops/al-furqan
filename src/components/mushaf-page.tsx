@@ -54,7 +54,10 @@ export default function MushafPage({ pageNumber }: { pageNumber: number }) {
           : "Official QCF V2 page boundaries, line positions, glyphs, and per-page font from Quran.Foundation."}</p>
       </div>
       <div className={styles.mushafControls}>
-        <label className={styles.tajweedToggle}>Tajweed colors <input type="checkbox" checked={tajweedEnabled} onChange={(event) => changeTajweed(event.target.checked)} /></label>
+        <div className={styles.readingModes} role="group" aria-label="Mushaf reading style">
+          <button type="button" aria-pressed={!tajweedEnabled} onClick={() => changeTajweed(false)}>Mushaf font</button>
+          <button type="button" aria-pressed={tajweedEnabled} onClick={() => changeTajweed(true)}>Tajweed</button>
+        </div>
         <form className={styles.tools} action="/quran/mushaf/1" onSubmit={(event) => {
           event.preventDefault();
           const value = new FormData(event.currentTarget).get("page");
@@ -70,12 +73,11 @@ export default function MushafPage({ pageNumber }: { pageNumber: number }) {
     {data && tajweedEnabled ? <>
       <TajweedLegend />
       <section className={`${styles.mushaf} ${styles.tajweedPage}`} lang="ar" dir="rtl" translate="no">
-        {data.tajweedVerses.map((verse) => <article className={styles.tajweedVerse} key={verse.verseKey}>
-          <a href={`/quran/${verse.verseKey.replace(":", "/")}`} aria-label={`Open Ayah ${verse.verseKey}`}>{verse.verseKey}</a>
-          {verse.tajweedHtml
-            ? <p className={styles.tajweed} dangerouslySetInnerHTML={{ __html: verse.tajweedHtml }} />
-            : <p>{verse.arabicText}</p>}
-        </article>)}
+        <div className={`${styles.tajweedFlow} ${styles.tajweed}`}>
+          {data.tajweedVerses.map((verse) => verse.tajweedHtml
+            ? <Link className={styles.tajweedAyah} href={`/quran/${verse.verseKey.replace(":", "/")}`} aria-label={`Open Ayah ${verse.verseKey}`} dangerouslySetInnerHTML={{ __html: verse.tajweedHtml }} key={verse.verseKey} />
+            : <Link className={styles.tajweedAyah} href={`/quran/${verse.verseKey.replace(":", "/")}`} aria-label={`Open Ayah ${verse.verseKey}`} key={verse.verseKey}>{verse.arabicText}</Link>)}
+        </div>
         <footer className={styles.mushafFooter}><span>{data.verseKeys[0]}</span><span>{pageNumber} / 604</span><span>{data.verseKeys.at(-1)}</span></footer>
       </section>
       <p className={styles.renderingNote}>Tajweed mode preserves the official page boundary and verse text. Switch it off for the exact QCF glyph and physical line layout.</p>

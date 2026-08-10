@@ -132,9 +132,30 @@ const run = async () => {
       !homeText.includes("Al-Furqan") ||
       !homeText.includes("A quiet place") ||
       !homeText.includes("Salah Times") ||
-      !homeText.includes("Masjid Finder")
+      !homeText.includes("Masjid Finder") ||
+      !homeText.includes('property="og:title"') ||
+      !homeText.includes('property="og:image"') ||
+      !homeText.includes('name="twitter:card"') ||
+      !homeText.includes('/icon.svg')
     ) {
       throw new Error("Home page failed smoke check.");
+    }
+
+    const socialAssets = [
+      ["/opengraph-image", "image/png"],
+      ["/icon.svg", "image/svg+xml"],
+      ["/apple-icon", "image/png"],
+      ["/manifest.webmanifest", "application/manifest+json"],
+    ];
+
+    for (const [route, expectedContentType] of socialAssets) {
+      const response = await fetch(`${BASE_URL}${route}`);
+      const contentType = response.headers.get("content-type") || "";
+      if (!response.ok || !contentType.includes(expectedContentType)) {
+        throw new Error(
+          `${route} failed social asset smoke check (${response.status} ${contentType}).`,
+        );
+      }
     }
 
     const publicPages = [

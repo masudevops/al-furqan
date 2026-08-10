@@ -69,7 +69,12 @@ interface ServerContentClient {
     };
     chapters: {
       get: (chapterId: string) => Promise<unknown>;
+      getInfo: (chapterId: string, params?: UnknownRecord) => Promise<unknown>;
       list: () => Promise<unknown>;
+    };
+    hadithReferences: {
+      byAyah: (key: string, params?: UnknownRecord) => Promise<unknown>;
+      hadithsByAyah: (key: string, params?: UnknownRecord) => Promise<unknown>;
     };
     resources: {
       chapterReciters: {
@@ -78,10 +83,19 @@ interface ServerContentClient {
       recitations: {
         list: (params?: UnknownRecord) => Promise<unknown>;
       };
+      languages: {
+        list: (params?: UnknownRecord) => Promise<unknown>;
+      };
+      recitationStyles: {
+        list: (params?: UnknownRecord) => Promise<unknown>;
+      };
       translations: {
         list: (params?: UnknownRecord) => Promise<unknown>;
       };
       tafsirs: {
+        list: (params?: UnknownRecord) => Promise<unknown>;
+      };
+      verseMedia: {
         list: (params?: UnknownRecord) => Promise<unknown>;
       };
     };
@@ -91,6 +105,7 @@ interface ServerContentClient {
       byJuz: (juzNumber: number, params: UnknownRecord) => Promise<unknown>;
       byHizb: (hizbNumber: number, params: UnknownRecord) => Promise<unknown>;
       byRub: (rubNumber: number, params: UnknownRecord) => Promise<unknown>;
+      byRange: (from: string, to: string, params: UnknownRecord) => Promise<unknown>;
     };
   };
 }
@@ -122,6 +137,11 @@ export interface ServerClient {
   content: ServerContentClient;
   oauth2: OAuth2ServerClient;
   quranReflect: ServerQuranReflectClient;
+  raw: {
+    content: {
+      v4: Record<string, (request?: UnknownRecord) => Promise<unknown>>;
+    };
+  };
   search: ServerSearchClient;
 }
 

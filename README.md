@@ -74,8 +74,9 @@ Quran.Foundation Developer Terms prohibit storing QF Content longer than one wee
 
 ## Known limitations
 
-- Search UI is implemented, but Quran.Foundation rejected the Search app-token exchange in both production and pre-live during verification. Search-scope approval for the exact client is **OWNER CONFIRMATION REQUIRED**.
-- Quran and Dua bookmarks, location, and prayer preferences work locally without sign-in. Cross-device User API sync remains **OWNER CONFIRMATION REQUIRED**.
+- Search UI is implemented. The owner reported Quran.Foundation production and pre-live Search approval on 2026-08-09; deployment verification remains required for the configured client.
+- Quran Reflect Lessons & Reflections is implemented as a read-only, curated QDC feed with individual detail routes. Production access requires the separate Quran Reflect `post.read` application scope; approval is **OWNER CONFIRMATION REQUIRED** until verified against the deployed client.
+- Quran and Dua bookmarks, location, and prayer preferences work locally without sign-in. The owner reported User API scope approval on 2026-08-09; the signed-in cross-device sync UI and deployed end-to-end validation are still pending.
 - A Sunnah.com API key has not been requested from the owner's account. The adapter boundary is ready, but the account/key request is an owner action.
 - Dua coverage reflects the source's current five-category English catalog; the intended broader Hisnul Muslim taxonomy is not yet available from this provider.
 - Localization/Arabic UI, accounts, and PWA are subsequent phases. Reading goals and extended progress features are intentionally held for the next priority round.

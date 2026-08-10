@@ -113,6 +113,7 @@ export interface ReaderVerse {
   id: string;
   translationName: string | null;
   translationText: string | null;
+  translationFootnotes: Array<{ id: number; label: string }>;
   tajweedHtml: string | null;
   tafsirName: string | null;
   tafsirText: string | null;
@@ -125,6 +126,20 @@ export interface ReaderVerse {
   rubNumber: number | null;
 }
 
+export interface FootnotePayload {
+  id: number;
+  languageName: string | null;
+  textHtml: string;
+}
+
+export interface ChapterInfoPayload {
+  chapterId: number;
+  languageName: string | null;
+  shortText: string | null;
+  source: string | null;
+  textHtml: string;
+}
+
 export interface ReaderPayload {
   chapter: {
     id: number;
@@ -135,8 +150,62 @@ export interface ReaderPayload {
   };
   translationIds: number[];
   recitationId: number | null;
+  script: QuranScript;
   tafsirId: number | null;
   verses: ReaderVerse[];
+}
+
+export type QuranScript = "uthmani" | "uthmani_simple" | "imlaei" | "indopak" | "indopak_nastaleeq";
+
+export interface QuranReflectItem {
+  authorName: string | null;
+  bodyHtml: string;
+  id: number;
+  languageName: string | null;
+  postType: string;
+  publishedAt: string | null;
+  references: Array<{ chapterId: number; from: number; to: number }>;
+  verified: boolean;
+}
+
+export interface QuranReflectPayload {
+  error: string | null;
+  items: QuranReflectItem[];
+  page: number;
+  pages: number;
+}
+
+export interface AyahHadithItem {
+  bookNumber: string | null;
+  chapterTitle: string | null;
+  collection: string;
+  grades: Array<{ grade: string; gradedBy: string | null }>;
+  hadithNumber: string;
+  textHtml: string;
+}
+
+export interface AyahAnswerItem {
+  answerHtml: string;
+  answeredBy: string | null;
+  questionHtml: string;
+  questionId: number;
+  summary: string | null;
+  theme: string | null;
+  type: string | null;
+}
+
+export interface AyahStudyPayload {
+  answers: AyahAnswerItem[];
+  hadiths: AyahHadithItem[];
+  verseKey: string;
+}
+
+export interface QuranResourcePayload {
+  languages: Array<{ direction: string | null; id: number | null; isoCode: string | null; name: string; nativeName: string | null }>;
+  recitationStyles: Array<{ key: string; label: string }>;
+  tafsirs: Array<{ authorName: string | null; id: number; languageName: string | null; name: string }>;
+  translations: Array<{ authorName: string | null; id: number; languageName: string | null; name: string }>;
+  verseMedia: Array<{ authorName: string | null; id: number; languageName: string | null; name: string }>;
 }
 
 export interface MushafWord extends ReaderWord { verseKey: string }

@@ -9,13 +9,19 @@ import type {
   BookmarkItem,
   BootstrapPayload,
   ChapterAudioPayload,
+  ChapterInfoPayload,
   ChapterReciterResource,
   CollectionItem,
   ContentPreviewItem,
   FactItem,
   FeedItem,
+  FootnotePayload,
+  AyahStudyPayload,
   NoteItem,
   ReaderPayload,
+  QuranScript,
+  QuranReflectPayload,
+  QuranResourcePayload,
   RecitationResource,
   SearchItem,
   TafsirResource,
@@ -133,10 +139,10 @@ const formatTimestamp = (value: unknown): string | null => {
 const getTranslation = (
   translations: unknown,
   preferredResourceId: number,
-): { name: string | null; text: string | null } => {
+): { footnotes: Array<{ id: number; label: string }>; name: string | null; text: string | null } => {
   const items = Array.isArray(translations) ? translations : [];
   if (items.length === 0) {
-    return { name: null, text: null };
+    return { footnotes: [], name: null, text: null };
   }
 
   const preferred = items.find((item) => {
@@ -152,11 +158,13 @@ const getTranslation = (
     const translation = asObject(preferred);
     const text = asNullableString(translation.text);
     if (text) {
+      const normalized = sanitizeTranslationMarkup(text);
       return {
+        footnotes: normalized.footnotes,
         name: asNullableString(
           translation.resourceName ?? translation.resource_name,
         ),
-        text,
+        text: normalized.html,
       };
     }
   }
@@ -166,16 +174,40 @@ const getTranslation = (
   );
 
   if (!firstWithText) {
-    return { name: null, text: null };
+    return { footnotes: [], name: null, text: null };
   }
 
   const translation = asObject(firstWithText);
+  const normalized = sanitizeTranslationMarkup(asNullableString(translation.text) ?? "");
   return {
+    footnotes: normalized.footnotes,
     name: asNullableString(
       translation.resourceName ?? translation.resource_name,
     ),
-    text: asNullableString(translation.text),
+    text: normalized.html,
   };
+};
+
+const escapeHtml = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+export const sanitizeSourceHtml = (value: unknown): string => {
+  const source = asString(value).replace(/<!--[\s\S]*?-->/g, "").replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "");
+  return escapeHtml(source)
+    .replace(/&lt;(p|h2|h3|strong|em|b|i|ul|ol|li|blockquote)(?:\s[^]*?)?&gt;/gi, "<$1>")
+    .replace(/&lt;\/(p|h2|h3|strong|em|b|i|ul|ol|li|blockquote)&gt;/gi, "</$1>")
+    .replace(/&lt;br\s*\/?&gt;/gi, "<br>");
+};
+
+export const sanitizeTranslationMarkup = (value: string) => {
+  const footnotes: Array<{ id: number; label: string }> = [];
+  const withoutFootnotes = value.replace(/<sup\s+foot_note=["']?(\d+)["']?\s*>([^<]*)<\/sup>/gi, (_match, id: string, label: string) => {
+    const parsed = Number(id);
+    if (parsed > 0 && !footnotes.some((item) => item.id === parsed)) footnotes.push({ id: parsed, label: label.trim() || String(footnotes.length + 1) });
+    return `__AF_FOOTNOTE_${parsed}_${escapeHtml(label.trim() || String(footnotes.length))}__`;
+  });
+  let html = sanitizeSourceHtml(withoutFootnotes);
+  html = html.replace(/__AF_FOOTNOTE_(\d+)_([^_]+)__/g, "<sup>$2</sup>");
+  return { footnotes, html };
 };
 
 const plainSourceText = (value: unknown): string | null => {
@@ -656,13 +688,15 @@ export const loadReaderData = async (
   chapterId: string,
   requestedTranslationId?: number,
   requestedRecitationId?: number,
-  options: { includeWords?: boolean; tafsirId?: number } = {},
+  options: { includeWords?: boolean; tafsirId?: number; script?: QuranScript } = {},
 ): Promise<ReaderPayload> => {
   const config = getConfig();
   const translationIds = requestedTranslationId
     ? [requestedTranslationId]
     : config.translationIds;
   const { serverClient } = await createClients(session);
+  const script = options.script ?? "uthmani";
+  const scriptField = { uthmani: "textUthmani", uthmani_simple: "textUthmaniSimple", imlaei: "textImlaei", indopak: "textIndopak", indopak_nastaleeq: "textIndopakNastaleeq" }[script];
 
   let chapterResponse: unknown;
   try {
@@ -690,7 +724,7 @@ export const loadReaderData = async (
     Array.from({ length: totalVersePages }, (_value, index) =>
       withReaderStage(`verse page ${index + 1}`, () => serverClient.content.v4.verses.byChapter(chapterId, {
         fields: {
-          textUthmani: true,
+          [scriptField]: true,
           textUthmaniTajweed: true,
         },
         page: index + 1,
@@ -730,7 +764,7 @@ export const loadReaderData = async (
       const tafsir = toArray(verse.tafsirs)[0];
 
       return {
-        arabicText: asString(verse.textUthmani),
+        arabicText: asString(verse[scriptField] ?? verse.textUthmani),
         audioUrl: audioByVerse.get(asString(verse.verseKey)) ?? null,
         id: asString(
           verse.id ??
@@ -739,6 +773,7 @@ export const loadReaderData = async (
         ),
         translationName: translation.name,
         translationText: translation.text,
+        translationFootnotes: translation.footnotes,
         tajweedHtml: sanitizeTajweedMarkup(verse.textUthmaniTajweed ?? verse.text_uthmani_tajweed),
         tafsirName: asNullableString(tafsir?.resourceName ?? tafsir?.resource_name ?? tafsir?.name),
         tafsirText: plainSourceText(tafsir?.text),
@@ -762,6 +797,7 @@ export const loadReaderData = async (
     },
     translationIds,
     recitationId: requestedRecitationId ?? null,
+    script,
     tafsirId: options.tafsirId ?? null,
     verses,
   };
@@ -780,14 +816,136 @@ export const loadMushafPage = async (session:StoredSession,pageNumber:number) =>
   return{error:null,pageNumber,verseKeys,tajweedVerses,lines:Array.from(lines.entries()).sort(([a],[b])=>a-b).map(([lineNumber,words])=>({lineNumber,words}))};
 };
 
-export const loadStructureVerses = async (session:StoredSession,kind:"juz"|"hizb"|"rub",id:number) => {
+export const loadStructureVerses = async (session:StoredSession,kind:"juz"|"hizb"|"rub"|"ruku"|"manzil",id:number) => {
   const {serverClient}=await createClients(session); const all:JsonObject[]=[];
-  const fetchPage=(page:number)=>{const query={page,perPage:50,fields:{textUthmani:true,textUthmaniTajweed:true}};return kind==="juz"?serverClient.content.v4.verses.byJuz(id,query):kind==="hizb"?serverClient.content.v4.verses.byHizb(id,query):serverClient.content.v4.verses.byRub(id,query)};
+  const fetchPage=(page:number)=>{const query={page,perPage:50,fields:{textUthmani:true,textUthmaniTajweed:true}};if(kind==="juz")return serverClient.content.v4.verses.byJuz(id,query);if(kind==="hizb")return serverClient.content.v4.verses.byHizb(id,query);if(kind==="rub")return serverClient.content.v4.verses.byRub(id,query);const operation=kind==="ruku"?"versesByRukuNumber":"versesByManzilNumber";const path=kind==="ruku"?{ruku_number:id}:{manzil_number:id};return serverClient.raw.content.v4[operation]({path,query})};
   const first=await fetchPage(1);const firstChunk=toArray(first,["data","verses"]);all.push(...firstChunk);
   const responseObject=asObject(first);const dataObject=asObject(responseObject.data);const pagination=asObject(responseObject.pagination??dataObject.pagination);const reportedPages=asNullableNumber(pagination.totalPages??pagination.total_pages);
   if(reportedPages&&reportedPages>1){const remaining=await Promise.all(Array.from({length:Math.min(20,reportedPages)-1},(_,index)=>fetchPage(index+2)));all.push(...remaining.flatMap(response=>toArray(response,["data","verses"]))) }
   else if(firstChunk.length===50){for(let page=2;page<=20;page++){const chunk=toArray(await fetchPage(page),["data","verses"]);all.push(...chunk);if(chunk.length<50)break}}
   return all.map(verse=>({arabicText:asString(verse.textUthmani??verse.text_uthmani),tajweedHtml:sanitizeTajweedMarkup(verse.textUthmaniTajweed??verse.text_uthmani_tajweed),verseKey:asString(verse.verseKey??verse.verse_key),pageNumber:asNullableNumber(verse.pageNumber??verse.page_number)}));
+};
+
+export const loadVerseRange = async (session: StoredSession, from: string, to: string) => {
+  const { serverClient } = await createClients(session);
+  const response = await serverClient.content.v4.verses.byRange(from, to, { fields: { textUthmani: true, textUthmaniTajweed: true }, perPage: 50 });
+  return toArray(response, ["data", "verses"]).map((verse) => ({ arabicText: asString(verse.textUthmani ?? verse.text_uthmani), tajweedHtml: sanitizeTajweedMarkup(verse.textUthmaniTajweed ?? verse.text_uthmani_tajweed), verseKey: asString(verse.verseKey ?? verse.verse_key), pageNumber: asNullableNumber(verse.pageNumber ?? verse.page_number) }));
+};
+
+export const loadFootnote = async (session: StoredSession, id: number): Promise<FootnotePayload> => {
+  const { serverClient } = await createClients(session);
+  const response = await serverClient.raw.content.v4.getFootNote({ path: { id } });
+  const footnote = asObject(asObject(response).footNote ?? asObject(response).foot_note ?? response);
+  return { id: Number(asNullableNumber(footnote.id) ?? id), languageName: asNullableString(footnote.languageName ?? footnote.language_name), textHtml: sanitizeSourceHtml(footnote.text) };
+};
+
+export const loadChapterInfo = async (session: StoredSession, chapterId: number): Promise<ChapterInfoPayload> => {
+  const { serverClient } = await createClients(session);
+  const response = await serverClient.content.v4.chapters.getInfo(String(chapterId), { language: "en", includeResources: true });
+  const info = asObject(asObject(response).chapterInfo ?? asObject(response).chapter_info ?? response);
+  if (!asNullableString(info.text)) throw new Error("Chapter information is unavailable.");
+  return { chapterId, languageName: asNullableString(info.languageName ?? info.language_name), shortText: asNullableString(info.shortText ?? info.short_text), source: asNullableString(info.source), textHtml: sanitizeSourceHtml(info.text) };
+};
+
+export const loadQuranReflectFeed = async (session: StoredSession, page = 1): Promise<QuranReflectPayload> => {
+  const { serverClient } = await createClients(session);
+  try {
+    const response = await serverClient.raw.content.v4.postsControllerFeed({ query: { tab: "qdc", languages: [2], limit: 20, page } });
+    const root = asObject(response);
+    const items = toArray(root.data).filter((post) => post.removed !== true && post.hidden !== true).map((post) => {
+      const author = asObject(post.author);
+      const displayName = asNullableString(author.displayName ?? author.display_name) ?? ([asNullableString(author.firstName ?? author.first_name), asNullableString(author.lastName ?? author.last_name)].filter(Boolean).join(" ") || asNullableString(author.username));
+      return { authorName: displayName || null, bodyHtml: sanitizeSourceHtml(post.body), id: Number(asNullableNumber(post.id) ?? 0), languageName: asNullableString(post.languageName ?? post.language_name), postType: asString(post.postTypeName ?? post.post_type_name, Number(post.postTypeId ?? post.post_type_id) === 2 ? "lesson" : "reflection"), publishedAt: asNullableString(post.publishedAt ?? post.published_at), references: toArray(post.references).map((reference) => ({ chapterId: Number(asNullableNumber(reference.chapterId ?? reference.chapter_id) ?? 0), from: Number(asNullableNumber(reference.from) ?? 0), to: Number(asNullableNumber(reference.to ?? reference.from) ?? 0) })).filter((reference) => reference.chapterId > 0 && reference.from > 0), verified: post.verified === true };
+    }).filter((post) => post.id > 0 && post.bodyHtml);
+    return { error: null, items, page: Number(asNullableNumber(root.currentPage ?? root.current_page) ?? page), pages: Number(asNullableNumber(root.pages) ?? 1) };
+  } catch (error) {
+    return { error: formatError(error), items: [], page, pages: 0 };
+  }
+};
+
+export const loadQuranReflectPost = async (session: StoredSession, id: number) => {
+  const { serverClient } = await createClients(session);
+  const response = await serverClient.raw.content.v4.postsControllerFindOne({ path: { id } });
+  const root = asObject(response);
+  const post = asObject(root.data ?? root.post ?? root);
+  if (post.removed === true || post.hidden === true || !asNullableString(post.body)) throw new Error("Reflection is unavailable.");
+  const author = asObject(post.author);
+  const authorName = asNullableString(author.displayName ?? author.display_name) ?? ([asNullableString(author.firstName ?? author.first_name), asNullableString(author.lastName ?? author.last_name)].filter(Boolean).join(" ") || asNullableString(author.username));
+  return {
+    authorName: authorName || null,
+    bodyHtml: sanitizeSourceHtml(post.body),
+    id: Number(asNullableNumber(post.id) ?? id),
+    languageName: asNullableString(post.languageName ?? post.language_name),
+    postType: asString(post.postTypeName ?? post.post_type_name, Number(post.postTypeId ?? post.post_type_id) === 2 ? "lesson" : "reflection"),
+    publishedAt: asNullableString(post.publishedAt ?? post.published_at),
+    references: toArray(post.references).map((reference) => ({ chapterId: Number(asNullableNumber(reference.chapterId ?? reference.chapter_id) ?? 0), from: Number(asNullableNumber(reference.from) ?? 0), to: Number(asNullableNumber(reference.to ?? reference.from) ?? 0) })).filter((reference) => reference.chapterId > 0 && reference.from > 0),
+    verified: post.verified === true,
+  };
+};
+
+export const loadAyahStudy = async (session: StoredSession, verseKey: string): Promise<AyahStudyPayload> => {
+  const { serverClient } = await createClients(session);
+  const [hadithResponse, answerResponse] = await Promise.all([
+    serverClient.content.v4.hadithReferences.hadithsByAyah(verseKey, { language: "en", limit: 20, page: 1 }),
+    serverClient.raw.content.v4.listAyahAnswers({ path: { ayah_key: verseKey }, query: { language: "en", page: 1, pageSize: 20 } }),
+  ]);
+
+  const hadiths = toArray(hadithResponse, ["hadiths", "data"]).map((hadith) => {
+    const contents = toArray(hadith.hadith);
+    const preferred = contents.find((content) => asString(content.lang).toLowerCase().startsWith("en")) ?? contents[0] ?? {};
+    return {
+      bookNumber: asNullableString(hadith.bookNumber ?? hadith.book_number),
+      chapterTitle: asNullableString(preferred.chapterTitle ?? preferred.chapter_title),
+      collection: asString(hadith.collection, "Hadith collection"),
+      grades: toArray(preferred.grades).map((grade) => ({ grade: asString(grade.grade), gradedBy: asNullableString(grade.gradedBy ?? grade.graded_by) })).filter((grade) => grade.grade),
+      hadithNumber: asString(hadith.hadithNumber ?? hadith.hadith_number),
+      textHtml: sanitizeSourceHtml(preferred.body),
+    };
+  }).filter((hadith) => hadith.hadithNumber && hadith.textHtml);
+
+  const answerRoot = asObject(answerResponse);
+  const answers = toArray(answerRoot.questions ?? asObject(answerRoot.data).questions).flatMap((question) => {
+    const publishedQuestion = !question.status || asString(question.status).toLowerCase() === "published" || asString(question.status).toLowerCase() === "answered";
+    if (!publishedQuestion) return [];
+    const answer = toArray(question.answers).find((candidate) => !candidate.status || asString(candidate.status).toLowerCase() === "published");
+    if (!answer) return [];
+    return [{
+      answerHtml: sanitizeSourceHtml(answer.body),
+      answeredBy: asNullableString(answer.answeredBy ?? answer.answered_by),
+      questionHtml: sanitizeSourceHtml(question.body),
+      questionId: Number(asNullableNumber(question.id) ?? 0),
+      summary: asNullableString(question.summary),
+      theme: asNullableString(question.theme),
+      type: asNullableString(question.type),
+    }];
+  }).filter((item) => item.questionId > 0 && item.answerHtml);
+
+  return { answers, hadiths, verseKey };
+};
+
+export const loadQuranResources = async (session: StoredSession): Promise<QuranResourcePayload> => {
+  const { serverClient } = await createClients(session);
+  const [languagesResponse, stylesResponse, translationsResponse, tafsirsResponse, mediaResponse] = await Promise.all([
+    serverClient.content.v4.resources.languages.list(),
+    serverClient.content.v4.resources.recitationStyles.list(),
+    serverClient.content.v4.resources.translations.list(),
+    serverClient.content.v4.resources.tafsirs.list(),
+    serverClient.content.v4.resources.verseMedia.list(),
+  ]);
+  const normalizeResources = (value: unknown, keys: string[]) => toArray(value, keys).map((item) => ({
+    authorName: asNullableString(item.authorName ?? item.author_name),
+    id: Number(asNullableNumber(item.id) ?? 0),
+    languageName: asNullableString(item.languageName ?? item.language_name),
+    name: asString(item.name),
+  })).filter((item) => item.id > 0 && item.name);
+  const styles = asObject(asObject(stylesResponse).recitationStyles ?? asObject(stylesResponse).recitation_styles ?? stylesResponse);
+  return {
+    languages: toArray(languagesResponse, ["languages", "data"]).map((item) => ({ direction: asNullableString(item.direction), id: asNullableNumber(item.id), isoCode: asNullableString(item.isoCode ?? item.iso_code), name: asString(item.name), nativeName: asNullableString(item.nativeName ?? item.native_name) })).filter((item) => item.name),
+    recitationStyles: Object.entries(styles).filter(([, label]) => typeof label === "string").map(([key, label]) => ({ key, label: String(label) })),
+    tafsirs: normalizeResources(tafsirsResponse, ["tafsirs", "data"]),
+    translations: normalizeResources(translationsResponse, ["translations", "data"]),
+    verseMedia: normalizeResources(mediaResponse, ["verseMedia", "verse_media", "data"]),
+  };
 };
 
 const createSignedOutBootstrap = ({

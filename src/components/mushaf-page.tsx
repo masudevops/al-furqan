@@ -49,9 +49,6 @@ export default function MushafPage({ pageNumber }: { pageNumber: number }) {
       <div>
         <Link href="/quran">← Quran</Link>
         <h1>Mushaf Page {pageNumber}</h1>
-        <p>{tajweedEnabled
-          ? "Official Quran.Foundation Tajweed text for the verses on this Mushaf page."
-          : "Official QCF V2 page boundaries, line positions, glyphs, and per-page font from Quran.Foundation."}</p>
       </div>
       <div className={styles.mushafControls}>
         <div className={styles.readingModes} role="group" aria-label="Mushaf reading style">

@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { loadReaderData, parsePositiveInteger } from "@/lib/data";
 import { getSession } from "@/lib/session";
 import { withSessionJson } from "@/lib/route-helpers";
+import type { QuranScript } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,9 @@ export async function GET(
   );
   const tafsirId=parsePositiveInteger(request.nextUrl.searchParams.get("tafsir"));
   const includeWords=request.nextUrl.searchParams.get("words")==="1";
+  const requestedScript=request.nextUrl.searchParams.get("script")??"uthmani";
+  const scripts:QuranScript[]=["uthmani","uthmani_simple","imlaei","indopak","indopak_nastaleeq"];
+  const script=scripts.includes(requestedScript as QuranScript)?requestedScript as QuranScript:"uthmani";
 
   if (!chapterId || chapterId > 114) {
     return withSessionJson(
@@ -38,7 +42,7 @@ export async function GET(
       String(chapterId),
       translationId ?? undefined,
       recitationId ?? undefined,
-      {includeWords,tafsirId:tafsirId??undefined},
+      {includeWords,script,tafsirId:tafsirId??undefined},
     );
     return withSessionJson(sessionContext, payload);
   } catch (error) {

@@ -130,7 +130,7 @@ const run = async () => {
     if (
       !homeResponse.ok ||
       !homeText.includes("Al-Furqan") ||
-      !homeText.includes("No generated scripture") ||
+      !homeText.includes("A quiet place") ||
       !homeText.includes("Salah Times") ||
       !homeText.includes("Masjid Finder")
     ) {
@@ -141,6 +141,9 @@ const run = async () => {
       ["/quran", "Choose a Surah"],
       ["/quran/mushaf/1", "Mushaf Page"],
       ["/quran/structure", "Browse by structure"],
+      ["/quran/range?from=1%3A1&to=1%3A7", "Ayahs"],
+      ["/quran/resources", "Quran resources"],
+      ["/reflect", "Lessons &amp; Reflections"],
       ["/sunnah", "Sunnah is temporarily unavailable"],
       ["/salah-times", "Salah Times"],
       ["/dua", "Hisnul Muslim"],

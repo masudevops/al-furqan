@@ -15,6 +15,8 @@ import {
   parsePositiveInteger,
   parseVerseKey,
   sanitizeTajweedMarkup,
+  sanitizeSourceHtml,
+  sanitizeTranslationMarkup,
 } from "@/lib/data";
 
 const sdkMocks = vi.hoisted(() => ({
@@ -64,6 +66,22 @@ describe("sanitizeTajweedMarkup", () => {
     expect(output).not.toContain("<script>");
     expect(output).not.toContain('<tajweed class="unknown">');
     expect(output).toContain("&lt;script&gt;");
+  });
+});
+
+describe("provider HTML sanitization", () => {
+  it("extracts Quran.Foundation translation footnotes and preserves their visible markers", () => {
+    expect(sanitizeTranslationMarkup('Guidance.<sup foot_note=227145>1</sup>')).toEqual({
+      footnotes: [{ id: 227145, label: "1" }],
+      html: "Guidance.<sup>1</sup>",
+    });
+  });
+
+  it("allows basic source formatting but removes executable markup", () => {
+    const html = sanitizeSourceHtml('<h2>About</h2><script>alert(1)</script><p onclick="bad()">Text</p>');
+    expect(html).toContain("<h2>About</h2>");
+    expect(html).not.toContain("<script>");
+    expect(html).not.toContain("onclick");
   });
 });
 

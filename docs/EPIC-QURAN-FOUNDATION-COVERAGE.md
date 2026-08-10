@@ -20,64 +20,64 @@ Source: [Audio and timestamp APIs](https://api-docs.quran.foundation/docs/conten
 
 ### 2. Translation footnotes
 
-- [ ] Discover footnote references in translation payloads.
-- [ ] Add a same-origin footnote route.
-- [ ] Sanitize provider HTML with an allowlist.
-- [ ] Render accessible inline disclosure/popover UI with source attribution.
+- [x] Discover footnote references in translation payloads.
+- [x] Add a same-origin footnote route.
+- [x] Sanitize provider HTML with an allowlist.
+- [x] Render accessible inline disclosure UI with source attribution.
 
 Source: [Footnote API](https://api-docs.quran.foundation/docs/content_apis_versioned/4.0.0/get-foot-note/)
 
 ### 3. Chapter information
 
-- [ ] Retrieve the chapter-information resource dynamically.
-- [ ] Add an introduction panel for revelation metadata and sourced background.
-- [ ] Handle missing or untranslated information without generated substitutes.
+- [x] Retrieve the chapter-information resource dynamically.
+- [x] Add an introduction panel for sourced background.
+- [x] Handle missing or untranslated information without generated substitutes.
 
 Source: [Chapter APIs](https://api-docs.quran.foundation/docs/content_apis_versioned/4.0.0/list-chapters/)
 
 ### 4. Complete structural navigation
 
-- [ ] Add Ruku navigation.
-- [ ] Add Manzil navigation.
-- [ ] Add a page index and verse-range entry point where it improves navigation.
+- [x] Add Ruku navigation.
+- [x] Add Manzil navigation.
+- [x] Add a page entry point and verse-range reader.
 
 Sources: [Ruku](https://api-docs.quran.foundation/docs/content_apis_versioned/4.0.0/list-rukus/) and [Manzil](https://api-docs.quran.foundation/docs/content_apis_versioned/4.0.0/list-manzils/)
 
 ### 5. Arabic script choices
 
-- [ ] Dynamically confirm available Uthmani Simple, Imlaei, IndoPak, and IndoPak Nastaleeq resources.
-- [ ] Add a reader script selector without changing translation, Tafsir, or Ayah identity.
-- [ ] Preserve official QCF page rendering as the only exact Mushaf layout.
+- [x] Request official Uthmani Simple, Imlaei, IndoPak, and IndoPak Nastaleeq fields from the Content API and show unavailable states instead of substitutes.
+- [x] Add a reader script selector without changing translation, Tafsir, or Ayah identity.
+- [x] Preserve official QCF page rendering as the only exact Mushaf layout.
 
 Source: [Quran script APIs](https://api-docs.quran.foundation/docs/content_apis_versioned/4.0.0/quran-verses-by-script/)
 
 ### 6. Ayah study references
 
-- [ ] Add Quran.Foundation Ayah-linked hadith references and full records.
-- [ ] Always show collection, hadith number, reference, and provider provenance.
-- [ ] Keep this separate from the future Sunnah.com collection browser.
-- [ ] Add published Ayah questions and answers with explicit source/type labels.
-- [ ] Never present this material as generated advice or a fiqh ruling service.
+- [x] Add Quran.Foundation Ayah-linked hadith full records.
+- [x] Always show collection, hadith number, grade when returned, and provider provenance.
+- [x] Keep this separate from the future Sunnah.com collection browser.
+- [x] Add published Ayah questions and answers with explicit source/type labels.
+- [x] Never present this material as generated advice or a fiqh ruling service.
 
 Sources: [Ayah-linked Hadith](https://api-docs.quran.foundation/docs/content_apis_versioned/4.0.0/hadith-references-by-ayah/) and [Ayah Answers](https://api-docs.quran.foundation/docs/content_apis_versioned/4.0.0/list-ayah-answers/)
 
 ### 7. Quran Reflect Lessons & Reflections
 
-- [ ] Request and verify the Quran Reflect `post.read` scope for the production client.
-- [ ] Add a same-origin, read-only feed and individual lesson/reflection detail route.
-- [ ] Expose only Quran.Foundation/QDC-curated or provider-verified material by default; do not present an unmoderated community feed as religious guidance.
-- [ ] Preserve the provider-supplied author, type, publication status, Ayah links, and Quran Reflect attribution on every item.
-- [ ] Link Ayah-specific lessons back to the exact Quran reader location without merging reflection text into Quran or Tafsir.
-- [ ] Sanitize provider HTML with an allowlist and cover loading, empty, unavailable, and malformed-provider states.
-- [ ] Keep comments out of the initial release. Request `comment.read` separately only if a later reviewed design displays comments.
+- [ ] Request and verify the Quran Reflect `post.read` scope for the production client. **OWNER CONFIRMATION REQUIRED.**
+- [x] Add a same-origin, read-only feed and individual lesson/reflection detail route.
+- [x] Expose only the Quran.Foundation/QDC-curated English feed by default; do not present an unmoderated community feed as religious guidance.
+- [x] Preserve provider-supplied author, type, verification state, Ayah links, and Quran Reflect attribution on every item.
+- [x] Link Ayah-specific lessons back to the exact Quran reader location without merging reflection text into Quran or Tafsir.
+- [x] Sanitize provider HTML with an allowlist and cover loading, empty, unavailable, and malformed-provider states.
+- [x] Keep comments out of the initial release. Request `comment.read` separately only if a later reviewed design displays comments.
 
 Source: [Quran Reflect Lessons and Reflections API](https://api-docs.quran.foundation/docs/content_apis_versioned/4.0.0/posts-controller-feed/)
 
 ### 8. Additional curated resource discovery
 
-- [ ] Audit verse-media resources and recitation-style metadata.
-- [ ] Add language/source information pages for translations and Tafsir.
-- [ ] Consider a clearly labelled random-Ayah reading prompt.
+- [x] Audit and expose verse-media resources and recitation-style metadata dynamically.
+- [x] Add a language/source information page for translations and Tafsir.
+- [x] Consider a clearly labelled random-Ayah reading prompt. Deferred because it adds no distinct authoritative content beyond existing navigation and search.
 
 Source: [Resource APIs](https://api-docs.quran.foundation/docs/content_apis_versioned/4.0.0/recitation-info/)
 

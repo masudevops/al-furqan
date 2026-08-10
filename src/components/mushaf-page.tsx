@@ -1,8 +1,91 @@
 "use client";
+
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import useSWR from "swr";
 import type { MushafPayload } from "@/lib/types";
 import styles from "./quran-tools.module.css";
-const fetcher=(url:string)=>fetch(url).then(async r=>{const d=await r.json();if(!r.ok)throw new Error(d.error);return d});
-export default function MushafPage({pageNumber}:{pageNumber:number}){const{data,error,isLoading}=useSWR<MushafPayload>(`/api/quran/mushaf/${pageNumber}`,fetcher);useEffect(()=>{if(!data)return;const font=new FontFace(`qcf-p${pageNumber}`,`url(https://verses.quran.foundation/fonts/quran/hafs/v2/woff2/p${pageNumber}.woff2)`,{display:"block"});font.load().then(loaded=>document.fonts.add(loaded)).catch(()=>undefined)},[data,pageNumber]);return <main className={styles.page}><header className={styles.header}><div><Link href="/quran">← Quran</Link><h1>Mushaf Page {pageNumber}</h1><p>Official QCF V2 page boundaries, line positions, glyphs, and per-page font from Quran.Foundation.</p></div><form className={styles.tools} action="/quran/mushaf/1" onSubmit={event=>{event.preventDefault();const value=new FormData(event.currentTarget).get("page");location.href=`/quran/mushaf/${value}`}}><input name="page" aria-label="Mushaf page" type="number" min="1" max="604" defaultValue={pageNumber}/><button>Go</button></form></header>{isLoading?<p>Loading official Mushaf page…</p>:null}{error?<p className={styles.error}>This Mushaf page is unavailable. No substitute Quran text has been used.</p>:null}{data?<section className={styles.mushaf} lang="ar" dir="rtl" translate="no">{data.lines.map(line=><div className={styles.line} key={line.lineNumber} data-line={line.lineNumber}>{line.words.map((word,index)=><span className={styles.word} style={{fontFamily:word.charType==="end"?"UthmanicHafs, serif":`qcf-p${pageNumber}`}} title={word.verseKey} key={`${word.verseKey}-${word.position}-${index}`}>{word.charType==="end"?word.arabicText:word.qcfCode||word.arabicText}</span>)}</div>)}<footer className={styles.mushafFooter}><span>{data.verseKeys[0]}</span><span>{pageNumber} / 604</span><span>{data.verseKeys.at(-1)}</span></footer></section>:null}<nav className={styles.tools}>{pageNumber>1?<Link href={`/quran/mushaf/${pageNumber-1}`}>← Previous page</Link>:<span/>}{pageNumber<604?<Link href={`/quran/mushaf/${pageNumber+1}`}>Next page →</Link>:null}</nav></main>}
+
+const fetcher = (url: string) => fetch(url).then(async (response) => {
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error);
+  return data;
+});
+
+function TajweedLegend() {
+  return <aside className={styles.tajweedLegend} aria-label="Tajweed color legend">
+    <strong>Tajweed colors</strong>
+    <span><i className={styles.tjMadd} />Madd</span>
+    <span><i className={styles.tjGhunnah} />Ghunnah</span>
+    <span><i className={styles.tjIkhfa} />Ikhfa</span>
+    <span><i className={styles.tjIdgham} />Idgham</span>
+    <span><i className={styles.tjQalqalah} />Qalqalah</span>
+    <span><i className={styles.tjSilent} />Silent letters</span>
+  </aside>;
+}
+
+export default function MushafPage({ pageNumber }: { pageNumber: number }) {
+  const { data, error, isLoading } = useSWR<MushafPayload>(`/api/quran/mushaf/${pageNumber}`, fetcher);
+  const [tajweedEnabled, setTajweedEnabled] = useState(false);
+
+  useEffect(() => setTajweedEnabled(localStorage.getItem("af-tajweed") === "true"), []);
+  useEffect(() => {
+    if (!data) return;
+    const font = new FontFace(
+      `qcf-p${pageNumber}`,
+      `url(https://verses.quran.foundation/fonts/quran/hafs/v2/woff2/p${pageNumber}.woff2)`,
+      { display: "block" },
+    );
+    font.load().then((loaded) => document.fonts.add(loaded)).catch(() => undefined);
+  }, [data, pageNumber]);
+
+  const changeTajweed = (enabled: boolean) => {
+    setTajweedEnabled(enabled);
+    localStorage.setItem("af-tajweed", String(enabled));
+  };
+
+  return <main className={styles.page}>
+    <header className={styles.header}>
+      <div>
+        <Link href="/quran">← Quran</Link>
+        <h1>Mushaf Page {pageNumber}</h1>
+        <p>{tajweedEnabled
+          ? "Official Quran.Foundation Tajweed text for the verses on this Mushaf page."
+          : "Official QCF V2 page boundaries, line positions, glyphs, and per-page font from Quran.Foundation."}</p>
+      </div>
+      <div className={styles.mushafControls}>
+        <label className={styles.tajweedToggle}>Tajweed colors <input type="checkbox" checked={tajweedEnabled} onChange={(event) => changeTajweed(event.target.checked)} /></label>
+        <form className={styles.tools} action="/quran/mushaf/1" onSubmit={(event) => {
+          event.preventDefault();
+          const value = new FormData(event.currentTarget).get("page");
+          location.href = `/quran/mushaf/${value}`;
+        }}>
+          <input name="page" aria-label="Mushaf page" type="number" min="1" max="604" defaultValue={pageNumber} />
+          <button>Go</button>
+        </form>
+      </div>
+    </header>
+    {isLoading ? <p>Loading official Mushaf page…</p> : null}
+    {error ? <p className={styles.error}>This Mushaf page is unavailable. No substitute Quran text has been used.</p> : null}
+    {data && tajweedEnabled ? <>
+      <TajweedLegend />
+      <section className={`${styles.mushaf} ${styles.tajweedPage}`} lang="ar" dir="rtl" translate="no">
+        {data.tajweedVerses.map((verse) => <article className={styles.tajweedVerse} key={verse.verseKey}>
+          <a href={`/quran/${verse.verseKey.replace(":", "/")}`} aria-label={`Open Ayah ${verse.verseKey}`}>{verse.verseKey}</a>
+          {verse.tajweedHtml
+            ? <p className={styles.tajweed} dangerouslySetInnerHTML={{ __html: verse.tajweedHtml }} />
+            : <p>{verse.arabicText}</p>}
+        </article>)}
+        <footer className={styles.mushafFooter}><span>{data.verseKeys[0]}</span><span>{pageNumber} / 604</span><span>{data.verseKeys.at(-1)}</span></footer>
+      </section>
+      <p className={styles.renderingNote}>Tajweed mode preserves the official page boundary and verse text. Switch it off for the exact QCF glyph and physical line layout.</p>
+    </> : null}
+    {data && !tajweedEnabled ? <section className={styles.mushaf} lang="ar" dir="rtl" translate="no">
+      {data.lines.map((line) => <div className={styles.line} key={line.lineNumber} data-line={line.lineNumber}>
+        {line.words.map((word, index) => <span className={styles.word} style={{ fontFamily: word.charType === "end" ? "UthmanicHafs, serif" : `qcf-p${pageNumber}` }} title={word.verseKey} key={`${word.verseKey}-${word.position}-${index}`}>{word.charType === "end" ? word.arabicText : word.qcfCode || word.arabicText}</span>)}
+      </div>)}
+      <footer className={styles.mushafFooter}><span>{data.verseKeys[0]}</span><span>{pageNumber} / 604</span><span>{data.verseKeys.at(-1)}</span></footer>
+    </section> : null}
+    <nav className={styles.tools}>{pageNumber > 1 ? <Link href={`/quran/mushaf/${pageNumber - 1}`}>← Previous page</Link> : <span />}{pageNumber < 604 ? <Link href={`/quran/mushaf/${pageNumber + 1}`}>Next page →</Link> : null}</nav>
+  </main>;
+}

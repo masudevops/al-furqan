@@ -120,7 +120,18 @@ export interface ReaderPayload {
 }
 
 export interface MushafWord extends ReaderWord { verseKey: string }
-export interface MushafPayload { error:null; pageNumber:number; lines:Array<{lineNumber:number;words:MushafWord[]}>; verseKeys:string[] }
+export interface MushafTajweedVerse {
+  arabicText: string;
+  tajweedHtml: string | null;
+  verseKey: string;
+}
+export interface MushafPayload {
+  error:null;
+  pageNumber:number;
+  lines:Array<{lineNumber:number;words:MushafWord[]}>;
+  tajweedVerses:MushafTajweedVerse[];
+  verseKeys:string[];
+}
 
 export interface BootstrapPayload {
   authError: string | null;

@@ -11,10 +11,10 @@ Use the remaining authoritative Quran.Foundation capabilities that add distinct 
 - [x] Play a selected Ayah range using Quran.Foundation Ayah audio.
 - [x] Repeat each Ayah 1, 3, or 5 times.
 - [x] Highlight the active Ayah and preserve correct pause/resume behavior.
-- [ ] Integrate Quran.Foundation timestamp ranges and timestamp-to-Ayah lookup.
-- [ ] Highlight the current word only when authoritative word timestamps are returned.
-- [ ] Add configurable pauses and continuous range looping.
-- [ ] Verify keyboard, reduced-motion, mobile, and screen-reader behavior.
+- [x] Integrate Quran.Foundation full-chapter timestamp ranges and timestamp-to-Ayah lookup.
+- [x] Highlight the current word only when authoritative word timestamps are returned.
+- [x] Add configurable pauses and continuous range looping.
+- [x] Verify keyboard, reduced-motion, mobile, and screen-reader behavior.
 
 Source: [Audio and timestamp APIs](https://api-docs.quran.foundation/docs/content_apis_versioned/4.0.0/audio-reciter-timestamp/)
 
@@ -61,17 +61,27 @@ Source: [Quran script APIs](https://api-docs.quran.foundation/docs/content_apis_
 
 Sources: [Ayah-linked Hadith](https://api-docs.quran.foundation/docs/content_apis_versioned/4.0.0/hadith-references-by-ayah/) and [Ayah Answers](https://api-docs.quran.foundation/docs/content_apis_versioned/4.0.0/list-ayah-answers/)
 
-### 7. Curated learning and resource discovery
+### 7. Quran Reflect Lessons & Reflections
 
-- [ ] Evaluate verified/QDC-curated Quran Reflect lessons before exposing a feed.
-- [ ] Request and verify `post.read` (and `comment.read` only if comments are displayed).
+- [ ] Request and verify the Quran Reflect `post.read` scope for the production client.
+- [ ] Add a same-origin, read-only feed and individual lesson/reflection detail route.
+- [ ] Expose only Quran.Foundation/QDC-curated or provider-verified material by default; do not present an unmoderated community feed as religious guidance.
+- [ ] Preserve the provider-supplied author, type, publication status, Ayah links, and Quran Reflect attribution on every item.
+- [ ] Link Ayah-specific lessons back to the exact Quran reader location without merging reflection text into Quran or Tafsir.
+- [ ] Sanitize provider HTML with an allowlist and cover loading, empty, unavailable, and malformed-provider states.
+- [ ] Keep comments out of the initial release. Request `comment.read` separately only if a later reviewed design displays comments.
+
+Source: [Quran Reflect Lessons and Reflections API](https://api-docs.quran.foundation/docs/content_apis_versioned/4.0.0/posts-controller-feed/)
+
+### 8. Additional curated resource discovery
+
 - [ ] Audit verse-media resources and recitation-style metadata.
 - [ ] Add language/source information pages for translations and Tafsir.
 - [ ] Consider a clearly labelled random-Ayah reading prompt.
 
-Sources: [Quran Reflect feed](https://api-docs.quran.foundation/docs/content_apis_versioned/4.0.0/posts-controller-feed/) and [Resource APIs](https://api-docs.quran.foundation/docs/content_apis_versioned/4.0.0/recitation-info/)
+Source: [Resource APIs](https://api-docs.quran.foundation/docs/content_apis_versioned/4.0.0/recitation-info/)
 
-### 8. User synchronization completion
+### 9. User synchronization completion
 
 - [ ] Complete signed-in UI for bookmark, note, collection, goal, and preference synchronization.
 - [ ] Verify production OAuth callback, consent, refresh, logout, and each approved scope end to end.

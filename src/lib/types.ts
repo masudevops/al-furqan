@@ -69,6 +69,26 @@ export interface RecitationResource {
   style: string | null;
 }
 
+export interface ChapterReciterResource {
+  id: number;
+  name: string;
+  style: string | null;
+}
+
+export interface QuranAudioTimestamp {
+  segments: Array<[number, number, number]>;
+  timestampFrom: number;
+  timestampTo: number;
+  verseKey: string;
+}
+
+export interface ChapterAudioPayload {
+  audioUrl: string;
+  chapterId: number;
+  reciterId: number;
+  timestamps: QuranAudioTimestamp[];
+}
+
 export interface TafsirResource {
   authorName: string | null;
   id: number;

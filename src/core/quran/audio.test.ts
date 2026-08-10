@@ -18,19 +18,24 @@ describe("normalizeAyahRange", () => {
 
 describe("resolveNextAudioStep", () => {
   it("replays the current Ayah until its selected count is complete", () => {
-    expect(resolveNextAudioStep({ activeRange: true, completedPlay: 1, currentVerseKey: "1:1", rangeEnd: 2, repeatCount: 3, verses }))
+    expect(resolveNextAudioStep({ activeRange: true, completedPlay: 1, currentVerseKey: "1:1", loopRange: false, rangeEnd: 2, rangeStart: 1, repeatCount: 3, verses }))
       .toEqual({ nextVerseKey: "1:1", replayCurrent: true });
   });
 
   it("advances and stops at the selected range boundary", () => {
-    expect(resolveNextAudioStep({ activeRange: true, completedPlay: 3, currentVerseKey: "1:1", rangeEnd: 2, repeatCount: 3, verses }))
+    expect(resolveNextAudioStep({ activeRange: true, completedPlay: 3, currentVerseKey: "1:1", loopRange: false, rangeEnd: 2, rangeStart: 1, repeatCount: 3, verses }))
       .toEqual({ nextVerseKey: "1:2", replayCurrent: false });
-    expect(resolveNextAudioStep({ activeRange: true, completedPlay: 3, currentVerseKey: "1:2", rangeEnd: 2, repeatCount: 3, verses }))
+    expect(resolveNextAudioStep({ activeRange: true, completedPlay: 3, currentVerseKey: "1:2", loopRange: false, rangeEnd: 2, rangeStart: 1, repeatCount: 3, verses }))
       .toEqual({ nextVerseKey: null, replayCurrent: false });
   });
 
+  it("loops back to the first sourced Ayah in the selected range", () => {
+    expect(resolveNextAudioStep({ activeRange: true, completedPlay: 1, currentVerseKey: "1:4", loopRange: true, rangeEnd: 4, rangeStart: 2, repeatCount: 1, verses }))
+      .toEqual({ nextVerseKey: "1:2", replayCurrent: false });
+  });
+
   it("skips unavailable audio during ordinary continuous playback", () => {
-    expect(resolveNextAudioStep({ activeRange: false, completedPlay: 1, currentVerseKey: "1:2", rangeEnd: 4, repeatCount: 1, verses }))
+    expect(resolveNextAudioStep({ activeRange: false, completedPlay: 1, currentVerseKey: "1:2", loopRange: false, rangeEnd: 4, rangeStart: 1, repeatCount: 1, verses }))
       .toEqual({ nextVerseKey: "1:4", replayCurrent: false });
   });
 });

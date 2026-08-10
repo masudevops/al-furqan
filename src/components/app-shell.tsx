@@ -13,6 +13,8 @@ import {
 } from "@/core/quran/audio";
 import type {
   ContentPreviewItem,
+  ChapterAudioPayload,
+  ChapterReciterResource,
   ReaderPayload,
   RecitationResource,
   SearchItem,
@@ -26,6 +28,7 @@ type Theme = "light" | "dark" | "sepia";
 type ChaptersPayload = { error: string | null; items: ContentPreviewItem[] };
 type TranslationsPayload = { error: string | null; items: TranslationResource[] };
 type RecitationsPayload = { error: string | null; items: RecitationResource[] };
+type ChapterRecitersPayload = { error: string | null; items: ChapterReciterResource[] };
 type TafsirsPayload = { error: string | null; items: TafsirResource[] };
 type LastRead = { chapterId: number; chapterName: string; verseNumber: number };
 type SearchPayload = {
@@ -85,8 +88,15 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const [rangeStart, setRangeStart] = useState(1);
   const [rangeEnd, setRangeEnd] = useState(1);
   const [activeRange, setActiveRange] = useState(false);
+  const [pauseSeconds, setPauseSeconds] = useState(0);
+  const [loopRange, setLoopRange] = useState(false);
   const [rangeError, setRangeError] = useState<string | null>(null);
+  const [selectedChapterReciter, setSelectedChapterReciter] = useState<number | null>(null);
+  const [synchronizedAudio, setSynchronizedAudio] = useState<ChapterAudioPayload | null>(null);
+  const [activeWordPosition, setActiveWordPosition] = useState<number | null>(null);
+  const [synchronizedLoading, setSynchronizedLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const playbackTimerRef = useRef<number | null>(null);
   const completedPlayRef = useRef(1);
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -102,6 +112,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
     useSWR<TranslationsPayload>(chapterId ? "/api/translations" : null, fetchJson, { revalidateOnFocus: false });
   const { data: recitations, error: recitationsError } =
     useSWR<RecitationsPayload>(chapterId ? "/api/recitations" : null, fetchJson, { revalidateOnFocus: false });
+  const { data: chapterReciters, error: chapterRecitersError } =
+    useSWR<ChapterRecitersPayload>(chapterId ? "/api/chapter-reciters" : null, fetchJson, { revalidateOnFocus: false });
   const { data: tafsirs, error: tafsirsError } =
     useSWR<TafsirsPayload>(chapterId ? "/api/tafsirs" : null, fetchJson, { revalidateOnFocus: false });
   const { data: reader, error: readerError, isLoading: readerLoading } =
@@ -140,6 +152,12 @@ export default function AppShell({ children }: { children: ReactNode }) {
   }, [recitations]);
 
   useEffect(() => {
+    if (!chapterReciters?.items.length) return;
+    const saved = Number(localStorage.getItem("af-chapter-reciter-id"));
+    setSelectedChapterReciter(chapterReciters.items.find(item => item.id === saved)?.id ?? chapterReciters.items[0].id);
+  }, [chapterReciters]);
+
+  useEffect(() => {
     if (!tafsirs?.items.length) return;
     const saved=Number(localStorage.getItem("af-tafsir-id"));
     setSelectedTafsir(tafsirs.items.find(item=>item.id===saved)?.id??tafsirs.items[0].id);
@@ -151,6 +169,10 @@ export default function AppShell({ children }: { children: ReactNode }) {
     if (playingVerseKey) audioRef.current?.play().catch(() => setPlayingVerseKey(null));
   }, [playingVerseKey]);
 
+  useEffect(() => () => {
+    if (playbackTimerRef.current !== null) window.clearTimeout(playbackTimerRef.current);
+  }, []);
+
   useEffect(() => {
     const verseCount = reader?.chapter.versesCount;
     if (!verseCount) return;
@@ -160,6 +182,17 @@ export default function AppShell({ children }: { children: ReactNode }) {
     completedPlayRef.current = 1;
     setPlaybackIteration(1);
   }, [reader?.chapter.id, reader?.chapter.versesCount]);
+
+  useEffect(() => {
+    if (playbackTimerRef.current !== null) {
+      window.clearTimeout(playbackTimerRef.current);
+      playbackTimerRef.current = null;
+    }
+    audioRef.current?.pause();
+    setPlayingVerseKey(null);
+    setSynchronizedAudio(null);
+    setActiveWordPosition(null);
+  }, [chapterId]);
 
   useEffect(() => {
     if (!reader?.chapter) return;
@@ -195,9 +228,13 @@ export default function AppShell({ children }: { children: ReactNode }) {
     localStorage.setItem("af-translation-id", String(value));
   };
   const changeRecitation = (value: number) => {
+    if (playbackTimerRef.current !== null) window.clearTimeout(playbackTimerRef.current);
+    playbackTimerRef.current = null;
     audioRef.current?.pause();
     setPlayingVerseKey(null);
     setActiveRange(false);
+    setSynchronizedAudio(null);
+    setActiveWordPosition(null);
     completedPlayRef.current = 1;
     setPlaybackIteration(1);
     setSelectedRecitation(value);
@@ -205,6 +242,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
   };
   const playVerse = (verseKey: string | null) => {
     if (!verseKey) return;
+    if (playbackTimerRef.current !== null) window.clearTimeout(playbackTimerRef.current);
+    playbackTimerRef.current = null;
     if (playingVerseKey === verseKey && audioRef.current && !audioRef.current.paused) {
       audioRef.current.pause();
       return;
@@ -214,31 +253,48 @@ export default function AppShell({ children }: { children: ReactNode }) {
       return;
     }
     setActiveRange(false);
+    setSynchronizedAudio(null);
+    setActiveWordPosition(null);
     completedPlayRef.current = 1;
     setPlaybackIteration(1);
     setPlayingVerseKey(verseKey);
   };
   const playNextVerse = () => {
     if (!reader) return;
+    if (synchronizedAudio) {
+      stopAudio();
+      return;
+    }
     const next = resolveNextAudioStep({
       activeRange,
       completedPlay: completedPlayRef.current,
       currentVerseKey: playingVerseKey,
+      loopRange,
       rangeEnd,
+      rangeStart,
       repeatCount,
       verses: reader.verses,
     });
-    if (next.replayCurrent && audioRef.current) {
-      completedPlayRef.current += 1;
-      setPlaybackIteration(completedPlayRef.current);
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(() => setPlayingVerseKey(null));
-      return;
+    const advance = () => {
+      playbackTimerRef.current = null;
+      if (next.replayCurrent && audioRef.current) {
+        completedPlayRef.current += 1;
+        setPlaybackIteration(completedPlayRef.current);
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => setPlayingVerseKey(null));
+        return;
+      }
+      completedPlayRef.current = 1;
+      setPlaybackIteration(1);
+      if (!next.nextVerseKey) setActiveRange(false);
+      setPlayingVerseKey(next.nextVerseKey);
+    };
+    if (pauseSeconds > 0 && (next.replayCurrent || next.nextVerseKey)) {
+      setAudioPaused(true);
+      playbackTimerRef.current = window.setTimeout(advance, pauseSeconds * 1000);
+    } else {
+      advance();
     }
-    completedPlayRef.current = 1;
-    setPlaybackIteration(1);
-    if (!next.nextVerseKey) setActiveRange(false);
-    setPlayingVerseKey(next.nextVerseKey);
   };
   const startAyahRange = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -246,9 +302,13 @@ export default function AppShell({ children }: { children: ReactNode }) {
     const formData = new FormData(event.currentTarget);
     const range = normalizeAyahRange(Number(formData.get("rangeStart")), Number(formData.get("rangeEnd")), reader.chapter.versesCount ?? reader.verses.length);
     const first = reader.verses.find(verse => verse.audioUrl && verse.verseNumber && verse.verseNumber >= range.start && verse.verseNumber <= range.end);
+    if (playbackTimerRef.current !== null) window.clearTimeout(playbackTimerRef.current);
+    playbackTimerRef.current = null;
     setRangeStart(range.start);
     setRangeEnd(range.end);
     setRangeError(first ? null : "No sourced recitation audio is available in this Ayah range.");
+    setSynchronizedAudio(null);
+    setActiveWordPosition(null);
     completedPlayRef.current = 1;
     setPlaybackIteration(1);
     setActiveRange(Boolean(first));
@@ -260,12 +320,46 @@ export default function AppShell({ children }: { children: ReactNode }) {
     }
   };
   const stopAudio = () => {
+    if (playbackTimerRef.current !== null) window.clearTimeout(playbackTimerRef.current);
+    playbackTimerRef.current = null;
     audioRef.current?.pause();
     setPlayingVerseKey(null);
     setAudioPaused(false);
     setActiveRange(false);
     completedPlayRef.current = 1;
     setPlaybackIteration(1);
+    setSynchronizedAudio(null);
+    setActiveWordPosition(null);
+  };
+  const startSynchronizedRecitation = async () => {
+    if (!reader || !selectedChapterReciter) return;
+    stopAudio();
+    setWordMode(true);
+    setSynchronizedLoading(true);
+    setRangeError(null);
+    try {
+      const payload = await fetchJson<ChapterAudioPayload>(`/api/quran/chapter-audio/${reader.chapter.id}?reciter=${selectedChapterReciter}`);
+      setSynchronizedAudio(payload);
+      setPlayingVerseKey(payload.timestamps[0]?.verseKey ?? null);
+      setActiveWordPosition(null);
+      localStorage.setItem("af-chapter-reciter-id", String(selectedChapterReciter));
+    } catch (error) {
+      setRangeError(messageOf(error));
+    } finally {
+      setSynchronizedLoading(false);
+    }
+  };
+  const synchronizePlaybackPosition = () => {
+    if (!synchronizedAudio || !audioRef.current) return;
+    const position = audioRef.current.currentTime * 1000;
+    const timestamp = synchronizedAudio.timestamps.find(item => position >= item.timestampFrom && position < item.timestampTo);
+    if (!timestamp) {
+      setActiveWordPosition(null);
+      return;
+    }
+    setPlayingVerseKey(timestamp.verseKey);
+    const segment = timestamp.segments.find(([, from, to]) => position >= from && position < to);
+    setActiveWordPosition(segment?.[0] ?? null);
   };
   const jump = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -315,10 +409,10 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <header className={styles.readerHeader}><div><Link href="/quran">← All Surahs</Link><p>Surah {reader.chapter.id}</p><h1>{reader.chapter.nameSimple}</h1><span>{reader.chapter.translatedName} · {reader.chapter.versesCount} Ayahs</span></div><strong lang="ar" dir="rtl" translate="no">{reader.chapter.nameArabic}</strong></header>
       <div className={styles.readerTools}><form onSubmit={jump}><label>Jump to Ayah <input name="verse" type="number" min="1" max={reader.chapter.versesCount ?? undefined} defaultValue={verseNumber ?? "1"}/></label><button>Go</button></form><label className={styles.translationPicker}>Translation <select aria-label="Quran translation" value={selectedTranslation ?? ""} onChange={event => changeTranslation(Number(event.target.value))}>{translations?.items.map(item => <option key={item.id} value={item.id}>{item.name}{item.authorName ? ` — ${item.authorName}` : ""}</option>)}</select></label><label className={styles.recitationPicker}>Reciter <select aria-label="Quran reciter" value={selectedRecitation ?? ""} onChange={event => changeRecitation(Number(event.target.value))}>{recitations?.items.map(item => <option key={item.id} value={item.id}>{item.name}{item.style ? ` — ${item.style}` : ""}</option>)}</select></label><button onClick={() => setSettingsOpen(true)}>Aa <span>Reader settings</span></button></div>
       <div className={styles.studyTools}><button className={wordMode?styles.selectedStudy:""} onClick={()=>setWordMode(value=>!value)}>Word by word</button><button className={tafsirOpen?styles.selectedStudy:""} onClick={()=>setTafsirOpen(value=>!value)}>Tafsir</button><button aria-expanded={memorizationOpen} className={memorizationOpen?styles.selectedStudy:""} onClick={()=>setMemorizationOpen(value=>!value)}>Memorize</button>{tafsirOpen?<label>Tafsir source<select value={selectedTafsir??""} onChange={event=>{const value=Number(event.target.value);setSelectedTafsir(value);localStorage.setItem("af-tafsir-id",String(value))}}>{tafsirs?.items.map(item=><option value={item.id} key={item.id}>{item.name}{item.authorName?` — ${item.authorName}`:""}</option>)}</select></label>:null}<Link href="/quran/mushaf/1">Mushaf view</Link><Link href="/quran/structure">Juz & structure</Link></div>
-      {memorizationOpen ? <form className={styles.memorizationTools} onSubmit={startAyahRange} aria-label="Memorization playback"><div><strong>Ayah range</strong><span>Repeat sourced recitation for focused practice.</span></div><label>From<input aria-label="First Ayah" name="rangeStart" type="number" min="1" max={reader.chapter.versesCount ?? undefined} value={rangeStart} onChange={event=>setRangeStart(Number(event.target.value))}/></label><label>To<input aria-label="Last Ayah" name="rangeEnd" type="number" min="1" max={reader.chapter.versesCount ?? undefined} value={rangeEnd} onChange={event=>setRangeEnd(Number(event.target.value))}/></label><label>Repeat each<select aria-label="Ayah repeat count" value={repeatCount} onChange={event=>setRepeatCount(Number(event.target.value) as AyahRepeatCount)}><option value="1">1 time</option><option value="3">3 times</option><option value="5">5 times</option></select></label><button type="submit">Play range</button>{rangeError?<p className={styles.rangeError} role="alert">{rangeError}</p>:null}</form> : null}
+      {memorizationOpen ? <form className={styles.memorizationTools} onSubmit={startAyahRange} aria-label="Memorization playback"><div><strong>Ayah range</strong><span>Repeat sourced recitation for focused practice.</span></div><label>From<input aria-label="First Ayah" name="rangeStart" type="number" min="1" max={reader.chapter.versesCount ?? undefined} value={rangeStart} onChange={event=>setRangeStart(Number(event.target.value))}/></label><label>To<input aria-label="Last Ayah" name="rangeEnd" type="number" min="1" max={reader.chapter.versesCount ?? undefined} value={rangeEnd} onChange={event=>setRangeEnd(Number(event.target.value))}/></label><label>Repeat each<select aria-label="Ayah repeat count" value={repeatCount} onChange={event=>setRepeatCount(Number(event.target.value) as AyahRepeatCount)}><option value="1">1 time</option><option value="3">3 times</option><option value="5">5 times</option></select></label><label>Pause<select aria-label="Pause between Ayahs" value={pauseSeconds} onChange={event=>setPauseSeconds(Number(event.target.value))}><option value="0">No pause</option><option value="1">1 second</option><option value="2">2 seconds</option><option value="3">3 seconds</option></select></label><label className={styles.loopRange}><input type="checkbox" checked={loopRange} onChange={event=>setLoopRange(event.target.checked)}/>Loop range</label><button type="submit">Play range</button><div className={styles.synchronizedControls}><label>Synchronized reciter<select aria-label="Synchronized Quran reciter" value={selectedChapterReciter??""} onChange={event=>setSelectedChapterReciter(Number(event.target.value))}>{chapterReciters?.items.map(item=><option key={item.id} value={item.id}>{item.name}{item.style?` — ${item.style}`:""}</option>)}</select></label><button type="button" onClick={startSynchronizedRecitation} disabled={synchronizedLoading||!selectedChapterReciter}>{synchronizedLoading?"Loading…":"Play with word highlighting"}</button></div>{chapterRecitersError||chapterReciters?.error?<p className={styles.rangeError} role="alert">Synchronized reciters are unavailable right now.</p>:null}{rangeError?<p className={styles.rangeError} role="alert">{rangeError}</p>:null}</form> : null}
       {tajweedEnabled ? <aside className={styles.tajweedLegend} aria-label="Tajweed color legend"><strong>Tajweed colors</strong><span><i className={styles.tjMadd}/>Madd</span><span><i className={styles.tjGhunnah}/>Ghunnah</span><span><i className={styles.tjIkhfa}/>Ikhfa</span><span><i className={styles.tjIdgham}/>Idgham</span><span><i className={styles.tjQalqalah}/>Qalqalah</span><span><i className={styles.tjSilent}/>Silent letters</span></aside> : null}
-      <section className={styles.verses} aria-label={`${reader.chapter.nameSimple} verses`}>{reader.verses.map(verse => {const bookmarkId=`quran:${verse.verseKey}`;const isPlaying=playingVerseKey===verse.verseKey&&!audioPaused;return <article id={`verse-${verse.verseNumber}`} className={`${styles.verse} ${playingVerseKey===verse.verseKey?styles.activeVerse:""}`} aria-current={playingVerseKey===verse.verseKey?"true":undefined} key={verse.id}><div className={styles.verseMeta}><a href={`#verse-${verse.verseNumber}`}>{verse.verseKey}</a><div>{verse.audioUrl ? <button className={styles.playVerse} aria-label={`${isPlaying ? "Pause" : "Play"} recitation of Ayah ${verse.verseNumber}`} onClick={() => playVerse(verse.verseKey)}>{isPlaying ? "❚❚" : "▶"}</button> : null}<button className={styles.saveVerse} onClick={()=>setLocalBookmarks(toggleLocalBookmark({id:bookmarkId,label:`${reader.chapter.nameSimple} ${verse.verseKey}`,reference:verse.verseKey??"",type:"quran",url:`/quran/${reader.chapter.id}/${verse.verseNumber}`}))}>{hasLocalBookmark(localBookmarks,bookmarkId)?"Saved":"Save"}</button><Link aria-label={`Open Ayah ${verse.verseNumber}`} href={`/quran/${reader.chapter.id}/${verse.verseNumber}`}>•••</Link></div></div>{wordMode&&verse.words.length?<div className={styles.wordGrid} lang="ar" dir="rtl" translate="no">{verse.words.filter(word=>word.charType==="word").map(word=><span key={word.position}><b>{word.arabicText}</b><small dir="ltr">{word.transliteration}</small><em dir="ltr">{word.translation}</em></span>)}</div>:tajweedEnabled && verse.tajweedHtml ? <p className={`${styles.arabic} ${styles.tajweed}`} lang="ar" dir="rtl" translate="no" dangerouslySetInnerHTML={{__html: verse.tajweedHtml}}/> : <p className={styles.arabic} lang="ar" dir="rtl" translate="no">{verse.arabicText}</p>}{verse.translationText ? <><div className={styles.translation} lang="en" translate="no" dangerouslySetInnerHTML={{__html: verse.translationText}}/>{verse.translationName || selectedTranslationResource ? <p className={styles.attribution}>Translation: {verse.translationName ?? selectedTranslationResource?.name}{selectedTranslationResource?.authorName ? ` — ${selectedTranslationResource.authorName}` : ""}</p> : null}</> : <p className={styles.unavailable}>The selected translation is unavailable for this Ayah.</p>}{tafsirOpen?<details className={styles.tafsir}><summary>Tafsir · {verse.tafsirName??selectedTafsirResource?.name??"Selected source"}</summary>{verse.tafsirText?<p translate="no">{verse.tafsirText}</p>:<p className={styles.unavailable}>No tafsir entry was returned for this Ayah.</p>}</details>:null}</article>})}</section>
-      {playingVerseKey ? <div className={styles.audioPlayer}><span>{activeRange?`Memorizing ${rangeStart}–${rangeEnd}`:"Reciting"} · Ayah {playingVerseKey}{repeatCount>1?` · ${playbackIteration}/${repeatCount}`:""}</span><audio ref={audioRef} controls autoPlay src={reader.verses.find(verse => verse.verseKey === playingVerseKey)?.audioUrl ?? undefined} onEnded={playNextVerse} onPause={()=>setAudioPaused(true)} onPlay={()=>setAudioPaused(false)} onError={stopAudio}>Your browser does not support audio playback.</audio><button aria-label="Close audio player" onClick={stopAudio}>×</button></div> : null}
+      <section className={styles.verses} aria-label={`${reader.chapter.nameSimple} verses`}>{reader.verses.map(verse => {const bookmarkId=`quran:${verse.verseKey}`;const isPlaying=playingVerseKey===verse.verseKey&&!audioPaused;return <article id={`verse-${verse.verseNumber}`} className={`${styles.verse} ${playingVerseKey===verse.verseKey?styles.activeVerse:""}`} aria-current={playingVerseKey===verse.verseKey?"true":undefined} key={verse.id}><div className={styles.verseMeta}><a href={`#verse-${verse.verseNumber}`}>{verse.verseKey}</a><div>{verse.audioUrl ? <button className={styles.playVerse} aria-label={`${isPlaying ? "Pause" : "Play"} recitation of Ayah ${verse.verseNumber}`} onClick={() => playVerse(verse.verseKey)}>{isPlaying ? "❚❚" : "▶"}</button> : null}<button className={styles.saveVerse} onClick={()=>setLocalBookmarks(toggleLocalBookmark({id:bookmarkId,label:`${reader.chapter.nameSimple} ${verse.verseKey}`,reference:verse.verseKey??"",type:"quran",url:`/quran/${reader.chapter.id}/${verse.verseNumber}`}))}>{hasLocalBookmark(localBookmarks,bookmarkId)?"Saved":"Save"}</button><Link aria-label={`Open Ayah ${verse.verseNumber}`} href={`/quran/${reader.chapter.id}/${verse.verseNumber}`}>•••</Link></div></div>{wordMode&&verse.words.length?<div className={styles.wordGrid} lang="ar" dir="rtl" translate="no">{verse.words.filter(word=>word.charType==="word").map(word=><span className={synchronizedAudio&&playingVerseKey===verse.verseKey&&activeWordPosition===word.position?styles.activeWord:""} key={word.position}><b>{word.arabicText}</b><small dir="ltr">{word.transliteration}</small><em dir="ltr">{word.translation}</em></span>)}</div>:tajweedEnabled && verse.tajweedHtml ? <p className={`${styles.arabic} ${styles.tajweed}`} lang="ar" dir="rtl" translate="no" dangerouslySetInnerHTML={{__html: verse.tajweedHtml}}/> : <p className={styles.arabic} lang="ar" dir="rtl" translate="no">{verse.arabicText}</p>}{verse.translationText ? <><div className={styles.translation} lang="en" translate="no" dangerouslySetInnerHTML={{__html: verse.translationText}}/>{verse.translationName || selectedTranslationResource ? <p className={styles.attribution}>Translation: {verse.translationName ?? selectedTranslationResource?.name}{selectedTranslationResource?.authorName ? ` — ${selectedTranslationResource.authorName}` : ""}</p> : null}</> : <p className={styles.unavailable}>The selected translation is unavailable for this Ayah.</p>}{tafsirOpen?<details className={styles.tafsir}><summary>Tafsir · {verse.tafsirName??selectedTafsirResource?.name??"Selected source"}</summary>{verse.tafsirText?<p translate="no">{verse.tafsirText}</p>:<p className={styles.unavailable}>No tafsir entry was returned for this Ayah.</p>}</details>:null}</article>})}</section>
+      {playingVerseKey ? <div className={styles.audioPlayer}><span>{synchronizedAudio?"Synchronized recitation":activeRange?`Memorizing ${rangeStart}–${rangeEnd}`:"Reciting"} · Ayah {playingVerseKey}{!synchronizedAudio&&repeatCount>1?` · ${playbackIteration}/${repeatCount}`:""}</span><audio ref={audioRef} controls autoPlay src={synchronizedAudio?.audioUrl??reader.verses.find(verse => verse.verseKey === playingVerseKey)?.audioUrl??undefined} onTimeUpdate={synchronizePlaybackPosition} onEnded={playNextVerse} onPause={()=>setAudioPaused(true)} onPlay={()=>setAudioPaused(false)} onError={stopAudio}>Your browser does not support audio playback.</audio><button aria-label="Close audio player" onClick={stopAudio}>×</button></div> : null}
       <nav className={styles.chapterNav}>{reader.chapter.id > 1 ? <Link href={`/quran/${reader.chapter.id-1}`}>← Previous Surah</Link> : <span/>}{reader.chapter.id < 114 ? <Link href={`/quran/${reader.chapter.id+1}`}>Next Surah →</Link> : null}</nav>
     </> : null}
   </main>;

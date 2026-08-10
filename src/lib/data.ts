@@ -8,6 +8,8 @@ import { createClients, getSearchModeQuick } from "@/lib/sdk";
 import type {
   BookmarkItem,
   BootstrapPayload,
+  ChapterAudioPayload,
+  ChapterReciterResource,
   CollectionItem,
   ContentPreviewItem,
   FactItem,
@@ -548,13 +550,55 @@ export const loadRecitationResources = async (
       .map((resource) => ({
         id: Number(asNullableNumber(resource.id) ?? 0),
         name: asString(resource.reciterName ?? resource.reciter_name, "Unnamed reciter"),
-        style: asNullableString(resource.style),
+        style: asNullableString(asObject(resource.style).name ?? (typeof resource.style === "string" ? resource.style : null)),
       }))
       .filter((resource) => resource.id > 0);
     return { error: null, items };
   } catch (error) {
     return { error: formatError(error), items: [] };
   }
+};
+
+export const loadChapterReciterResources = async (
+  session: StoredSession,
+): Promise<{ error: string | null; items: ChapterReciterResource[] }> => {
+  const { serverClient } = await createClients(session);
+  try {
+    const response = await serverClient.content.v4.resources.chapterReciters.list({ language: "en" });
+    const items = toArray(response, ["data", "reciters", "chapterReciters", "chapter_reciters"])
+      .map((resource) => ({
+        id: Number(asNullableNumber(resource.id) ?? 0),
+        name: asString(resource.reciterName ?? resource.reciter_name ?? resource.name, "Unnamed reciter"),
+        style: asNullableString(asObject(resource.style).name ?? (typeof resource.style === "string" ? resource.style : null)),
+      }))
+      .filter((resource) => resource.id > 0);
+    return { error: null, items };
+  } catch (error) {
+    return { error: formatError(error), items: [] };
+  }
+};
+
+export const loadChapterAudio = async (
+  session: StoredSession,
+  chapterId: number,
+  reciterId: number,
+): Promise<ChapterAudioPayload> => {
+  const { serverClient } = await createClients(session);
+  const response = await serverClient.content.v4.audio.chapterRecitation.get(String(reciterId), String(chapterId), { segments: true });
+  const payload = asObject(response);
+  const audioFile = asObject(payload.audioFile ?? payload.audio_file ?? payload);
+  const audioUrl = asNullableString(audioFile.audioUrl ?? audioFile.audio_url);
+  if (!audioUrl) throw new Error("Synchronized chapter audio URL is unavailable.");
+  const timestamps = toArray(audioFile.timestamps).map((timestamp) => ({
+    segments: (Array.isArray(timestamp.segments) ? timestamp.segments : [])
+      .map((segment) => Array.isArray(segment) ? segment.map(Number) : [])
+      .filter((segment): segment is [number, number, number] => segment.length === 3 && segment.every(Number.isFinite)),
+    timestampFrom: Number(asNullableNumber(timestamp.timestampFrom ?? timestamp.timestamp_from) ?? 0),
+    timestampTo: Number(asNullableNumber(timestamp.timestampTo ?? timestamp.timestamp_to) ?? 0),
+    verseKey: asString(timestamp.verseKey ?? timestamp.verse_key),
+  })).filter((timestamp) => timestamp.verseKey && timestamp.timestampTo >= timestamp.timestampFrom);
+  if (!timestamps.length) throw new Error("Authoritative chapter timestamps are unavailable.");
+  return { audioUrl, chapterId, reciterId, timestamps };
 };
 
 export const loadTafsirResources = async (session: StoredSession): Promise<{error:string|null;items:TafsirResource[]}> => {

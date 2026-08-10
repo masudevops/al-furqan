@@ -16,7 +16,9 @@ interface ResolveNextAudioStepOptions {
   currentVerseKey: string | null;
   completedPlay: number;
   rangeEnd: number;
+  rangeStart: number;
   repeatCount: AyahRepeatCount;
+  loopRange: boolean;
   verses: AudioSequenceItem[];
 }
 
@@ -32,7 +34,9 @@ export function resolveNextAudioStep({
   completedPlay,
   currentVerseKey,
   rangeEnd,
+  rangeStart,
   repeatCount,
+  loopRange,
   verses,
 }: ResolveNextAudioStepOptions): NextAudioStep {
   if (!currentVerseKey) return { nextVerseKey: null, replayCurrent: false };
@@ -44,6 +48,15 @@ export function resolveNextAudioStep({
   if (currentIndex < 0) return { nextVerseKey: null, replayCurrent: false };
   const current = verses[currentIndex];
   if (activeRange && (current.verseNumber ?? Number.POSITIVE_INFINITY) >= rangeEnd) {
+    if (loopRange) {
+      const first = verses.find((verse) => Boolean(
+        verse.audioUrl
+        && verse.verseKey
+        && (verse.verseNumber ?? 0) >= rangeStart
+        && (verse.verseNumber ?? Number.POSITIVE_INFINITY) <= rangeEnd,
+      ));
+      return { nextVerseKey: first?.verseKey ?? null, replayCurrent: false };
+    }
     return { nextVerseKey: null, replayCurrent: false };
   }
 

@@ -60,6 +60,9 @@ interface ServerAuthClient {
 interface ServerContentClient {
   v4: {
     audio: {
+      chapterRecitation: {
+        get: (reciterId: string, chapterId: string, params?: UnknownRecord) => Promise<unknown>;
+      };
       verseRecitation: {
         byChapter: (chapterId: string, recitationId: string, params?: UnknownRecord) => Promise<unknown>;
       };
@@ -69,6 +72,9 @@ interface ServerContentClient {
       list: () => Promise<unknown>;
     };
     resources: {
+      chapterReciters: {
+        list: (params?: UnknownRecord) => Promise<unknown>;
+      };
       recitations: {
         list: (params?: UnknownRecord) => Promise<unknown>;
       };

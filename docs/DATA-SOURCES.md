@@ -2,7 +2,7 @@
 
 | Feature | Provider | Purpose | License/storage/update | Status |
 |---|---|---|---|---|
-| Quran, translations, Tafsir, word-by-word, structure, recitations, metadata | Quran.Foundation Content API v4 and Quran CDN URLs returned by the API | Authoritative Quran experience | Developer Terms; display in app, unmodified Quran; cache at most one week unless expressly permitted; refresh from API; source attribution required | Active |
+| Quran, translations, Tafsir, word-by-word, structure, Ayah recitations, synchronized chapter audio/timestamps, metadata | Quran.Foundation Content API v4 and Quran CDN URLs returned by the API | Authoritative Quran experience, memorization playback, and source-timed word highlighting | Developer Terms; display in app, unmodified Quran; cache at most one week unless expressly permitted; refresh from API; source attribution required; never infer missing timestamps | Active |
 | Tajweed annotations | Quran.Foundation Content API v4 `text_uthmani_tajweed` | Color-rule lens over verse, structural, and Mushaf page reading | Same Quran.Foundation Developer Terms; fetched with each verse and sanitized to documented Tajweed rule tags/classes | Active; Mushaf Tajweed preserves official page boundaries while exact QCF physical line rendering remains a separate mode |
 | Official Mushaf rendering | Quran.Foundation Content API page data and official QCF V2 per-page fonts | Exact page/line/glyph view | Same Foundation terms; remote per-page font; no inferred page layout; no permanent offline Quran cache | Active |
 | Search | Quran.Foundation Search API | Quran search | Same Foundation terms; `search` application-token scope | Adapter and UI active; production scope approval required |

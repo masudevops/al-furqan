@@ -5,6 +5,8 @@ import {
   ensureUserScope,
   getGrantedScopes,
   loadMushafPage,
+  loadChapterAudio,
+  loadChapterReciterResources,
   loadReaderData,
   loadRecitationResources,
   loadSearchData,
@@ -286,6 +288,25 @@ describe("loadRecitationResources", () => {
   it("normalizes the dynamic reciter catalog", async () => {
     sdkMocks.serverClient = { content: { v4: { resources: { recitations: { list: vi.fn(async () => [{ id: 7, reciterName: "Mishari Rashid al-`Afasy", style: null }]) } } } } };
     await expect(loadRecitationResources({} as never)).resolves.toEqual({ error: null, items: [{ id: 7, name: "Mishari Rashid al-`Afasy", style: null }] });
+  });
+});
+
+describe("synchronized chapter recitation", () => {
+  it("normalizes chapter-reciter resources separately from Ayah reciters", async () => {
+    sdkMocks.serverClient = { content: { v4: { resources: { chapterReciters: { list: vi.fn(async () => ({ reciters: [{ id: 4, reciterName: "Abu Bakr al-Shatri", style: { name: "Murattal" } }] })) } } } } };
+    await expect(loadChapterReciterResources({} as never)).resolves.toEqual({ error: null, items: [{ id: 4, name: "Abu Bakr al-Shatri", style: "Murattal" }] });
+  });
+
+  it("preserves only authoritative verse and word timestamps", async () => {
+    const get = vi.fn(async () => ({ audioFile: { audioUrl: "https://download.quranicaudio.com/example.mp3", timestamps: [{ verseKey: "1:1", timestampFrom: 0, timestampTo: 6493, segments: [[1, 0, 630], [2, 650, 1570], ["bad"]] }] } }));
+    sdkMocks.serverClient = { content: { v4: { audio: { chapterRecitation: { get } } } } };
+    await expect(loadChapterAudio({} as never, 1, 4)).resolves.toEqual({
+      audioUrl: "https://download.quranicaudio.com/example.mp3",
+      chapterId: 1,
+      reciterId: 4,
+      timestamps: [{ verseKey: "1:1", timestampFrom: 0, timestampTo: 6493, segments: [[1, 0, 630], [2, 650, 1570]] }],
+    });
+    expect(get).toHaveBeenCalledWith("4", "1", { segments: true });
   });
 });
 

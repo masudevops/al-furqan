@@ -1,6 +1,4 @@
-import { NextRequest } from "next/server";
 import { loadTafsirResources } from "@/lib/data";
-import { withSessionJson } from "@/lib/route-helpers";
-import { getSession } from "@/lib/session";
+import { createPublicContentSession, publicContentJson } from "@/lib/public-content";
 export const dynamic="force-dynamic";
-export async function GET(request:NextRequest){const context=await getSession(request);return withSessionJson(context,await loadTafsirResources(context.session))}
+export async function GET(){const payload=await loadTafsirResources(createPublicContentSession());return publicContentJson(payload,payload.error?502:200)}

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import useSWR from "swr";
+import useSWR, { preload } from "swr";
 
 import PrayerTimes from "@/components/prayer-times";
 import {
@@ -147,6 +147,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
     const savedLastRead = localStorage.getItem("af-last-read");
     const savedArabic = Number(localStorage.getItem("af-arabic-size"));
     const savedTranslation = Number(localStorage.getItem("af-translation-size"));
+    const savedTranslationId = Number(localStorage.getItem("af-translation-id"));
+    const savedRecitationId = Number(localStorage.getItem("af-recitation-id"));
     setTajweedEnabled(localStorage.getItem("af-tajweed") === "true");
     const savedScript = localStorage.getItem("af-quran-script") as QuranScript | null;
     if (["uthmani","uthmani_simple","imlaei","indopak","indopak_nastaleeq"].includes(savedScript ?? "")) setQuranScript(savedScript!);
@@ -156,22 +158,44 @@ export default function AppShell({ children }: { children: ReactNode }) {
     if (savedLastRead) { try { setLastRead(JSON.parse(savedLastRead) as LastRead); } catch {} }
     if (savedArabic >= 30 && savedArabic <= 64) setArabicSize(savedArabic);
     if (savedTranslation >= 14 && savedTranslation <= 26) setTranslationSize(savedTranslation);
+    if (Number.isInteger(savedTranslationId) && savedTranslationId > 0) setSelectedTranslation(savedTranslationId);
+    if (Number.isInteger(savedRecitationId) && savedRecitationId > 0) setSelectedRecitation(savedRecitationId);
   }, []);
+
+  useEffect(() => {
+    if (route !== "home" && !(route === "quran" && !chapterId)) return;
+    const warmReaderResources = () => {
+      void preload("/api/translations", fetchJson);
+      void preload("/api/recitations", fetchJson);
+    };
+    const idleWindow = window as Window & {
+      cancelIdleCallback?: (id: number) => void;
+      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+    };
+    if (typeof idleWindow.requestIdleCallback === "function") {
+      const id = idleWindow.requestIdleCallback(warmReaderResources, { timeout: 1500 });
+      return () => idleWindow.cancelIdleCallback?.(id);
+    }
+    const id = setTimeout(warmReaderResources, 250);
+    return () => clearTimeout(id);
+  }, [chapterId, route]);
 
   useEffect(() => {
     if (!translations?.items.length) return;
     const saved = Number(localStorage.getItem("af-translation-id"));
     const availableSaved = translations.items.find((item) => item.id === saved);
     const documentedDefault = translations.items.find((item) => item.id === 131);
-    setSelectedTranslation(
-      availableSaved?.id ?? documentedDefault?.id ?? translations.items[0].id,
-    );
+    const selectedId = availableSaved?.id ?? documentedDefault?.id ?? translations.items[0].id;
+    setSelectedTranslation(selectedId);
+    localStorage.setItem("af-translation-id", String(selectedId));
   }, [translations]);
 
   useEffect(() => {
     if (!recitations?.items.length) return;
     const saved = Number(localStorage.getItem("af-recitation-id"));
-    setSelectedRecitation(recitations.items.find(item => item.id === saved)?.id ?? recitations.items.find(item => item.id === 7)?.id ?? recitations.items[0].id);
+    const selectedId = recitations.items.find(item => item.id === saved)?.id ?? recitations.items.find(item => item.id === 7)?.id ?? recitations.items[0].id;
+    setSelectedRecitation(selectedId);
+    localStorage.setItem("af-recitation-id", String(selectedId));
   }, [recitations]);
 
   useEffect(() => {

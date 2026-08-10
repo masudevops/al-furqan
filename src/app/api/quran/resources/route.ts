@@ -1,16 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
-
 import { loadQuranResources } from "@/lib/data";
-import { getSession } from "@/lib/session";
+import { createPublicContentSession, publicContentJson } from "@/lib/public-content";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: NextRequest) {
-  const sessionContext = await getSession(request);
+export async function GET() {
   try {
-    return NextResponse.json(await loadQuranResources(sessionContext.session));
+    return publicContentJson(await loadQuranResources(createPublicContentSession()));
   } catch (error) {
     console.error("Quran resources request failed", { message: error instanceof Error ? error.message : "Unknown error" });
-    return NextResponse.json({ error: "Quran resources are unavailable right now." }, { status: 502 });
+    return publicContentJson({ error: "Quran resources are unavailable right now." }, 502);
   }
 }

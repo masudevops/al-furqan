@@ -70,7 +70,7 @@ npm run sdk:status
 - Nearby mosque data uses [OpenStreetMap](https://www.openstreetmap.org/copyright) through the public Overpass API; manual city lookup uses Nominatim. Results are session-cached and community data may be incomplete.
 - Hadith is disabled in navigation, UI data loading, and server routes while Sunnah.com production API access is pending. The previous provider adapter remains non-public implementation scaffolding and must not be enabled in production.
 
-Quran.Foundation Developer Terms prohibit storing QF Content longer than one week without express permission, so this build intentionally does not contain permanent offline Quran downloads. See the [source registry](docs/DATA-SOURCES.md), [Hadith source notes](docs/HADITH-SOURCE.md), and [offline strategy](docs/OFFLINE-STRATEGY.md).
+Quran.Foundation Developer Terms prohibit storing QF Content longer than one week without express permission, so this build intentionally does not contain permanent offline Quran downloads. Public, non-personalized Quran responses use a one-hour edge TTL with a one-day stale-revalidation window for responsive navigation; User API data remains private and uncached. See the [source registry](docs/DATA-SOURCES.md), [Hadith source notes](docs/HADITH-SOURCE.md), and [offline strategy](docs/OFFLINE-STRATEGY.md).
 
 ## Known limitations
 

@@ -1,18 +1,14 @@
-import { NextRequest } from "next/server";
-
 import { loadFootnote, parsePositiveInteger } from "@/lib/data";
-import { withSessionJson } from "@/lib/route-helpers";
-import { getSession } from "@/lib/session";
+import { createPublicContentSession, publicContentJson } from "@/lib/public-content";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: NextRequest, { params }: { params: { footnoteId: string } }) {
-  const context = await getSession(request);
+export async function GET(_request: Request, { params }: { params: { footnoteId: string } }) {
   const id = parsePositiveInteger(params.footnoteId);
-  if (!id) return withSessionJson(context, { message: "A valid footnote is required." }, 400);
+  if (!id) return publicContentJson({ message: "A valid footnote is required." }, 400);
   try {
-    return withSessionJson(context, await loadFootnote(context.session, id));
+    return publicContentJson(await loadFootnote(createPublicContentSession(), id));
   } catch {
-    return withSessionJson(context, { message: "This translation footnote is unavailable right now." }, 502);
+    return publicContentJson({ message: "This translation footnote is unavailable right now." }, 502);
   }
 }

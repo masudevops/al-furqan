@@ -1,12 +1,9 @@
-import { NextRequest } from "next/server";
 import { loadContentPreviewData } from "@/lib/data";
-import { withSessionJson } from "@/lib/route-helpers";
-import { getSession } from "@/lib/session";
+import { createPublicContentSession, publicContentJson } from "@/lib/public-content";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: NextRequest) {
-  const context = await getSession(request);
-  const payload = await loadContentPreviewData(context.session, 114);
-  return withSessionJson(context, payload, payload.error ? 502 : 200);
+export async function GET() {
+  const payload = await loadContentPreviewData(createPublicContentSession(), 114);
+  return publicContentJson(payload, payload.error ? 502 : 200);
 }

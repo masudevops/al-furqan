@@ -162,6 +162,16 @@ const run = async () => {
       }
     }
 
+    const chaptersResponse = await fetch(`${BASE_URL}/api/chapters`);
+    const chaptersCacheControl = chaptersResponse.headers.get("cache-control") || "";
+    if (
+      (chaptersResponse.ok && !chaptersCacheControl.includes("s-maxage=3600")) ||
+      (!chaptersResponse.ok && chaptersCacheControl !== "no-store") ||
+      chaptersResponse.headers.has("set-cookie")
+    ) {
+      throw new Error("Public Quran content caching failed smoke check.");
+    }
+
     const publicPages = [
       ["/quran", "Choose a Surah"],
       ["/quran/mushaf/1", "Mushaf Page"],

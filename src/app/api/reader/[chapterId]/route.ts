@@ -18,6 +18,8 @@ export async function GET(
   const recitationId = parsePositiveInteger(
     request.nextUrl.searchParams.get("recitation"),
   );
+  const tafsirId=parsePositiveInteger(request.nextUrl.searchParams.get("tafsir"));
+  const includeWords=request.nextUrl.searchParams.get("words")==="1";
 
   if (!chapterId || chapterId > 114) {
     return withSessionJson(
@@ -36,6 +38,7 @@ export async function GET(
       String(chapterId),
       translationId ?? undefined,
       recitationId ?? undefined,
+      {includeWords,tafsirId:tafsirId??undefined},
     );
     return withSessionJson(sessionContext, payload);
   } catch (error) {

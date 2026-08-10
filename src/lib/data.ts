@@ -16,6 +16,7 @@ import type {
   ReaderPayload,
   RecitationResource,
   SearchItem,
+  TafsirResource,
   TranslationResource,
 } from "@/lib/types";
 
@@ -174,6 +175,27 @@ const getTranslation = (
     text: asNullableString(translation.text),
   };
 };
+
+const plainSourceText = (value: unknown): string | null => {
+  const text = asNullableString(value);
+  if (!text) return null;
+  return text.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, " ").trim();
+};
+
+const normalizeWords = (value: unknown) => toArray(value).map((word) => {
+  const translation = asObject(word.translation);
+  const transliteration = asObject(word.transliteration);
+  return {
+    arabicText: asString(word.textUthmani ?? word.text ?? word.textQpcHafs),
+    audioUrl: asNullableString(word.audioUrl ?? word.audio_url),
+    charType: asString(word.charTypeName ?? word.char_type_name, "word"),
+    lineNumber: asNullableNumber(word.lineNumber ?? word.line_number),
+    position: Number(asNullableNumber(word.position) ?? 0),
+    qcfCode: asNullableString(word.codeV2 ?? word.code_v2),
+    translation: asNullableString(translation.text),
+    transliteration: asNullableString(transliteration.text),
+  };
+});
 
 export const buildReaderUrlFromKey = (key: string | null | undefined): string | null => {
   const normalized = String(key ?? "").trim();
@@ -535,6 +557,18 @@ export const loadRecitationResources = async (
   }
 };
 
+export const loadTafsirResources = async (session: StoredSession): Promise<{error:string|null;items:TafsirResource[]}> => {
+  const {serverClient}=await createClients(session);
+  try {
+    const response=await serverClient.content.v4.resources.tafsirs.list({language:"en"});
+    const items=toArray(response,["data","tafsirs"]).map(resource=>({
+      authorName:asNullableString(resource.authorName??resource.author_name),id:Number(asNullableNumber(resource.id)??0),
+      languageName:asNullableString(resource.languageName??resource.language_name),name:asString(resource.name,"Unnamed tafsir"),
+    })).filter(item=>item.id>0);
+    return{error:null,items};
+  }catch(error){return{error:formatError(error),items:[]}}
+};
+
 export const loadSearchData = async (
   session: StoredSession,
   query: string | null,
@@ -578,6 +612,7 @@ export const loadReaderData = async (
   chapterId: string,
   requestedTranslationId?: number,
   requestedRecitationId?: number,
+  options: { includeWords?: boolean; tafsirId?: number } = {},
 ): Promise<ReaderPayload> => {
   const config = getConfig();
   const translationIds = requestedTranslationId
@@ -617,7 +652,9 @@ export const loadReaderData = async (
         page: index + 1,
         perPage: READER_PAGE_SIZE,
         translations: translationIds,
-        words: false,
+        tafsirs: options.tafsirId ? [options.tafsirId] : undefined,
+        words: Boolean(options.includeWords),
+        wordFields: options.includeWords ? { textUthmani: true, verseKey: true, location: true } : undefined,
       })),
     ),
   );
@@ -646,6 +683,7 @@ export const loadReaderData = async (
         verse.translations,
         translationIds[0],
       );
+      const tafsir = toArray(verse.tafsirs)[0];
 
       return {
         arabicText: asString(verse.textUthmani),
@@ -658,8 +696,15 @@ export const loadReaderData = async (
         translationName: translation.name,
         translationText: translation.text,
         tajweedHtml: sanitizeTajweedMarkup(verse.textUthmaniTajweed ?? verse.text_uthmani_tajweed),
+        tafsirName: asNullableString(tafsir?.resourceName ?? tafsir?.resource_name ?? tafsir?.name),
+        tafsirText: plainSourceText(tafsir?.text),
         verseKey: asNullableString(verse.verseKey),
         verseNumber: asNullableNumber(verse.verseNumber),
+        words: normalizeWords(verse.words),
+        pageNumber: asNullableNumber(verse.pageNumber ?? verse.page_number),
+        juzNumber: asNullableNumber(verse.juzNumber ?? verse.juz_number),
+        hizbNumber: asNullableNumber(verse.hizbNumber ?? verse.hizb_number),
+        rubNumber: asNullableNumber(verse.rubElHizbNumber ?? verse.rub_el_hizb_number),
       };
     });
 
@@ -673,8 +718,27 @@ export const loadReaderData = async (
     },
     translationIds,
     recitationId: requestedRecitationId ?? null,
+    tafsirId: options.tafsirId ?? null,
     verses,
   };
+};
+
+export const loadMushafPage = async (session:StoredSession,pageNumber:number) => {
+  const {serverClient}=await createClients(session);
+  const response=await serverClient.content.v4.verses.byPage(pageNumber,{mushaf:1,words:true,perPage:50,fields:{codeV2:true,textUthmani:true},wordFields:{codeV2:true,textUthmani:true,verseKey:true}});
+  const verses=toArray(response,["data","verses"]); const lines=new Map<number,Array<Record<string,unknown>>>(); const verseKeys:string[]=[];
+  for(const verse of verses){const verseKey=asString(verse.verseKey??verse.verse_key);verseKeys.push(verseKey);for(const word of normalizeWords(verse.words)){const line=word.lineNumber??0;const items=lines.get(line)??[];items.push({...word,verseKey});lines.set(line,items)}}
+  return{error:null,pageNumber,verseKeys,lines:Array.from(lines.entries()).sort(([a],[b])=>a-b).map(([lineNumber,words])=>({lineNumber,words}))};
+};
+
+export const loadStructureVerses = async (session:StoredSession,kind:"juz"|"hizb"|"rub",id:number) => {
+  const {serverClient}=await createClients(session); const all:JsonObject[]=[];
+  const fetchPage=(page:number)=>{const query={page,perPage:50,fields:{textUthmani:true}};return kind==="juz"?serverClient.content.v4.verses.byJuz(id,query):kind==="hizb"?serverClient.content.v4.verses.byHizb(id,query):serverClient.content.v4.verses.byRub(id,query)};
+  const first=await fetchPage(1);const firstChunk=toArray(first,["data","verses"]);all.push(...firstChunk);
+  const responseObject=asObject(first);const dataObject=asObject(responseObject.data);const pagination=asObject(responseObject.pagination??dataObject.pagination);const reportedPages=asNullableNumber(pagination.totalPages??pagination.total_pages);
+  if(reportedPages&&reportedPages>1){const remaining=await Promise.all(Array.from({length:Math.min(20,reportedPages)-1},(_,index)=>fetchPage(index+2)));all.push(...remaining.flatMap(response=>toArray(response,["data","verses"]))) }
+  else if(firstChunk.length===50){for(let page=2;page<=20;page++){const chunk=toArray(await fetchPage(page),["data","verses"]);all.push(...chunk);if(chunk.length<50)break}}
+  return all.map(verse=>({arabicText:asString(verse.textUthmani),verseKey:asString(verse.verseKey??verse.verse_key),pageNumber:asNullableNumber(verse.pageNumber??verse.page_number)}));
 };
 
 const createSignedOutBootstrap = ({

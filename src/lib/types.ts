@@ -69,6 +69,24 @@ export interface RecitationResource {
   style: string | null;
 }
 
+export interface TafsirResource {
+  authorName: string | null;
+  id: number;
+  languageName: string | null;
+  name: string;
+}
+
+export interface ReaderWord {
+  arabicText: string;
+  audioUrl: string | null;
+  charType: string;
+  lineNumber: number | null;
+  position: number;
+  qcfCode: string | null;
+  translation: string | null;
+  transliteration: string | null;
+}
+
 export interface ReaderVerse {
   arabicText: string;
   audioUrl: string | null;
@@ -76,8 +94,15 @@ export interface ReaderVerse {
   translationName: string | null;
   translationText: string | null;
   tajweedHtml: string | null;
+  tafsirName: string | null;
+  tafsirText: string | null;
   verseKey: string | null;
   verseNumber: number | null;
+  words: ReaderWord[];
+  pageNumber: number | null;
+  juzNumber: number | null;
+  hizbNumber: number | null;
+  rubNumber: number | null;
 }
 
 export interface ReaderPayload {
@@ -90,8 +115,12 @@ export interface ReaderPayload {
   };
   translationIds: number[];
   recitationId: number | null;
+  tafsirId: number | null;
   verses: ReaderVerse[];
 }
+
+export interface MushafWord extends ReaderWord { verseKey: string }
+export interface MushafPayload { error:null; pageNumber:number; lines:Array<{lineNumber:number;words:MushafWord[]}>; verseKeys:string[] }
 
 export interface BootstrapPayload {
   authError: string | null;

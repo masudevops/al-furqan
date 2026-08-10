@@ -75,9 +75,16 @@ interface ServerContentClient {
       translations: {
         list: (params?: UnknownRecord) => Promise<unknown>;
       };
+      tafsirs: {
+        list: (params?: UnknownRecord) => Promise<unknown>;
+      };
     };
     verses: {
       byChapter: (chapterId: string, params: UnknownRecord) => Promise<unknown>;
+      byPage: (pageNumber: number, params: UnknownRecord) => Promise<unknown>;
+      byJuz: (juzNumber: number, params: UnknownRecord) => Promise<unknown>;
+      byHizb: (hizbNumber: number, params: UnknownRecord) => Promise<unknown>;
+      byRub: (rubNumber: number, params: UnknownRecord) => Promise<unknown>;
     };
   };
 }

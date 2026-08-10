@@ -725,20 +725,25 @@ export const loadReaderData = async (
 
 export const loadMushafPage = async (session:StoredSession,pageNumber:number) => {
   const {serverClient}=await createClients(session);
-  const response=await serverClient.content.v4.verses.byPage(pageNumber,{mushaf:1,words:true,perPage:50,fields:{codeV2:true,textUthmani:true},wordFields:{codeV2:true,textUthmani:true,verseKey:true}});
+  const response=await serverClient.content.v4.verses.byPage(pageNumber,{mushaf:1,words:true,perPage:50,fields:{codeV2:true,textUthmani:true,textUthmaniTajweed:true},wordFields:{codeV2:true,textUthmani:true,verseKey:true}});
   const verses=toArray(response,["data","verses"]); const lines=new Map<number,Array<Record<string,unknown>>>(); const verseKeys:string[]=[];
   for(const verse of verses){const verseKey=asString(verse.verseKey??verse.verse_key);verseKeys.push(verseKey);for(const word of normalizeWords(verse.words)){const line=word.lineNumber??0;const items=lines.get(line)??[];items.push({...word,verseKey});lines.set(line,items)}}
-  return{error:null,pageNumber,verseKeys,lines:Array.from(lines.entries()).sort(([a],[b])=>a-b).map(([lineNumber,words])=>({lineNumber,words}))};
+  const tajweedVerses=verses.map(verse=>({
+    arabicText:asString(verse.textUthmani??verse.text_uthmani),
+    tajweedHtml:sanitizeTajweedMarkup(verse.textUthmaniTajweed??verse.text_uthmani_tajweed),
+    verseKey:asString(verse.verseKey??verse.verse_key),
+  }));
+  return{error:null,pageNumber,verseKeys,tajweedVerses,lines:Array.from(lines.entries()).sort(([a],[b])=>a-b).map(([lineNumber,words])=>({lineNumber,words}))};
 };
 
 export const loadStructureVerses = async (session:StoredSession,kind:"juz"|"hizb"|"rub",id:number) => {
   const {serverClient}=await createClients(session); const all:JsonObject[]=[];
-  const fetchPage=(page:number)=>{const query={page,perPage:50,fields:{textUthmani:true}};return kind==="juz"?serverClient.content.v4.verses.byJuz(id,query):kind==="hizb"?serverClient.content.v4.verses.byHizb(id,query):serverClient.content.v4.verses.byRub(id,query)};
+  const fetchPage=(page:number)=>{const query={page,perPage:50,fields:{textUthmani:true,textUthmaniTajweed:true}};return kind==="juz"?serverClient.content.v4.verses.byJuz(id,query):kind==="hizb"?serverClient.content.v4.verses.byHizb(id,query):serverClient.content.v4.verses.byRub(id,query)};
   const first=await fetchPage(1);const firstChunk=toArray(first,["data","verses"]);all.push(...firstChunk);
   const responseObject=asObject(first);const dataObject=asObject(responseObject.data);const pagination=asObject(responseObject.pagination??dataObject.pagination);const reportedPages=asNullableNumber(pagination.totalPages??pagination.total_pages);
   if(reportedPages&&reportedPages>1){const remaining=await Promise.all(Array.from({length:Math.min(20,reportedPages)-1},(_,index)=>fetchPage(index+2)));all.push(...remaining.flatMap(response=>toArray(response,["data","verses"]))) }
   else if(firstChunk.length===50){for(let page=2;page<=20;page++){const chunk=toArray(await fetchPage(page),["data","verses"]);all.push(...chunk);if(chunk.length<50)break}}
-  return all.map(verse=>({arabicText:asString(verse.textUthmani),verseKey:asString(verse.verseKey??verse.verse_key),pageNumber:asNullableNumber(verse.pageNumber??verse.page_number)}));
+  return all.map(verse=>({arabicText:asString(verse.textUthmani??verse.text_uthmani),tajweedHtml:sanitizeTajweedMarkup(verse.textUthmaniTajweed??verse.text_uthmani_tajweed),verseKey:asString(verse.verseKey??verse.verse_key),pageNumber:asNullableNumber(verse.pageNumber??verse.page_number)}));
 };
 
 const createSignedOutBootstrap = ({

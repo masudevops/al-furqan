@@ -1,6 +1,8 @@
 export interface DuaCategory { name:string; slug:string; total:number }
 export interface DuaSummary { id:number; title:string; category:string; categoryName:string }
-export interface DuaEntry extends DuaSummary { arabic:string; latin:string; translation:string; notes:string; fawaid:string; source:string }
+import type { DuaAudioSource } from "@/lib/dua-audio";
+
+export interface DuaEntry extends DuaSummary { arabic:string; latin:string; translation:string; notes:string; fawaid:string; source:string; audio:DuaAudioSource|null }
 
 const BASE = "https://dua-dhikr.vercel.app";
 export async function fetchDuaPath(path:string):Promise<unknown>{

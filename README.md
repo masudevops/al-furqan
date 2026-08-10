@@ -63,10 +63,10 @@ npm run sdk:status
 
 ## Phase 3 features and data sources
 
-- Quran and Tajweed annotations use Quran.Foundation Content API v4. Tajweed mode renders the official `text_uthmani_tajweed` annotations through a strict rule-class allowlist; no Tajweed text or rules are generated.
+- Quran and Tajweed annotations use Quran.Foundation Content API v4. Tajweed mode renders the official `text_uthmani_tajweed` annotations through a strict rule-class allowlist in verse, structural, and Mushaf page reading; no Tajweed text or rules are generated. The Mushaf keeps its exact QCF glyph/line mode as a separate toggle because verse-level Tajweed markup does not encode QCF glyph color positions.
 - Tafsir resources, word-by-word data, Quran structural divisions, QCF V2 page glyphs, line positions, and per-page Mushaf fonts are discovered from Quran.Foundation. No Mushaf line or page is approximated.
 - Prayer times and Qibla bearings use the keyless [AlAdhan API](https://aladhan.com/prayer-times-api). Location, method, Asr school, and daily data remain in browser storage. Times are calculations and may differ from a local mosque timetable.
-- Dua content uses the MIT-licensed [fitrahive/dua-dhikr](https://github.com/fitrahive/dua-dhikr) service through a same-origin server adapter. The live English endpoint was verified for this release, but it publishes no rate-limit or availability SLA and currently exposes five English categories. The app shows an unavailable state rather than substituting content.
+- Dua content uses the MIT-licensed [fitrahive/dua-dhikr](https://github.com/fitrahive/dua-dhikr) service through a same-origin server adapter. Reviewed entries can optionally stream matching Arabic recordings from Hisnul Muslim; recordings are not copied or cached, and ambiguous matches are omitted. The live English text endpoint was verified for this release, but it publishes no rate-limit or availability SLA and currently exposes five English categories. The app shows an unavailable state rather than substituting content.
 - Nearby mosque data uses [OpenStreetMap](https://www.openstreetmap.org/copyright) through the public Overpass API; manual city lookup uses Nominatim. Results are session-cached and community data may be incomplete.
 - Hadith is disabled in navigation, UI data loading, and server routes while Sunnah.com production API access is pending. The previous provider adapter remains non-public implementation scaffolding and must not be enabled in production.
 

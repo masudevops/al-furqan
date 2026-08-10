@@ -4,9 +4,11 @@ import {
   buildReaderUrlFromKey,
   ensureUserScope,
   getGrantedScopes,
+  loadMushafPage,
   loadReaderData,
   loadRecitationResources,
   loadSearchData,
+  loadStructureVerses,
   loadTranslationResources,
   parsePositiveInteger,
   parseVerseKey,
@@ -60,6 +62,50 @@ describe("sanitizeTajweedMarkup", () => {
     expect(output).not.toContain("<script>");
     expect(output).not.toContain('<tajweed class="unknown">');
     expect(output).toContain("&lt;script&gt;");
+  });
+});
+
+describe("Tajweed page data", () => {
+  it("carries sanitized official Tajweed markup into Mushaf page mode", async () => {
+    const byPage = vi.fn(async () => [{
+      textUthmani: "الرَّحْمَٰنِ",
+      textUthmaniTajweed: "<tajweed class=madda_normal>ـٰ</tajweed>",
+      verseKey: "1:3",
+      words: [{ charTypeName: "word", codeV2: "glyph", lineNumber: 2, position: 1, textUthmani: "الرَّحْمَٰنِ" }],
+    }]);
+    sdkMocks.serverClient = { content: { v4: { verses: { byPage } } } };
+
+    const data = await loadMushafPage({} as never, 1);
+
+    expect(byPage).toHaveBeenCalledWith(1, expect.objectContaining({
+      fields: expect.objectContaining({ textUthmaniTajweed: true }),
+      mushaf: 1,
+    }));
+    expect(data.tajweedVerses).toEqual([{
+      arabicText: "الرَّحْمَٰنِ",
+      tajweedHtml: '<tajweed class="madda_normal">ـٰ</tajweed>',
+      verseKey: "1:3",
+    }]);
+  });
+
+  it("carries sanitized official Tajweed markup into structural reading", async () => {
+    const byJuz = vi.fn(async () => [{
+      pageNumber: 1,
+      textUthmani: "بِسْمِ",
+      textUthmaniTajweed: "<tajweed class=ham_wasl>ٱ</tajweed>",
+      verseKey: "1:1",
+    }]);
+    sdkMocks.serverClient = { content: { v4: { verses: { byJuz } } } };
+
+    const data = await loadStructureVerses({} as never, "juz", 1);
+
+    expect(byJuz).toHaveBeenCalledWith(1, expect.objectContaining({
+      fields: expect.objectContaining({ textUthmaniTajweed: true }),
+    }));
+    expect(data[0]).toMatchObject({
+      tajweedHtml: '<tajweed class="ham_wasl">ٱ</tajweed>',
+      verseKey: "1:1",
+    });
   });
 });
 

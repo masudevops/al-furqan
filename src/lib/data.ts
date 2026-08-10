@@ -190,11 +190,20 @@ const getTranslation = (
 
 const escapeHtml = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
+const decodeCodePoint = (match: string, code: number) => Number.isInteger(code) && code >= 0 && code <= 0x10ffff && !(code >= 0xd800 && code <= 0xdfff) ? String.fromCodePoint(code) : match;
+const decodeSourceEntities = (value: string) => value
+  .replace(/&#(\d+);/g, (match, code: string) => decodeCodePoint(match, Number(code)))
+  .replace(/&#x([0-9a-f]+);/gi, (match, code: string) => decodeCodePoint(match, Number.parseInt(code, 16)))
+  .replace(/&nbsp;/gi, "\u00a0")
+  .replace(/&quot;/gi, '"')
+  .replace(/&#39;|&apos;/gi, "'")
+  .replace(/&amp;/gi, "&");
+
 export const sanitizeSourceHtml = (value: unknown): string => {
-  const source = asString(value).replace(/<!--[\s\S]*?-->/g, "").replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "");
+  const source = decodeSourceEntities(asString(value)).replace(/<!--[\s\S]*?-->/g, "").replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "");
   return escapeHtml(source)
-    .replace(/&lt;(p|h2|h3|strong|em|b|i|ul|ol|li|blockquote)(?:\s[^]*?)?&gt;/gi, "<$1>")
-    .replace(/&lt;\/(p|h2|h3|strong|em|b|i|ul|ol|li|blockquote)&gt;/gi, "</$1>")
+    .replace(/&lt;(p|h2|h3|strong|em|b|i|span|ul|ol|li|blockquote)(?:\s[^]*?)?&gt;/gi, "<$1>")
+    .replace(/&lt;\/(p|h2|h3|strong|em|b|i|span|ul|ol|li|blockquote)&gt;/gi, "</$1>")
     .replace(/&lt;br\s*\/?&gt;/gi, "<br>");
 };
 

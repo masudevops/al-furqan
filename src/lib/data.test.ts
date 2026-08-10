@@ -83,6 +83,14 @@ describe("provider HTML sanitization", () => {
     expect(html).not.toContain("<script>");
     expect(html).not.toContain("onclick");
   });
+
+  it("renders provider span formatting without leaking markup or inline styles", () => {
+    const html = sanitizeSourceHtml('<strong>Themes:</strong><span style="font-weight: 400;">Purpose&nbsp;and context</span>');
+    expect(html).toBe("<strong>Themes:</strong><span>Purpose\u00a0and context</span>");
+    expect(html).not.toContain("style=");
+    expect(html).not.toContain("&lt;span");
+    expect(html).not.toContain("&amp;nbsp;");
+  });
 });
 
 describe("Tajweed page data", () => {

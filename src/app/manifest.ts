@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Al-Furqan — Quran & Worship Companion",
+    name: "Al-Furqan — Quran & Sunnah Companion",
     short_name: "Al-Furqan",
-    description: "A free, ad-free, privacy-first Quran and worship companion.",
+    description: "A free, ad-free, privacy-first Quran and Sunnah companion.",
     start_url: "/",
     display: "standalone",
     background_color: "#f6f2e8",

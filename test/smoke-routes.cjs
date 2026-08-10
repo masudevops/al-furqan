@@ -131,11 +131,15 @@ const run = async () => {
       !homeResponse.ok ||
       !homeText.includes("Al-Furqan") ||
       !homeText.includes("A quiet place") ||
+      !homeText.includes("to meet the Quran") ||
+      !homeText.includes("The Noble Quran, without the noise.") ||
       !homeText.includes("Salah Times") ||
       !homeText.includes("Masjid Finder") ||
       !homeText.includes('property="og:title"') ||
+      !homeText.includes('property="og:url"') ||
       !homeText.includes('property="og:image"') ||
       !homeText.includes('name="twitter:card"') ||
+      !homeText.includes('rel="canonical"') ||
       !homeText.includes('/icon.svg')
     ) {
       throw new Error("Home page failed smoke check.");

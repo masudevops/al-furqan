@@ -1,6 +1,6 @@
 # Al-Furqan · الفرقان
 
-Al-Furqan is a free, ad-free, privacy-respecting Quran and Islamic worship companion. The public experience includes all 114 Surahs, authoritative Arabic, translations, Tafsir, word-by-word study, official Mushaf pages, structural navigation, continuous Ayah recitation, Tajweed, Salah Times, Dua, Qibla, and a Masjid Finder.
+Al-Furqan is a free, ad-free, privacy-respecting Quran and Sunnah companion. The public experience includes all 114 Surahs, authoritative Arabic, translations, Tafsir, word-by-word study, official Mushaf pages, structural navigation, continuous Ayah recitation, Tajweed, Salah Times, Dua, Qibla, and a Masjid Finder.
 
 Religious content is never generated or substituted. Quran content is fetched from Quran.Foundation through a server-only SDK boundary and protected from automatic browser translation.
 

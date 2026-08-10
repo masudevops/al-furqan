@@ -398,7 +398,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const renderHome = () => <main className={styles.main}>
     <section className={styles.hero}>
       <p className={styles.kicker}>بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</p>
-      <h1>A quiet place<br/>to return to the Quran.</h1>
+      <h1>A quiet place<br/>to meet the Quran.</h1>
       <p>Read with clarity, continue without friction, and keep the Quran at the center.</p>
       <Link className={styles.primary} href={lastRead ? `/quran/${lastRead.chapterId}/${lastRead.verseNumber}` : "/quran/1"}>Begin reading <span>→</span></Link>
     </section>

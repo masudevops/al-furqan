@@ -130,9 +130,30 @@ const run = async () => {
     if (
       !homeResponse.ok ||
       !homeText.includes("Al-Furqan") ||
-      !homeText.includes("No generated scripture")
+      !homeText.includes("No generated scripture") ||
+      !homeText.includes("Salah Times") ||
+      !homeText.includes("Masjid Finder")
     ) {
       throw new Error("Home page failed smoke check.");
+    }
+
+    const publicPages = [
+      ["/quran", "Choose a Surah"],
+      ["/quran/mushaf/1", "Mushaf Page"],
+      ["/quran/structure", "Browse by structure"],
+      ["/sunnah", "Sunnah is temporarily unavailable"],
+      ["/salah-times", "Salah Times"],
+      ["/dua", "Hisnul Muslim"],
+      ["/qibla", "Qibla"],
+      ["/masjid-finder", "Masjid Finder"],
+    ];
+
+    for (const [route, expectedText] of publicPages) {
+      const response = await fetch(`${BASE_URL}${route}`);
+      const body = await response.text();
+      if (!response.ok || !body.includes(expectedText)) {
+        throw new Error(`${route} failed smoke check.`);
+      }
     }
 
     const bootstrapResponse = await fetch(`${BASE_URL}/api/bootstrap`);

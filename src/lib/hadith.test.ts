@@ -9,8 +9,21 @@ describe("ummahHadithAdapter", () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it("discovers collections dynamically", async () => {
-    vi.mocked(fetch).mockImplementationOnce(() => response({ collections: [{ key: "bukhari", name: "Sahih al-Bukhari", total_hadiths: 7580 }] }));
+    vi.mocked(fetch).mockImplementationOnce(() => response({ collections: [{ key: "bukhari", name: "Sahih al-Bukhari", total_hadiths: 7580 }, { key: "shahwaliullah", name: "Shah Waliullah's 40 Hadith", total_hadiths: 40 }] }));
     await expect(ummahHadithAdapter.collections()).resolves.toEqual([{ id: "bukhari", name: "Sahih al-Bukhari", sections: [{ id: "all", name: "All available Hadith" }], total: 7580 }]);
+  });
+
+  it("blocks the excluded Shah Waliullah collection from direct access", async () => {
+    await expect(ummahHadithAdapter.list("shahwaliullah")).rejects.toThrow("Invalid Hadith collection");
+    await expect(ummahHadithAdapter.one("shahwaliullah", 1)).resolves.toBeNull();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("selects a stable daily record from an allowed live collection", async () => {
+    vi.mocked(fetch)
+      .mockImplementationOnce(() => response({ collections: [{ key: "bukhari", name: "Sahih al-Bukhari", total_hadiths: 50 }] }))
+      .mockImplementationOnce(() => response({ hadiths: [record()], page: 1, total: 50, total_pages: 2 }));
+    await expect(ummahHadithAdapter.daily("2026-08-11")).resolves.toMatchObject({ collectionId: "bukhari", hadithNumber: 7 });
   });
 
   it("normalizes source text and labels a grade without inventing its authority", async () => {

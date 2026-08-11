@@ -1,6 +1,7 @@
 import "server-only";
 
 import { DEFAULT_BOOKMARK_MUSHAF, DEFAULT_FEED_QUERY, LIST_PREVIEW_LIMIT, SESSION_EXPIRED_MESSAGE } from "@/lib/constants";
+import { dailyIndex } from "@/lib/daily";
 import { getConfig } from "@/lib/env";
 import { decodeJwt } from "@/lib/oauth";
 import type { StoredSession } from "@/lib/session/store";
@@ -865,6 +866,45 @@ export const loadVerseRange = async (session: StoredSession, from: string, to: s
   const { serverClient } = await createClients(session);
   const response = await serverClient.content.v4.verses.byRange(from, to, { fields: { textUthmani: true, textUthmaniTajweed: true }, perPage: 50 });
   return toArray(response, ["data", "verses"]).map((verse) => ({ arabicText: asString(verse.textUthmani ?? verse.text_uthmani), tajweedHtml: sanitizeTajweedMarkup(verse.textUthmaniTajweed ?? verse.text_uthmani_tajweed), verseKey: asString(verse.verseKey ?? verse.verse_key), pageNumber: asNullableNumber(verse.pageNumber ?? verse.page_number) }));
+};
+
+export const loadDailyVerse = async (session: StoredSession, day: string) => {
+  const { serverClient } = await createClients(session);
+  const chapterResponse = await serverClient.content.v4.chapters.list();
+  const chapters = toArray(chapterResponse, ["data", "chapters"]).map((chapter) => ({
+    id: Number(asNullableNumber(chapter.id) ?? 0),
+    name: asString(chapter.nameSimple ?? chapter.name_simple),
+    verses: Number(asNullableNumber(chapter.versesCount ?? chapter.verses_count) ?? 0),
+  })).filter((chapter) => chapter.id > 0 && chapter.verses > 0);
+  const totalVerses = chapters.reduce((total, chapter) => total + chapter.verses, 0);
+  let ordinal = dailyIndex(day, totalVerses, "quran-verse");
+  const chapter = chapters.find((candidate) => {
+    if (ordinal < candidate.verses) return true;
+    ordinal -= candidate.verses;
+    return false;
+  });
+  if (!chapter) throw new Error("A daily Quran verse could not be selected.");
+
+  const translationsResponse = await serverClient.content.v4.resources.translations.list({ language: "en" });
+  const translations = toArray(translationsResponse, ["data", "translations"]);
+  const configuredIds = getConfig().translationIds;
+  const resource = translations.find((item) => configuredIds.includes(Number(asNullableNumber(item.id) ?? 0))) ?? translations[0];
+  const translationId = Number(asNullableNumber(resource?.id) ?? 0);
+  if (!translationId) throw new Error("A verified English translation is unavailable.");
+
+  const verseKey = `${chapter.id}:${ordinal + 1}`;
+  const response = await serverClient.raw.content.v4.versesByVerseKey({ path: { verse_key: verseKey }, query: { fields: { textUthmani: true }, translations: [translationId] } });
+  const verse = asObject(asObject(response).verse ?? response);
+  const translation = getTranslation(verse.translations, translationId);
+  const arabicText = asString(verse.textUthmani ?? verse.text_uthmani);
+  if (!arabicText || !translation.text) throw new Error("The sourced daily Quran verse is incomplete.");
+  return {
+    arabicText,
+    chapterName: chapter.name,
+    translationName: translation.name ?? asString(resource.name, "Verified English translation"),
+    translationText: translation.text,
+    verseKey,
+  };
 };
 
 export const loadFootnote = async (session: StoredSession, id: number): Promise<FootnotePayload> => {

@@ -6,6 +6,7 @@ import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "reac
 import useSWR, { preload } from "swr";
 
 import PrayerTimes from "@/components/prayer-times";
+import DailyContent from "@/components/daily-content";
 import MutashabihatPanel from "@/components/mutashabihat-panel";
 import {
   normalizeAyahRange,
@@ -435,6 +436,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       </article>
       <Link className={styles.entryCard} href="/quran"><span className={styles.entryIcon}><Icon name="quran"/></span><div><p className={styles.label}>Quran</p><h2>Browse all 114 Surahs</h2><p>Arabic text and trusted translations from Quran.Foundation.</p></div><b>→</b></Link>
     </section>
+    <DailyContent/>
     <PrayerTimes/>
     <section className={styles.quickLinks}><Link href="/dua"><span>Dua</span><b>Daily remembrance →</b></Link><Link href="/qibla"><span>Qibla</span><b>Find the direction →</b></Link><Link href="/masjid-finder"><span>Nearby</span><b>Find a masjid →</b></Link></section>
   </main>;

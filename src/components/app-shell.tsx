@@ -445,14 +445,14 @@ export default function AppShell({ children }: { children: ReactNode }) {
     <header className={styles.pageHeader}><p className={styles.kicker}>The Noble Quran</p><h1>Choose a Surah</h1><p>Browse the complete Quran. Reading never requires an account.</p></header>
     <div className={styles.quranBrowseTools}><Link href="/quran/mushaf/1">Mushaf view</Link><Link href="/quran/structure">Browse by structure</Link><Link href="/reflect">Lessons & reflections</Link><Link href="/quran/resources">Quran resources</Link></div>
     <label className={styles.search}><span>⌕</span><input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Search by Surah name or number"/><kbd>114</kbd></label>
-    {chaptersLoading ? <div className={styles.skeletonGrid} aria-label="Loading chapters">{Array.from({length: 9},(_,i)=><i key={i}/>)}</div> : null}
+    {chaptersLoading ? children ?? <div className={styles.skeletonGrid} aria-label="Loading chapters">{Array.from({length: 9},(_,i)=><i key={i}/>)}</div> : null}
     {chaptersError ? <ErrorState message={messageOf(chaptersError)}/> : null}
     {!chaptersLoading && !chaptersError ? <div className={styles.chapterList}>{filteredChapters.map(chapter => <Link href={chapter.readerUrl} className={styles.chapterRow} key={chapter.id}><span className={styles.chapterNumber}>{chapter.id}</span><div><h2>{chapter.nameSimple}</h2><p>{chapter.translatedName} · {chapter.versesCount} Ayahs</p></div><strong lang="ar" dir="rtl" translate="no">{chapter.nameArabic}</strong><b>›</b></Link>)}</div> : null}
     {!chaptersLoading && !chaptersError && filteredChapters.length === 0 ? <p className={styles.empty}>No Surahs match your search.</p> : null}
   </main>;
 
   const renderReader = () => <main className={`${styles.main} ${styles.readerMain}`} style={{"--arabic-size": `${arabicSize}px`, "--translation-size": `${translationSize}px`} as React.CSSProperties}>
-    {readerLoading || (chapterId && (!selectedTranslation || !selectedRecitation) && !translationsError && !recitationsError) ? <ReaderSkeleton/> : null}
+    {readerLoading || (chapterId && (!selectedTranslation || !selectedRecitation) && !translationsError && !recitationsError) ? children ?? <ReaderSkeleton/> : null}
     {readerError || translationsError || recitationsError || tafsirsError ? <ErrorState message={messageOf(readerError ?? translationsError ?? recitationsError ?? tafsirsError)}/> : null}
     {reader ? <>
       <header className={styles.readerHeader}><div><Link href="/quran">← All Surahs</Link><p>Surah {reader.chapter.id}</p><h1>{reader.chapter.nameSimple}</h1><span>{reader.chapter.translatedName} · {reader.chapter.versesCount} Ayahs</span></div><strong lang="ar" dir="rtl" translate="no">{reader.chapter.nameArabic}</strong></header>

@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 
 import { starterConfig } from "../../starter.config";
 import AppShell from "@/components/app-shell";
+import StructuredData, { siteStructuredData } from "@/components/structured-data";
 import "./globals.css";
 
 const bodyFont = localFont({
@@ -27,7 +28,6 @@ export const metadata: Metadata = {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
     apple: [{ url: "/apple-icon", sizes: "180x180", type: "image/png" }],
   },
-  keywords: ["Quran", "Tajweed", "Tafsir", "Salah times", "Dua", "Qibla", "Islamic app"],
   openGraph: {
     title: "The Noble Quran, without the noise.",
     description: "Read the Quran with Tajweed, trusted translations, Tafsir and audio—plus Salah times, Dua, Qibla, and more. Free, private, and ad-free.",
@@ -43,6 +43,10 @@ export const metadata: Metadata = {
     images: ["/opengraph-image"],
   },
   robots: { index: true, follow: true },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION,
+    other: process.env.BING_SITE_VERIFICATION ? { "msvalidate.01": process.env.BING_SITE_VERIFICATION } : undefined,
+  },
 };
 
 export default function RootLayout({
@@ -53,6 +57,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${bodyFont.variable} ${monoFont.variable}`}>
+        <StructuredData data={siteStructuredData}/>
         <AppShell>{children}</AppShell>
       </body>
     </html>

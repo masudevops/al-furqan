@@ -8,10 +8,11 @@ import styles from "./hadith-browser.module.css";
 
 type Collection = { id: string; name: string; sections: Array<{ id: string; name: string }>; total: number };
 type Hadith = { arabic: string; authenticityContext: string; bookNumber: number; collectionId: string; collectionName: string; grades: Array<{ grade: string; scholar: string }>; hadithNumber: number; narrator: string; referenceNumber: number; sectionName: string; text: string };
+type HadithPage = { items: Hadith[]; page: number; pages: number; total: number };
 const fetcher = async (url: string) => { const response = await fetch(url); const value = await response.json(); if (!response.ok) throw value; return value; };
 
-export default function HadithBrowser({ collectionId, hadithNumber }: { collectionId?: string; hadithNumber?: string }) {
-  const { data: catalog, error: catalogError } = useSWR<{ items: Collection[] }>("/api/hadith/collections", fetcher);
+export default function HadithBrowser({ collectionId, hadithNumber, initialCatalog, initialItem, initialList }: { collectionId?: string; hadithNumber?: string; initialCatalog?: Collection[]; initialItem?: Hadith | null; initialList?: HadithPage }) {
+  const { data: catalog, error: catalogError } = useSWR<{ items: Collection[] }>("/api/hadith/collections", fetcher, { fallbackData: initialCatalog ? { items: initialCatalog } : undefined, revalidateOnFocus: false });
   const [collection, setCollection] = useState(collectionId ?? "bukhari");
   const [section, setSection] = useState("all");
   const [queryInput, setQueryInput] = useState("");
@@ -23,8 +24,8 @@ export default function HadithBrowser({ collectionId, hadithNumber }: { collecti
   const selected = catalog?.items.find((item) => item.id === collection);
   useEffect(() => { if (selected?.sections.length && !selected.sections.some((item) => item.id === section)) setSection(selected.sections[0].id); }, [selected, section]);
   const listUrl = !hadithNumber && selected ? `/api/hadith/${collection}?${query ? `query=${encodeURIComponent(query)}` : `page=${page}`}` : null;
-  const { data: list, error: listError, isLoading } = useSWR<{ items: Hadith[]; page: number; pages: number; total: number }>(listUrl, fetcher);
-  const { data: detail, error: detailError } = useSWR<{ item: Hadith }>(hadithNumber && collectionId ? `/api/hadith/${collectionId}/${hadithNumber}` : null, fetcher);
+  const { data: list, error: listError, isLoading } = useSWR<HadithPage>(listUrl, fetcher, { fallbackData: initialList, revalidateOnFocus: false });
+  const { data: detail, error: detailError } = useSWR<{ item: Hadith }>(hadithNumber && collectionId ? `/api/hadith/${collectionId}/${hadithNumber}` : null, fetcher, { fallbackData: initialItem ? { item: initialItem } : undefined, revalidateOnFocus: false });
   const item = detail?.item;
   const bookmarkId = item ? `sunnah:${item.collectionId}:${item.hadithNumber}` : "";
   const bookmarked = hasLocalBookmark(bookmarks, bookmarkId);

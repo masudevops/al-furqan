@@ -140,9 +140,22 @@ const run = async () => {
       !homeText.includes('property="og:image"') ||
       !homeText.includes('name="twitter:card"') ||
       !homeText.includes('rel="canonical"') ||
+      !homeText.includes('application/ld+json') ||
       !homeText.includes('/icon.svg')
     ) {
       throw new Error("Home page failed smoke check.");
+    }
+
+    const robotsResponse = await fetch(`${BASE_URL}/robots.txt`);
+    const robotsText = await robotsResponse.text();
+    if (!robotsResponse.ok || !robotsText.includes("Sitemap: https://al-furqan.app/sitemap.xml") || !robotsText.includes("Disallow: /api/")) {
+      throw new Error("robots.txt failed SEO smoke check.");
+    }
+
+    const sitemapResponse = await fetch(`${BASE_URL}/sitemap.xml`);
+    const sitemapText = await sitemapResponse.text();
+    if (!sitemapResponse.ok || !sitemapText.includes("https://al-furqan.app/quran") || !sitemapText.includes("https://al-furqan.app/sunnah")) {
+      throw new Error("sitemap.xml failed SEO smoke check.");
     }
 
     const socialAssets = [

@@ -1,11 +1,17 @@
-import { NextResponse } from "next/server";
 import { HADITH_ENABLED } from "@/lib/feature-flags";
+import { sunnahNowHadithAdapter } from "@/lib/hadith";
+import { publicContentJson } from "@/lib/public-content";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   if (!HADITH_ENABLED) {
-    return NextResponse.json({ error: "Hadith is disabled pending verified Sunnah.com integration.", items: [] }, { status: 503 });
+    return publicContentJson({ error: "Sunnah browsing is not enabled for this deployment.", items: [] }, 503);
   }
-  return NextResponse.json({ error: "Sunnah.com integration is not configured.", items: [] }, { status: 501 });
+  try {
+    return publicContentJson({ error: null, items: await sunnahNowHadithAdapter.collections() });
+  } catch (error) {
+    console.error("Sunnah.now catalog request failed", { message: error instanceof Error ? error.message : "Unknown error" });
+    return publicContentJson({ error: "The sourced Sunnah catalog is unavailable right now.", items: [] }, 502);
+  }
 }

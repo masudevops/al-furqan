@@ -28,7 +28,8 @@ export default function PrayerTimes() {
     if (!location) return;
     const method = localStorage.getItem("af-prayer-method") || "2";
     const school = localStorage.getItem("af-prayer-school") || "0";
-    const params = new URLSearchParams({ latitude:String(location.latitude), longitude:String(location.longitude), method, school });
+    const highLatitude = localStorage.getItem("af-prayer-high-latitude") || "0";
+    const params = new URLSearchParams({ latitude:String(location.latitude), longitude:String(location.longitude), method, school, highLatitude });
     const cacheKey = `af-prayers:${new Date().toISOString().slice(0,10)}:${params}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) { try { setPayload(JSON.parse(cached)); return; } catch {} }

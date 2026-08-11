@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
   const search = request.nextUrl.searchParams;
   const method = /^\d+$/.test(search.get("method") ?? "") ? search.get("method")! : "2";
   const school = search.get("school") === "1" ? "1" : "0";
+  const highLatitude = ["0", "1", "2", "3"].includes(search.get("highLatitude") ?? "") ? search.get("highLatitude")! : "0";
   const latitude = search.get("latitude");
   const longitude = search.get("longitude");
   const city = search.get("city")?.trim();
@@ -28,6 +29,7 @@ export async function GET(request: NextRequest) {
   }
   upstream.searchParams.set("method", method);
   upstream.searchParams.set("school", school);
+  upstream.searchParams.set("latitudeAdjustmentMethod", highLatitude);
   if (monthly) {
     upstream.searchParams.set("month", String(month));
     upstream.searchParams.set("year", String(year));

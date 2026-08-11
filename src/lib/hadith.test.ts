@@ -1,43 +1,37 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { sunnahNowHadithAdapter } from "@/lib/hadith";
 
-import { jsDelivrHadithAdapter } from "@/lib/hadith";
+const response = (body: unknown) => Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(body) } as Response);
+const record = (overrides: Record<string, unknown> = {}) => ({
+  id: 7,
+  metadata: { volume: { id: 1 }, chapter: { id: 2, language: { en: { text: "Belief" } } } },
+  language: { ar: { text: "نص عربي" }, en: { narrator: "Narrated by a named companion", text: "English source text" } },
+  ...overrides,
+});
 
-const response = (value: unknown) => Promise.resolve({
-  json: async () => value,
-  ok: true,
-} as Response);
+describe("sunnahNowHadithAdapter", () => {
+  beforeEach(() => { process.env.SUNNAH_NOW_API_KEY = "server-secret"; vi.stubGlobal("fetch", vi.fn()); });
+  afterEach(() => { delete process.env.SUNNAH_NOW_API_KEY; vi.unstubAllGlobals(); });
 
-describe("jsDelivrHadithAdapter", () => {
-  beforeEach(() => vi.restoreAllMocks());
-
-  it("maps provider reference and named grades without inference", async () => {
-    vi.spyOn(globalThis, "fetch")
-      .mockImplementationOnce(() => response({ metadata: { name: "Jami At Tirmidhi", section: { "1": "Purification" } }, hadiths: [{ hadithnumber: 1, text: "Translation", grades: [{ name: "Named scholar", grade: "Sahih" }], reference: { book: 1, hadith: 1 } }] }))
-      .mockImplementationOnce(() => response({ hadiths: [{ hadithnumber: 1, text: "نص عربي" }] }));
-
-    await expect(jsDelivrHadithAdapter.one("tirmidhi", 1)).resolves.toMatchObject({
-      arabic: "نص عربي",
-      bookNumber: 1,
-      collectionName: "Jami At Tirmidhi",
-      grades: [{ grade: "Sahih", scholar: "Named scholar" }],
-      referenceNumber: 1,
-      text: "Translation",
-    });
+  it("discovers the provider catalog with a server-only key header", async () => {
+    vi.mocked(fetch).mockImplementationOnce(() => response([{ collection: "Sahih al-Bukhari", slug: "bukhari" }]));
+    await expect(sunnahNowHadithAdapter.collections()).resolves.toEqual([{ id: "bukhari", name: "Sahih al-Bukhari", sections: [{ id: "all", name: "All available Hadith" }] }]);
+    expect(vi.mocked(fetch).mock.calls[0][1]).toMatchObject({ headers: { "X-API-Key": "server-secret" } });
   });
 
-  it("does not publish a record when the provider supplies no grade", async () => {
-    vi.spyOn(globalThis, "fetch")
-      .mockImplementationOnce(() => response({ metadata: { name: "Collection", section: { "1": "Book" } }, hadiths: [{ hadithnumber: 1, text: "Translation", grades: [], reference: { book: 1, hadith: 1 } }] }))
-      .mockImplementationOnce(() => response({ hadiths: [{ hadithnumber: 1, text: "نص عربي" }] }));
-
-    await expect(jsDelivrHadithAdapter.one("collection", 1)).resolves.toBeNull();
+  it("normalizes exact source fields without inventing a grade", async () => {
+    vi.mocked(fetch).mockImplementationOnce(() => response([record()]));
+    await expect(sunnahNowHadithAdapter.list("bukhari", "all")).resolves.toEqual([expect.objectContaining({ arabic: "نص عربي", authenticityContext: "Sahih al-Bukhari", bookNumber: 1, grades: [], hadithNumber: 7, narrator: "Narrated by a named companion", sectionName: "Belief", text: "English source text" })]);
   });
 
-  it("keeps explicitly numbered book zero records", async () => {
-    vi.spyOn(globalThis, "fetch")
-      .mockImplementationOnce(() => response({ metadata: { name: "Sunan Ibn Majah", section: { "0": "The Book of the Sunnah" } }, hadiths: [{ hadithnumber: 1, text: "Translation", grades: [{ name: "Named scholar", grade: "Sahih" }], reference: { book: 0, hadith: 1 } }] }))
-      .mockImplementationOnce(() => response({ hadiths: [{ hadithnumber: 1, text: "نص عربي" }] }));
+  it("omits incomplete religious records", async () => {
+    vi.mocked(fetch).mockImplementationOnce(() => response([record({ language: { ar: { text: "" }, en: { text: "English only" } } })]));
+    await expect(sunnahNowHadithAdapter.list("bukhari", "all")).resolves.toEqual([]);
+  });
 
-    await expect(jsDelivrHadithAdapter.one("ibnmajah", 1)).resolves.toMatchObject({ bookNumber: 0, sectionName: "The Book of the Sunnah" });
+  it("fails before a request when the server key is missing", async () => {
+    delete process.env.SUNNAH_NOW_API_KEY;
+    vi.mocked(fetch).mockImplementationOnce(() => response(record()));
+    await expect(sunnahNowHadithAdapter.one("bukhari", 7)).rejects.toThrow("API key is not configured");
   });
 });

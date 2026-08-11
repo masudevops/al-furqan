@@ -1,11 +1,11 @@
 # Hadith source and integrity policy
 
-Status: disabled. No Hadith provider is published while Sunnah.com API access is pending.
+Status: disabled and on hold while the owner waits for a submitted Sunnah.com API-access request. The sunnah.now integration was cancelled because its early-access catalog contains only Sahih al-Bukhari. UmmahAPI Hadith is not approved: its live response identifies `fawazahmed0/hadith-api via jsDelivr` as the upstream source, and tested grades do not name a grading authority.
 
-The initial `fawazahmed0/hadith-api` adapter remains in the working tree as non-public scaffolding, but its feature flag is off, navigation is hidden, and all same-origin Hadith API routes return HTTP 503 without contacting that provider. It must not be enabled in production.
+The provider-neutral `HadithSourceAdapter` remains an architectural boundary, but no external Hadith source is approved for publication. Keep `SUNNAH_NOW_ENABLED` unset/false. Source failures and disabled access must produce an unavailable state rather than fallback content.
 
-`HadithSourceAdapter` isolates catalog, list/search, and detail operations so a verified Sunnah.com adapter can replace the disabled provider without rewriting the UI. The owner has initiated the Sunnah.com API-key request. When access is granted, the server adapter, response mappings, attribution, caching limits, and production behavior must be verified before the feature flag changes.
+Version 0.1.0 currently publishes Sahih al-Bukhari in Arabic and English. The API supplies collection, volume, chapter, Hadith identifiers, narrator, and texts. It does not currently supply a distinct per-Hadith authenticity-grade field. Al-Furqan displays the exact collection-level context and explicitly states that no per-Hadith grade was supplied; it never infers or generates one.
 
-Hadith bookmarks are also disabled. They must not be sent through Quran.Foundation's Quran bookmark schema because that would misrepresent external content. Cross-device synchronization needs an explicitly supported external-content schema before it can be enabled.
+Records missing an identifier, Arabic text, or English text are omitted. Source failures produce an unavailable state rather than fallback religious content. Local Hadith bookmarks use the shared versioned bookmark store; cross-device sync remains deferred until an external-content bookmark schema is defined.
 
-Planned source documentation: <https://sunnah.stoplight.io/docs/api/skano6c6wbtl5-sunnah-com-api>.
+If Sunnah.com access is granted, its source contract must be audited before implementation. If it is unavailable, alternative providers—including UmmahAPI—can be reassessed explicitly. See [EPIC-UMMAHAPI-AUDIT.md](EPIC-UMMAHAPI-AUDIT.md) for the non-Hadith roadmap and fallback-source findings.

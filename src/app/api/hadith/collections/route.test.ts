@@ -8,7 +8,7 @@ describe("disabled Hadith route", () => {
 
     expect(response.status).toBe(503);
     await expect(response.json()).resolves.toEqual({
-      error: "Hadith is disabled pending verified Sunnah.com integration.",
+      error: "Sunnah browsing is not enabled for this deployment.",
       items: [],
     });
   });

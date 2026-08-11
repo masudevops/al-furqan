@@ -25,8 +25,9 @@
 .detail > h1 { font-size: 34px; margin: 10px 0 30px; }
 .arabic { font: 500 34px/2.15 Georgia; text-align: right; }
 .translation { color: var(--translation); font-size: 17px; line-height: 1.85; }
+.narrator { color: var(--muted); font-style: italic; line-height: 1.65; }
 .detail section { display: grid; gap: 7px; background: var(--soft); border: 1px solid var(--line); padding: 18px; margin: 25px 0; }
-.detail section span { font-size: 12px; }
+.detail section span, .detail section small { font-size: 12px; line-height: 1.55; }
 .detail > button { padding: 12px 18px; }
 .detail > small { display: block; margin-top: 22px; line-height: 1.6; }
 

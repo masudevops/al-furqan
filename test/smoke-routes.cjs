@@ -179,7 +179,7 @@ const run = async () => {
       ["/quran/range?from=1%3A1&to=1%3A7", "Ayahs"],
       ["/quran/resources", "Quran resources"],
       ["/reflect", "Lessons &amp; Reflections"],
-      ["/sunnah", "Sunnah is temporarily unavailable"],
+      ["/sunnah", "Sunnah library"],
       ["/salah-times", "Salah Times"],
       ["/dua", "Hisnul Muslim"],
       ["/qibla", "Qibla"],

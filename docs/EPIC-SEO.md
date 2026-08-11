@@ -2,7 +2,7 @@
 
 ## Goal
 
-Make Al-Furqan technically easy to crawl, understand, and index for Quran, Sunnah, Salah, Dua, Qibla, and related searches without keyword stuffing, generated religious content, or promises of ranking position.
+Make Al-Furqan technically easy to crawl, understand, and index for Quran, Sunnah, Salah, Dua, and other enabled features without keyword stuffing, generated religious content, or promises of ranking position.
 
 ## Delivery sequence
 
@@ -16,7 +16,7 @@ Make Al-Furqan technically easy to crawl, understand, and index for Quran, Sunna
 
 ### 2. Route metadata
 
-- [x] Add descriptive titles, descriptions, Open Graph fields, and canonicals for the homepage, Quran catalog, Surahs, Ayahs, Sunnah catalog, collections, Hadith details, Salah Times, Dua, Qibla, Masjid Finder, Search, Reflect, structure, and resource pages.
+- [x] Add descriptive titles, descriptions, Open Graph fields, and canonicals for the homepage, Quran catalog, Surahs, Ayahs, Sunnah catalog, collections, Hadith details, Salah Times, Dua, Qibla, Masjid Finder, Search, Reflect, and structure pages.
 - [x] Mark invalid/unavailable dynamic Quran and Hadith records `noindex`.
 - [ ] Add source-backed dynamic metadata to Dua and Quran Reflect detail records.
 
@@ -43,9 +43,10 @@ Make Al-Furqan technically easy to crawl, understand, and index for Quran, Sunna
 ### 6. Search-engine verification
 
 - [x] Add optional `GOOGLE_SITE_VERIFICATION` and `BING_SITE_VERIFICATION` metadata hooks.
-- [ ] Owner: create/verify both webmaster accounts and add the production token values in Vercel.
-- [ ] Owner: submit `https://al-furqan.app/sitemap.xml` to Google Search Console and Bing Webmaster Tools.
-- [ ] Owner: inspect and request indexing for `/`, `/quran`, `/sunnah`, and representative Surah/Hadith pages.
+- [x] Owner: verify the domain in Google Search Console through DNS.
+- [x] Owner: submit `https://al-furqan.app/sitemap.xml` to Google Search Console.
+- [x] Owner: inspect and request Google indexing for `/`, `/quran`, and `/sunnah`.
+- [ ] Owner: complete the equivalent Bing Webmaster Tools verification, sitemap, and URL submission workflow.
 
 ## Success measures
 

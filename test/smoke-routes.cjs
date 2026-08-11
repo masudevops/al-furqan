@@ -203,7 +203,6 @@ const run = async () => {
       ["/quran/mushaf/1", "Mushaf Page"],
       ["/quran/structure", "Browse by structure"],
       ["/quran/range?from=1%3A1&to=1%3A7", "Ayahs"],
-      ["/quran/resources", "Quran resources"],
       ["/reflect", "Lessons &amp; Reflections"],
       ["/sunnah", "Sunnah library"],
       ...(features.salahTimes ? [["/salah-times", "Salah Times"]] : []),

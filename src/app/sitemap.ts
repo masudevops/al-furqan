@@ -7,7 +7,7 @@ import { publicFeatures } from "@/lib/features";
 const BASE = "https://al-furqan.app";
 export const revalidate = 86400;
 const core = [
-  "", "/quran", "/sunnah", "/search", "/reflect", "/quran/mushaf/1", "/quran/structure", "/quran/resources",
+  "", "/quran", "/sunnah", "/search", "/reflect", "/quran/mushaf/1", "/quran/structure",
   publicFeatures.salahTimes ? "/salah-times" : null,
   publicFeatures.dua ? "/dua" : null,
   publicFeatures.qibla ? "/qibla" : null,

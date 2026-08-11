@@ -202,14 +202,6 @@ export interface AyahStudyPayload {
   verseKey: string;
 }
 
-export interface QuranResourcePayload {
-  languages: Array<{ direction: string | null; id: number | null; isoCode: string | null; name: string; nativeName: string | null }>;
-  recitationStyles: Array<{ key: string; label: string }>;
-  tafsirs: Array<{ authorName: string | null; id: number; languageName: string | null; name: string }>;
-  translations: Array<{ authorName: string | null; id: number; languageName: string | null; name: string }>;
-  verseMedia: Array<{ authorName: string | null; id: number; languageName: string | null; name: string }>;
-}
-
 export interface MushafWord extends ReaderWord { verseKey: string }
 export interface MushafTajweedVerse {
   arabicText: string;

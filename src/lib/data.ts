@@ -22,7 +22,6 @@ import type {
   ReaderPayload,
   QuranScript,
   QuranReflectPayload,
-  QuranResourcePayload,
   RecitationResource,
   SearchItem,
   TafsirResource,
@@ -1000,31 +999,6 @@ export const loadAyahStudy = async (session: StoredSession, verseKey: string): P
   }).filter((item) => item.questionId > 0 && item.answerHtml);
 
   return { answers, hadiths, verseKey };
-};
-
-export const loadQuranResources = async (session: StoredSession): Promise<QuranResourcePayload> => {
-  const { serverClient } = await createClients(session);
-  const [languagesResponse, stylesResponse, translationsResponse, tafsirsResponse, mediaResponse] = await Promise.all([
-    serverClient.content.v4.resources.languages.list(),
-    serverClient.content.v4.resources.recitationStyles.list(),
-    serverClient.content.v4.resources.translations.list(),
-    serverClient.content.v4.resources.tafsirs.list(),
-    serverClient.content.v4.resources.verseMedia.list(),
-  ]);
-  const normalizeResources = (value: unknown, keys: string[]) => toArray(value, keys).map((item) => ({
-    authorName: asNullableString(item.authorName ?? item.author_name),
-    id: Number(asNullableNumber(item.id) ?? 0),
-    languageName: asNullableString(item.languageName ?? item.language_name),
-    name: asString(item.name),
-  })).filter((item) => item.id > 0 && item.name);
-  const styles = asObject(asObject(stylesResponse).recitationStyles ?? asObject(stylesResponse).recitation_styles ?? stylesResponse);
-  return {
-    languages: toArray(languagesResponse, ["languages", "data"]).map((item) => ({ direction: asNullableString(item.direction), id: asNullableNumber(item.id), isoCode: asNullableString(item.isoCode ?? item.iso_code), name: asString(item.name), nativeName: asNullableString(item.nativeName ?? item.native_name) })).filter((item) => item.name),
-    recitationStyles: Object.entries(styles).filter(([, label]) => typeof label === "string").map(([key, label]) => ({ key, label: String(label) })),
-    tafsirs: normalizeResources(tafsirsResponse, ["tafsirs", "data"]),
-    translations: normalizeResources(translationsResponse, ["translations", "data"]),
-    verseMedia: normalizeResources(mediaResponse, ["verseMedia", "verse_media", "data"]),
-  };
 };
 
 const createSignedOutBootstrap = ({

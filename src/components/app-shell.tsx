@@ -87,7 +87,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const params = useParams<{ chapterId?: string; verseNumber?: string; collection?: string; number?: string }>();
   const router = useRouter();
-  const quranToolRoute = pathname.startsWith("/quran/mushaf") || pathname.startsWith("/quran/structure") || pathname.startsWith("/quran/range") || pathname.startsWith("/quran/resources");
+  const quranToolRoute = pathname.startsWith("/quran/mushaf") || pathname.startsWith("/quran/structure") || pathname.startsWith("/quran/range");
   const route = pathname === "/" ? "home" : pathname.startsWith("/quran") ? "quran" : pathname.startsWith("/sunnah") || pathname.startsWith("/hadith") ? "sunnah" : pathname.startsWith("/salah-times") ? "salah" : pathname.startsWith("/dua") ? "dua" : pathname.startsWith("/qibla") ? "qibla" : pathname.startsWith("/masjid-finder") ? "masjid" : pathname.startsWith("/search") ? "search" : "other";
   const chapterId = params?.chapterId;
   const verseNumber = params?.verseNumber;
@@ -444,7 +444,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
   const renderLibrary = () => <main className={styles.main}>
     <header className={styles.pageHeader}><p className={styles.kicker}>The Noble Quran</p><h1>Choose a Surah</h1><p>Browse the complete Quran. Reading never requires an account.</p></header>
-    <div className={styles.quranBrowseTools}><Link href="/quran/mushaf/1">Mushaf view</Link><Link href="/quran/structure">Browse by structure</Link><Link href="/reflect">Lessons & reflections</Link><Link href="/quran/resources">Quran resources</Link></div>
+    <div className={styles.quranBrowseTools}><Link href="/quran/mushaf/1">Mushaf view</Link><Link href="/quran/structure">Browse by structure</Link><Link href="/reflect">Lessons & reflections</Link></div>
     <label className={styles.search}><span>⌕</span><input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Search by Surah name or number"/><kbd>114</kbd></label>
     {chaptersLoading ? children ?? <div className={styles.skeletonGrid} aria-label="Loading chapters">{Array.from({length: 9},(_,i)=><i key={i}/>)}</div> : null}
     {chaptersError ? <ErrorState message={messageOf(chaptersError)}/> : null}

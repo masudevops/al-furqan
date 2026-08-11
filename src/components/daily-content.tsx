@@ -32,7 +32,7 @@ export default function DailyContent() {
     {data.hadith ? <article className={styles.card}>
       <p className={styles.kicker}>Hadith of the day</p>
       <p className={styles.hadith} translate="no">{data.hadith.text}</p>
-      <footer><span>{data.hadith.collectionName} · Hadith {data.hadith.hadithNumber}<small>{data.hadith.authenticityContext} · Grade supplied by UmmahAPI</small></span><Link href={`/sunnah/${data.hadith.collectionId}/${data.hadith.hadithNumber}`}>Read Arabic & English →</Link></footer>
+      <footer><span>{data.hadith.collectionName} · Hadith {data.hadith.hadithNumber}<small>Reported grade: {data.hadith.authenticityContext}</small></span><Link href={`/sunnah/${data.hadith.collectionId}/${data.hadith.hadithNumber}`}>Read Arabic & English →</Link></footer>
     </article> : null}
   </section>;
 }

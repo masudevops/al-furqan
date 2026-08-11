@@ -1,15 +1,12 @@
-import { describe, expect, it } from "vitest";
-
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { GET } from "@/app/api/hadith/collections/route";
 
-describe("disabled Hadith route", () => {
-  it("returns 503 without publishing provider data", async () => {
+describe("Hadith collections route", () => {
+  afterEach(() => vi.unstubAllGlobals());
+  it("returns the live normalized catalog", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ success: true, data: { collections: [{ key: "bukhari", name: "Sahih al-Bukhari", total_hadiths: 7580 }] } }) } as Response)));
     const response = await GET();
-
-    expect(response.status).toBe(503);
-    await expect(response.json()).resolves.toEqual({
-      error: "Sunnah browsing is not enabled for this deployment.",
-      items: [],
-    });
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ error: null, items: [{ id: "bukhari", name: "Sahih al-Bukhari", total: 7580 }] });
   });
 });

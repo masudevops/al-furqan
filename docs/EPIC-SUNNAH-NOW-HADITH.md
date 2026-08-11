@@ -1,6 +1,6 @@
 # EPIC — Authoritative Sunnah browsing with sunnah.now (superseded)
 
-> Status: cancelled on 2026-08-10. The available early-access catalog contains only Sahih al-Bukhari, so Al-Furqan will not adopt it as the public Sunnah source. Do not enable `SUNNAH_NOW_ENABLED`. See [EPIC-UMMAHAPI-AUDIT.md](EPIC-UMMAHAPI-AUDIT.md); UmmahAPI Hadith is also rejected because it wraps the previously declined fawazahmed0 dataset.
+> Status: cancelled on 2026-08-10. The available early-access catalog contains only Sahih al-Bukhari, so Al-Furqan did not adopt it as the public Sunnah source. The later UmmahAPI decision is documented in [EPIC-UMMAHAPI-AUDIT.md](EPIC-UMMAHAPI-AUDIT.md); it is enabled as an explicitly labelled interim source while Sunnah.com access remains pending.
 
 ## Goal
 

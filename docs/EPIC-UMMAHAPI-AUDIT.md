@@ -14,17 +14,17 @@ Use UmmahAPI only where it adds a well-sourced capability that Quran.Foundation 
 
 ## Critical Hadith decision
 
-**Status: on hold pending the owner's Sunnah.com API request. Do not implement or publish.**
+**Status: conditionally adopted as an interim source while the owner's Sunnah.com API request remains pending.**
 
-Although UmmahAPI advertises 36,000+ records across several collections, its live collection response identifies the source as `fawazahmed0/hadith-api (via jsDelivr CDN)`. That is the same dataset Al-Furqan previously declined to publish. Live checks also found nine reachable collections rather than the advertised ten, no separate book/chapter fields in tested records, and generic grades without a named grading authority. UmmahAPI remains only a fallback candidate if official Sunnah.com access is unavailable and the owner later accepts those limitations.
+The owner accepted UmmahAPI as an interim source after reviewing its limitations. Its live collection response identifies `fawazahmed0/hadith-api (via jsDelivr CDN)` as the upstream source. Live checks found no separate book/chapter fields in tested records and generic grades without a named grading authority. The UI must disclose these limitations and preserve a clean migration path to Sunnah.com.
 
-- [x] Keep `SUNNAH_NOW_ENABLED` off.
-- [x] Do not point the Sunnah adapter at UmmahAPI.
+- [x] Remove the obsolete sunnah.now runtime configuration.
+- [x] Point the provider-neutral adapter at UmmahAPI with explicit provenance and fail-closed normalization.
 - [ ] Wait for the owner's submitted Sunnah.com API-access request.
 - [ ] If access is granted, audit Sunnah.com's collections, references, grading authority, terms, and response contract before implementation.
-- [ ] Remove the abandoned sunnah.now implementation before the next production release.
+- [x] Remove the abandoned sunnah.now implementation before the next production release.
 - [ ] If Sunnah.com access is declined or unavailable, reassess alternatives with Arabic, translation, canonical reference, and named grade authority.
-- [ ] Keep the Sunnah page in a clean unavailable state until that source exists.
+- [x] Enable browse, full-text search, pagination, detail pages, and local bookmarks.
 
 ## Prioritized workstreams
 
@@ -123,7 +123,7 @@ This is high-stakes religious and financial functionality. A generic 2.5% comput
 4. Mutashabihat provenance decision and memorization UI.
 5. Hijri calendar/date adjustment and Qibla distance.
 6. Reconsider blocked services only after written provenance answers.
-7. Handle Hadith separately after the Sunnah.com request is resolved; it is not part of the active UmmahAPI implementation scope.
+7. Operate the interim UmmahAPI Hadith adapter with visible provenance limitations, then reassess and migrate if Sunnah.com access is granted.
 
 ## Definition of done for each enabled service
 

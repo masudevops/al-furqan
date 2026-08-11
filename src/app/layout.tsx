@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import { starterConfig } from "../../starter.config";
 import AppShell from "@/components/app-shell";
 import StructuredData, { siteStructuredData } from "@/components/structured-data";
+import { enabledFeatureLabels } from "@/lib/features";
 import "./globals.css";
 
 const bodyFont = localFont({
@@ -16,6 +17,9 @@ const monoFont = localFont({
   variable: "--font-mono",
 });
 
+const enabledExtras = enabledFeatureLabels();
+const extrasCopy = enabledExtras.length ? `, plus ${enabledExtras.join(", ")}` : "";
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://al-furqan.app"),
   applicationName: starterConfig.app.name,
@@ -23,14 +27,14 @@ export const metadata: Metadata = {
     default: "Al-Furqan — Quran & Sunnah Companion",
     template: "%s · Al-Furqan",
   },
-  description: "A free, ad-free Quran and Sunnah companion with Tajweed, translations, Tafsir, audio, Salah times, Dua, Qibla, and more.",
+  description: `A free, ad-free Quran and Sunnah companion with Tajweed, translations, Tafsir and audio${extrasCopy}.`,
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
     apple: [{ url: "/apple-icon", sizes: "180x180", type: "image/png" }],
   },
   openGraph: {
     title: "The Noble Quran, without the noise.",
-    description: "Read the Quran with Tajweed, trusted translations, Tafsir and audio—plus Salah times, Dua, Qibla, and more. Free, private, and ad-free.",
+    description: `Read the Quran with Tajweed, trusted translations, Tafsir and audio${extrasCopy}. Free, private, and ad-free.`,
     siteName: "Al-Furqan",
     locale: "en_US",
     type: "website",

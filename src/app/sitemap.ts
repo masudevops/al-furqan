@@ -2,10 +2,17 @@ import type { MetadataRoute } from "next";
 import { loadContentPreviewData } from "@/lib/data";
 import { ummahHadithAdapter } from "@/lib/hadith";
 import { createPublicContentSession } from "@/lib/public-content";
+import { publicFeatures } from "@/lib/features";
 
 const BASE = "https://al-furqan.app";
 export const revalidate = 86400;
-const core = ["", "/quran", "/sunnah", "/salah-times", "/dua", "/qibla", "/masjid-finder", "/search", "/reflect", "/quran/mushaf/1", "/quran/structure", "/quran/resources"];
+const core = [
+  "", "/quran", "/sunnah", "/search", "/reflect", "/quran/mushaf/1", "/quran/structure", "/quran/resources",
+  publicFeatures.salahTimes ? "/salah-times" : null,
+  publicFeatures.dua ? "/dua" : null,
+  publicFeatures.qibla ? "/qibla" : null,
+  publicFeatures.masjidFinder ? "/masjid-finder" : null,
+].filter((path): path is string => path !== null);
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();

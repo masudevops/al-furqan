@@ -6,6 +6,13 @@ const path = require("node:path");
 
 const PORT = process.env.SMOKE_PORT || "4315";
 const BASE_URL = `http://127.0.0.1:${PORT}`;
+const enabled = (value, defaultValue) => value == null || value.trim() === "" ? defaultValue : value.toLowerCase() !== "false";
+const features = {
+  salahTimes: enabled(process.env.NEXT_PUBLIC_FEATURE_SALAH_TIMES, true),
+  dua: enabled(process.env.NEXT_PUBLIC_FEATURE_DUA, true),
+  qibla: enabled(process.env.NEXT_PUBLIC_FEATURE_QIBLA, false),
+  masjidFinder: enabled(process.env.NEXT_PUBLIC_FEATURE_MASJID_FINDER, true),
+};
 
 const resolveNpmCli = () => {
   if (process.env.npm_execpath && fs.existsSync(process.env.npm_execpath)) {
@@ -133,8 +140,11 @@ const run = async () => {
       !homeText.includes("A quiet place") ||
       !homeText.includes("to meet the Quran") ||
       !homeText.includes("The Noble Quran, without the noise.") ||
-      !homeText.includes("Salah Times") ||
-      !homeText.includes("Masjid Finder") ||
+      (features.salahTimes && !homeText.includes("Salah Times")) ||
+      (features.dua && !homeText.includes(">Dua<")) ||
+      (features.qibla && !homeText.includes(">Qibla<")) ||
+      (!features.qibla && homeText.includes('href="/qibla"')) ||
+      (features.masjidFinder && !homeText.includes("Masjid Finder")) ||
       !homeText.includes('property="og:title"') ||
       !homeText.includes('property="og:url"') ||
       !homeText.includes('property="og:image"') ||
@@ -156,6 +166,9 @@ const run = async () => {
     const sitemapText = await sitemapResponse.text();
     if (!sitemapResponse.ok || !sitemapText.includes("https://al-furqan.app/quran") || !sitemapText.includes("https://al-furqan.app/sunnah")) {
       throw new Error("sitemap.xml failed SEO smoke check.");
+    }
+    if (!features.qibla && sitemapText.includes("https://al-furqan.app/qibla")) {
+      throw new Error("Disabled Qibla route was included in sitemap.xml.");
     }
 
     const socialAssets = [
@@ -193,10 +206,10 @@ const run = async () => {
       ["/quran/resources", "Quran resources"],
       ["/reflect", "Lessons &amp; Reflections"],
       ["/sunnah", "Sunnah library"],
-      ["/salah-times", "Salah Times"],
-      ["/dua", "Hisnul Muslim"],
-      ["/qibla", "Qibla"],
-      ["/masjid-finder", "Masjid Finder"],
+      ...(features.salahTimes ? [["/salah-times", "Salah Times"]] : []),
+      ...(features.dua ? [["/dua", "Hisnul Muslim"]] : []),
+      ...(features.qibla ? [["/qibla", "Qibla"]] : []),
+      ...(features.masjidFinder ? [["/masjid-finder", "Masjid Finder"]] : []),
     ];
 
     for (const [route, expectedText] of publicPages) {
@@ -204,6 +217,18 @@ const run = async () => {
       const body = await response.text();
       if (!response.ok || !body.includes(expectedText)) {
         throw new Error(`${route} failed smoke check.`);
+      }
+    }
+
+    for (const route of [
+      !features.salahTimes ? "/salah-times" : null,
+      !features.dua ? "/dua" : null,
+      !features.qibla ? "/qibla" : null,
+      !features.masjidFinder ? "/masjid-finder" : null,
+    ].filter(Boolean)) {
+      const response = await fetch(`${BASE_URL}${route}`);
+      if (response.status !== 404) {
+        throw new Error(`${route} should return 404 while disabled.`);
       }
     }
 

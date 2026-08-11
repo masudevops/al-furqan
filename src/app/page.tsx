@@ -3,6 +3,7 @@ import { enabledFeatureLabels } from "@/lib/features";
 
 const enabledExtras = enabledFeatureLabels();
 const extrasCopy = enabledExtras.length ? `, plus ${enabledExtras.join(", ")}` : "";
+const socialImageUrl = "https://al-furqan.app/opengraph-image?v=20260811-2";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
@@ -16,8 +17,8 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/opengraph-image",
-        secureUrl: "/opengraph-image",
+        url: socialImageUrl,
+        secureUrl: socialImageUrl,
         type: "image/png",
         width: 1200,
         height: 630,

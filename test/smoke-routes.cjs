@@ -149,6 +149,7 @@ const run = async () => {
       !homeText.includes('property="og:url"') ||
       !homeText.includes('property="og:image"') ||
       !homeText.includes('property="og:image:secure_url"') ||
+      !homeText.includes('content="https://al-furqan.app/opengraph-image?v=20260811-2"') ||
       (homeText.match(/property="og:image"/g) || []).length !== 1 ||
       (homeText.match(/property="og:image:secure_url"/g) || []).length !== 1 ||
       !homeText.includes('name="twitter:card"') ||

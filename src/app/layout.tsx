@@ -19,6 +19,7 @@ const monoFont = localFont({
 
 const enabledExtras = enabledFeatureLabels();
 const extrasCopy = enabledExtras.length ? `, plus ${enabledExtras.join(", ")}` : "";
+const socialImageUrl = "https://al-furqan.app/opengraph-image?v=20260811-2";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://al-furqan.app"),
@@ -38,13 +39,13 @@ export const metadata: Metadata = {
     siteName: "Al-Furqan",
     locale: "en_US",
     type: "website",
-    images: [{ url: "/opengraph-image", secureUrl: "/opengraph-image", type: "image/png", width: 1200, height: 630, alt: "Al-Furqan — The Noble Quran, without the noise" }],
+    images: [{ url: socialImageUrl, secureUrl: socialImageUrl, type: "image/png", width: 1200, height: 630, alt: "Al-Furqan — The Noble Quran, without the noise" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "The Noble Quran, without the noise.",
     description: "A free, private, and ad-free Quran and Sunnah companion.",
-    images: ["/opengraph-image"],
+    images: [socialImageUrl],
   },
   robots: { index: true, follow: true },
   verification: {

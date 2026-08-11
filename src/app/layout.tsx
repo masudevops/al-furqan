@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     siteName: "Al-Furqan",
     locale: "en_US",
     type: "website",
-    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Al-Furqan — The Noble Quran, without the noise" }],
+    images: [{ url: "/opengraph-image", secureUrl: "/opengraph-image", type: "image/png", width: 1200, height: 630, alt: "Al-Furqan — The Noble Quran, without the noise" }],
   },
   twitter: {
     card: "summary_large_image",

@@ -148,6 +148,9 @@ const run = async () => {
       !homeText.includes('property="og:title"') ||
       !homeText.includes('property="og:url"') ||
       !homeText.includes('property="og:image"') ||
+      !homeText.includes('property="og:image:secure_url"') ||
+      (homeText.match(/property="og:image"/g) || []).length !== 1 ||
+      (homeText.match(/property="og:image:secure_url"/g) || []).length !== 1 ||
       !homeText.includes('name="twitter:card"') ||
       !homeText.includes('rel="canonical"') ||
       !homeText.includes('application/ld+json') ||
@@ -158,7 +161,7 @@ const run = async () => {
 
     const robotsResponse = await fetch(`${BASE_URL}/robots.txt`);
     const robotsText = await robotsResponse.text();
-    if (!robotsResponse.ok || !robotsText.includes("Sitemap: https://al-furqan.app/sitemap.xml") || !robotsText.includes("Disallow: /api/")) {
+    if (!robotsResponse.ok || !robotsText.includes("Sitemap: https://al-furqan.app/sitemap.xml") || !robotsText.includes("Disallow: /api/") || !robotsText.includes("facebookexternalhit") || !robotsText.includes("facebookcatalog") || !robotsText.includes("Allow: /opengraph-image")) {
       throw new Error("robots.txt failed SEO smoke check.");
     }
 

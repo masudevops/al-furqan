@@ -17,6 +17,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: "/opengraph-image",
+        secureUrl: "/opengraph-image",
+        type: "image/png",
         width: 1200,
         height: 630,
         alt: "Al-Furqan — The Noble Quran, without the noise",

@@ -62,6 +62,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://verses.quran.foundation" crossOrigin="anonymous" />
+      </head>
       <body className={`${bodyFont.variable} ${monoFont.variable}`}>
         <StructuredData data={siteStructuredData}/>
         <AppShell>{children}</AppShell>

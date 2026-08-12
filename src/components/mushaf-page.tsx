@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import useSWR from "swr";
+import useSWR, { preload } from "swr";
 import type { MushafPayload } from "@/lib/types";
 import styles from "./quran-tools.module.css";
 
@@ -11,6 +12,18 @@ const fetcher = (url: string) => fetch(url).then(async (response) => {
   if (!response.ok) throw new Error(data.error);
   return data;
 });
+
+const mushafApiUrl = (pageNumber: number) => `/api/quran/mushaf/${pageNumber}?layout=qcf-v4`;
+const mushafFontUrl = (pageNumber: number) => `https://verses.quran.foundation/fonts/quran/hafs/v4/colrv1/woff2/p${pageNumber}.woff2`;
+
+const loadMushafFont = (pageNumber: number) => {
+  const family = `qcf-p${pageNumber}-v4`;
+  if (document.fonts.check(`1em "${family}"`)) return;
+  new FontFace(family, `url(${mushafFontUrl(pageNumber)})`, { display: "swap" })
+    .load()
+    .then((font) => document.fonts.add(font))
+    .catch(() => undefined);
+};
 
 function TajweedLegend() {
   return <aside className={styles.tajweedLegend} aria-label="Tajweed color legend">
@@ -25,7 +38,8 @@ function TajweedLegend() {
 }
 
 export default function MushafPage({ pageNumber }: { pageNumber: number }) {
-  const { data, error, isLoading } = useSWR<MushafPayload>(`/api/quran/mushaf/${pageNumber}?layout=qcf-v4`, fetcher);
+  const router = useRouter();
+  const { data, error, isLoading } = useSWR<MushafPayload>(mushafApiUrl(pageNumber), fetcher, { revalidateOnFocus: false });
   const [readingTheme, setReadingTheme] = useState("sepia");
 
   useEffect(() => {
@@ -37,14 +51,14 @@ export default function MushafPage({ pageNumber }: { pageNumber: number }) {
     return () => observer.disconnect();
   },[]);
   useEffect(() => {
-    if (!data) return;
-    const tajweedFont = new FontFace(
-      `qcf-p${pageNumber}-v4`,
-      `url(https://verses.quran.foundation/fonts/quran/hafs/v4/colrv1/woff2/p${pageNumber}.woff2)`,
-      { display: "block" },
-    );
-    tajweedFont.load().then((font) => document.fonts.add(font)).catch(() => undefined);
-  }, [data, pageNumber]);
+    loadMushafFont(pageNumber);
+    for (const adjacentPage of [pageNumber - 1, pageNumber + 1]) {
+      if (adjacentPage < 1 || adjacentPage > 604) continue;
+      void preload(mushafApiUrl(adjacentPage), fetcher);
+      loadMushafFont(adjacentPage);
+      router.prefetch(`/quran/mushaf/${adjacentPage}`);
+    }
+  }, [pageNumber, router]);
 
   return <main className={styles.page}>
     <header className={styles.header}>
@@ -63,7 +77,8 @@ export default function MushafPage({ pageNumber }: { pageNumber: number }) {
         <form className={styles.tools} action="/quran/mushaf/1" onSubmit={(event) => {
           event.preventDefault();
           const value = new FormData(event.currentTarget).get("page");
-          location.href = `/quran/mushaf/${value}`;
+          const requestedPage = Number(value);
+          if (Number.isInteger(requestedPage) && requestedPage >= 1 && requestedPage <= 604) router.push(`/quran/mushaf/${requestedPage}`);
         }}>
           <input name="page" aria-label="Mushaf page" type="number" min="1" max="604" defaultValue={pageNumber} />
           <button>Go</button>

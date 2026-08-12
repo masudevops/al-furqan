@@ -1,16 +1,16 @@
 .main {
   width: min(920px, calc(100% - 40px));
   margin: auto;
-  padding: 70px 0 110px;
+  padding: 44px 0 110px;
 }
-.main > header { text-align: center; margin-bottom: 36px; }
+.main > header { text-align: left; margin-bottom: 22px; }
 .kicker { color: var(--green); font-size: 11px; font-weight: 750; letter-spacing: .14em; text-transform: uppercase; }
-.main h1 { font: 500 clamp(42px, 6vw, 66px)/1 Georgia; margin: 12px; }
-.main header > p:last-child { color: var(--muted); line-height: 1.6; }
+.main h1 { font: 500 clamp(36px, 5vw, 52px)/1 Georgia; margin: 8px 0; }
+.main header > p:last-child { color: var(--muted); font-size: 14px; line-height: 1.5; margin: 0; }
 .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .controls label { display: grid; gap: 7px; color: var(--muted); font-size: 12px; }
 .controls select, .search input { background: var(--card); border: 1px solid var(--line); color: var(--ink); padding: 13px; }
-.search { display: flex; margin: 18px 0; }
+.search { display: flex; margin: 12px 0 18px; }
 .search input { flex: 1; min-width: 0; }
 .search button, .detail > button { border: 0; background: var(--green); color: #fff; padding: 0 20px; }
 .clearSearch{border:0;background:transparent;color:var(--green);padding:0 0 14px;cursor:pointer}.pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px 0}.pagination button{border:1px solid var(--line);background:var(--card);color:var(--green);padding:10px 12px}.pagination button:disabled{opacity:.45}.pagination span{color:var(--muted);font-size:12px;text-align:center}

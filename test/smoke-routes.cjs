@@ -204,7 +204,7 @@ const run = async () => {
 
     const publicPages = [
       ["/quran", "Choose a Surah"],
-      ["/quran/mushaf/1", "Mushaf Page"],
+      ["/quran/mushaf/1", "Mushaf"],
       ["/quran/structure", "Browse by structure"],
       ["/quran/range?from=1%3A1&to=1%3A7", "Ayahs"],
       ["/reflect", "Lessons &amp; Reflections"],

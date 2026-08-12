@@ -26,9 +26,9 @@ function TajweedLegend() {
 
 export default function MushafPage({ pageNumber }: { pageNumber: number }) {
   const { data, error, isLoading } = useSWR<MushafPayload>(`/api/quran/mushaf/${pageNumber}`, fetcher);
-  const [tajweedEnabled, setTajweedEnabled] = useState(false);
+  const [tajweedEnabled, setTajweedEnabled] = useState(true);
 
-  useEffect(() => setTajweedEnabled(localStorage.getItem("af-tajweed") === "true"), []);
+  useEffect(() => setTajweedEnabled(localStorage.getItem("af-tajweed") !== "false"), []);
   useEffect(() => {
     if (!data) return;
     const font = new FontFace(
@@ -46,9 +46,16 @@ export default function MushafPage({ pageNumber }: { pageNumber: number }) {
 
   return <main className={styles.page}>
     <header className={styles.header}>
-      <div>
+      <div className={styles.mushafHeading}>
         <Link href="/quran">← Quran</Link>
-        <h1>Mushaf Page {pageNumber}</h1>
+        {data ? <>
+          <h1>{data.chapterNames.join(" · ") || "Mushaf"}</h1>
+          <p>{[
+            data.juzNumbers.length ? `Juz ${data.juzNumbers.join("–")}` : null,
+            data.hizbNumbers.length ? `Hizb ${data.hizbNumbers.join("–")}` : null,
+            `Page ${pageNumber}`,
+          ].filter(Boolean).join(" · ")}</p>
+        </> : <><h1>Mushaf</h1><p>Page {pageNumber}</p></>}
       </div>
       <div className={styles.mushafControls}>
         <div className={styles.readingModes} role="group" aria-label="Mushaf reading style">
@@ -77,7 +84,6 @@ export default function MushafPage({ pageNumber }: { pageNumber: number }) {
         </div>
         <footer className={styles.mushafFooter}><span>{data.verseKeys[0]}</span><span>{pageNumber} / 604</span><span>{data.verseKeys.at(-1)}</span></footer>
       </section>
-      <p className={styles.renderingNote}>Tajweed mode preserves the official page boundary and verse text. Switch it off for the exact QCF glyph and physical line layout.</p>
     </> : null}
     {data && !tajweedEnabled ? <section className={styles.mushaf} lang="ar" dir="rtl" translate="no">
       {data.lines.map((line) => <div className={styles.line} key={line.lineNumber} data-line={line.lineNumber}>

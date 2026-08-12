@@ -36,7 +36,7 @@ const toPositiveInt = (value: string | undefined, fallback: number): number => {
 
 export const parseTranslationIds = (value: string | undefined): number[] => {
   if (!value) {
-    return [131];
+    return [20];
   }
 
   const parsed = value
@@ -46,7 +46,7 @@ export const parseTranslationIds = (value: string | undefined): number[] => {
     .map((item) => Number.parseInt(item, 10))
     .filter((item) => Number.isInteger(item) && item > 0);
 
-  return parsed.length > 0 ? parsed : [131];
+  return parsed.length > 0 ? parsed : [20];
 };
 
 const buildServiceOverrides = () => {

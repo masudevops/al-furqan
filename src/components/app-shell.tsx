@@ -45,6 +45,13 @@ type SearchPayload = {
   verseItems: SearchItem[];
 };
 
+export const preferredTranslation = (items: TranslationResource[]) =>
+  items.find((item) => /\b(saheeh|sahih) international\b/i.test(item.name));
+
+export const preferredRecitation = (items: RecitationResource[]) =>
+  items.find((item) => /minshawi/i.test(item.name) && /murattal/i.test(item.style ?? ""))
+  ?? items.find((item) => /minshawi/i.test(item.name));
+
 const fetchJson = async <T,>(url: string): Promise<T> => {
   const response = await fetch(url, { credentials: "include" });
   const payload = await response.json().catch(() => ({}));
@@ -91,11 +98,11 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const route = pathname === "/" ? "home" : pathname.startsWith("/quran") ? "quran" : pathname.startsWith("/sunnah") || pathname.startsWith("/hadith") ? "sunnah" : pathname.startsWith("/salah-times") ? "salah" : pathname.startsWith("/dua") ? "dua" : pathname.startsWith("/qibla") ? "qibla" : pathname.startsWith("/masjid-finder") ? "masjid" : pathname.startsWith("/search") ? "search" : "other";
   const chapterId = params?.chapterId;
   const verseNumber = params?.verseNumber;
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setTheme] = useState<Theme>("sepia");
   const [arabicSize, setArabicSize] = useState(40);
   const [translationSize, setTranslationSize] = useState(17);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [tajweedEnabled, setTajweedEnabled] = useState(false);
+  const [tajweedEnabled, setTajweedEnabled] = useState(true);
   const [quranScript, setQuranScript] = useState<QuranScript>("uthmani");
   const [filter, setFilter] = useState("");
   const [lastRead, setLastRead] = useState<LastRead | null>(null);
@@ -154,10 +161,10 @@ export default function AppShell({ children }: { children: ReactNode }) {
     const savedTranslationId = Number(localStorage.getItem("af-translation-id"));
     const savedRecitationId = Number(localStorage.getItem("af-recitation-id"));
     setFollowRecitation(localStorage.getItem("af-follow-recitation") !== "false");
-    setTajweedEnabled(localStorage.getItem("af-tajweed") === "true");
+    setTajweedEnabled(localStorage.getItem("af-tajweed") !== "false");
     const savedScript = localStorage.getItem("af-quran-script") as QuranScript | null;
     if (["uthmani","uthmani_simple","imlaei","indopak","indopak_nastaleeq"].includes(savedScript ?? "")) setQuranScript(savedScript!);
-    const initialTheme = savedTheme ?? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    const initialTheme = savedTheme ?? "sepia";
     setTheme(initialTheme);
     document.documentElement.dataset.theme = initialTheme;
     if (savedLastRead) { try { setLastRead(JSON.parse(savedLastRead) as LastRead); } catch {} }
@@ -189,8 +196,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
     if (!translations?.items.length) return;
     const saved = Number(localStorage.getItem("af-translation-id"));
     const availableSaved = translations.items.find((item) => item.id === saved);
-    const documentedDefault = translations.items.find((item) => item.id === 131);
-    const selectedId = availableSaved?.id ?? documentedDefault?.id ?? translations.items[0].id;
+    const selectedId = availableSaved?.id ?? preferredTranslation(translations.items)?.id ?? translations.items[0].id;
     setSelectedTranslation(selectedId);
     localStorage.setItem("af-translation-id", String(selectedId));
   }, [translations]);
@@ -198,7 +204,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!recitations?.items.length) return;
     const saved = Number(localStorage.getItem("af-recitation-id"));
-    const selectedId = recitations.items.find(item => item.id === saved)?.id ?? recitations.items.find(item => item.id === 7)?.id ?? recitations.items[0].id;
+    const selectedId = recitations.items.find(item => item.id === saved)?.id ?? preferredRecitation(recitations.items)?.id ?? recitations.items[0].id;
     setSelectedRecitation(selectedId);
     localStorage.setItem("af-recitation-id", String(selectedId));
   }, [recitations]);
@@ -461,7 +467,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
         <div><div><h2>{lastRead?.chapterName ?? chapters?.items?.[0]?.nameSimple ?? "Al-Fatihah"}</h2><p>{lastRead ? `Ayah ${lastRead.verseNumber}` : "The Opening"}</p></div><span className={styles.arabicTitle}>{lastRead ? "اقرأ" : chapters?.items?.[0]?.nameArabic ?? "الفاتحة"}</span></div>
         <Link href={lastRead ? `/quran/${lastRead.chapterId}/${lastRead.verseNumber}` : "/quran/1"}>Resume <span>→</span></Link>
       </article>
-      <Link className={styles.entryCard} href="/quran"><span className={styles.entryIcon}><Icon name="quran"/></span><div><p className={styles.label}>Quran</p><h2>Browse all 114 Surahs</h2><p>Arabic text and trusted translations from Quran.Foundation.</p></div><b>→</b></Link>
+      <Link className={styles.entryCard} href="/quran"><span className={styles.entryIcon}><Icon name="quran"/></span><div><p className={styles.label}>Quran</p><h2>Browse all 114 Surahs</h2><p>Arabic text, trusted translations, Tafsir, Tajweed, and recitation.</p></div><b>→</b></Link>
     </section>
     <DailyContent/>
     {publicFeatures.salahTimes ? <PrayerTimes/> : null}
@@ -495,7 +501,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   </main>;
 
   const renderSearch = () => <main className={styles.main}>
-    <header className={styles.pageHeader}><p className={styles.kicker}>Quran search</p><h1>Find a verse</h1><p>Search Quran.Foundation&apos;s indexed Quran content and open results in reading context.</p></header>
+    <header className={styles.pageHeader}><p className={styles.kicker}>Quran search</p><h1>Find a verse</h1><p>Search the Quran and open results in reading context.</p></header>
     <form className={styles.searchForm} role="search" onSubmit={search}><label htmlFor="quran-search">Search the Quran</label><div><input id="quran-search" type="search" value={searchInput} onChange={event => setSearchInput(event.target.value)} placeholder="Try mercy, guidance, or an Arabic phrase"/><button disabled={!searchInput.trim()}>Search</button></div></form>
     {searchLoading ? <div className={styles.searchLoading} aria-live="polite">Searching…</div> : null}
     {searchError || searchResults?.error ? <ErrorState message={messageOf(searchError ?? { message: searchResults?.error })}/> : null}
@@ -507,7 +513,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
     {route === "home" ? renderHome() : quranToolRoute ? children : route === "quran" && !chapterId ? renderLibrary() : route === "quran" ? renderReader() : route === "search" ? renderSearch() : children}
     <nav className={styles.mobileNav}><Link className={route === "quran" ? styles.active : ""} href="/quran"><Icon name="quran"/><span>Quran</span></Link><Link className={route === "sunnah" ? styles.active : ""} href="/sunnah"><span className={styles.mobileGlyph}>◉</span><span>Sunnah</span></Link>{publicFeatures.salahTimes ? <Link className={route === "salah" ? styles.active : ""} href="/salah-times"><span className={styles.mobileGlyph}>◷</span><span>Salah</span></Link> : null}{publicFeatures.dua ? <Link className={route === "dua" ? styles.active : ""} href="/dua"><span className={styles.mobileGlyph}>✦</span><span>Dua</span></Link> : null}<button className={route === "search" || route === "qibla" || route === "masjid" ? styles.active : ""} onClick={()=>setMoreOpen(value=>!value)}><Icon name="more"/><span>More</span></button></nav>
     {moreOpen?<div className={styles.moreMenu} role="dialog" aria-label="More navigation"><Link href="/search" onClick={()=>setMoreOpen(false)}>Search <span>→</span></Link>{publicFeatures.qibla ? <Link href="/qibla" onClick={()=>setMoreOpen(false)}>Qibla <span>→</span></Link> : null}{publicFeatures.masjidFinder ? <Link href="/masjid-finder" onClick={()=>setMoreOpen(false)}>Masjid Finder <span>→</span></Link> : null}</div>:null}
-    {settingsOpen ? <div className={styles.scrim} onMouseDown={() => setSettingsOpen(false)}><aside className={styles.settings} role="dialog" aria-modal="true" aria-labelledby="reader-settings" onMouseDown={e => e.stopPropagation()}><header><h2 id="reader-settings">Reader settings</h2><button aria-label="Close settings" onClick={() => setSettingsOpen(false)}>×</button></header><fieldset><legend>Reading theme</legend><div className={styles.themeOptions}>{(["light","dark","sepia"] as Theme[]).map(value=><button className={theme===value?styles.selected:""} onClick={()=>changeTheme(value)} key={value}><i className={styles[value]}/>{value}</button>)}</div></fieldset><label className={styles.toggleSetting}>Tajweed colors <input type="checkbox" checked={tajweedEnabled} onChange={event => { setTajweedEnabled(event.target.checked); localStorage.setItem("af-tajweed", String(event.target.checked)); }}/></label><label>Arabic text size <output>{arabicSize}px</output><input type="range" min="30" max="64" value={arabicSize} onChange={e=>changeSize("arabic", Number(e.target.value))}/></label><label>Translation size <output>{translationSize}px</output><input type="range" min="14" max="26" value={translationSize} onChange={e=>changeSize("translation", Number(e.target.value))}/></label><p>Text and tajweed annotations are provided by Quran.Foundation. Quran and translation content is protected from automatic browser translation.</p></aside></div> : null}
+    {settingsOpen ? <div className={styles.scrim} onMouseDown={() => setSettingsOpen(false)}><aside className={styles.settings} role="dialog" aria-modal="true" aria-labelledby="reader-settings" onMouseDown={e => e.stopPropagation()}><header><h2 id="reader-settings">Reader settings</h2><button aria-label="Close settings" onClick={() => setSettingsOpen(false)}>×</button></header><fieldset><legend>Reading theme</legend><div className={styles.themeOptions}>{(["light","dark","sepia"] as Theme[]).map(value=><button className={theme===value?styles.selected:""} onClick={()=>changeTheme(value)} key={value}><i className={styles[value]}/>{value}</button>)}</div></fieldset><label className={styles.toggleSetting}>Tajweed colors <input type="checkbox" checked={tajweedEnabled} onChange={event => { setTajweedEnabled(event.target.checked); localStorage.setItem("af-tajweed", String(event.target.checked)); }}/></label><label>Arabic text size <output>{arabicSize}px</output><input type="range" min="30" max="64" value={arabicSize} onChange={e=>changeSize("arabic", Number(e.target.value))}/></label><label>Translation size <output>{translationSize}px</output><input type="range" min="14" max="26" value={translationSize} onChange={e=>changeSize("translation", Number(e.target.value))}/></label></aside></div> : null}
   </div>;
 }
 

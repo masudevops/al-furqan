@@ -210,6 +210,9 @@ export interface MushafTajweedVerse {
 }
 export interface MushafPayload {
   error:null;
+  chapterNames:string[];
+  hizbNumbers:number[];
+  juzNumbers:number[];
   pageNumber:number;
   lines:Array<{lineNumber:number;words:MushafWord[]}>;
   tajweedVerses:MushafTajweedVerse[];

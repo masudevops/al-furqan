@@ -4,7 +4,7 @@ import { parseTranslationIds } from "@/lib/env";
 
 describe("parseTranslationIds", () => {
   it("uses the default translation when value is missing", () => {
-    expect(parseTranslationIds(undefined)).toEqual([131]);
+    expect(parseTranslationIds(undefined)).toEqual([20]);
   });
 
   it("parses comma-separated numeric ids", () => {
@@ -16,6 +16,6 @@ describe("parseTranslationIds", () => {
   });
 
   it("falls back to default when all values are invalid", () => {
-    expect(parseTranslationIds("a,b,0")).toEqual([131]);
+    expect(parseTranslationIds("a,b,0")).toEqual([20]);
   });
 });

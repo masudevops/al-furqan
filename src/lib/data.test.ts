@@ -112,12 +112,14 @@ describe("Quran Reflect presentation", () => {
 describe("Tajweed page data", () => {
   it("carries sanitized official Tajweed markup into Mushaf page mode", async () => {
     const byPage = vi.fn(async () => [{
+      hizbNumber: 1,
+      juzNumber: 1,
       textUthmani: "الرَّحْمَٰنِ",
       textUthmaniTajweed: "<tajweed class=madda_normal>ـٰ</tajweed>",
       verseKey: "1:3",
       words: [{ charTypeName: "word", codeV2: "glyph", lineNumber: 2, position: 1, textUthmani: "الرَّحْمَٰنِ" }],
     }]);
-    sdkMocks.serverClient = { content: { v4: { verses: { byPage } } } };
+    sdkMocks.serverClient = { content: { v4: { chapters: { list: vi.fn(async () => [{ id: 1, nameSimple: "Al-Fatihah" }]) }, verses: { byPage } } } };
 
     const data = await loadMushafPage({} as never, 1);
 
@@ -130,6 +132,7 @@ describe("Tajweed page data", () => {
       tajweedHtml: '<tajweed class="madda_normal">ـٰ</tajweed>',
       verseKey: "1:3",
     }]);
+    expect(data).toMatchObject({ chapterNames: ["Al-Fatihah"], hizbNumbers: [1], juzNumbers: [1], pageNumber: 1 });
   });
 
   it("carries sanitized official Tajweed markup into structural reading", async () => {

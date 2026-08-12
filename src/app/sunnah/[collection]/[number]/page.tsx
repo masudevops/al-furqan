@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: { params: { collection: strin
   if (!item) return { title: "Hadith unavailable", robots: { index: false, follow: true } };
   return {
     title: `${item.collectionName} Hadith ${item.hadithNumber} — Arabic & English`,
-    description: `${item.collectionName}, Hadith ${item.hadithNumber}, with original Arabic, English translation and the authenticity grade supplied by the source.`,
+    description: `${item.collectionName}, Hadith ${item.hadithNumber}, with original Arabic, English translation and its reported authenticity grade.`,
     alternates: { canonical: `/sunnah/${item.collectionId}/${item.hadithNumber}` },
     openGraph: { title: `${item.collectionName} · Hadith ${item.hadithNumber}`, description: item.text.slice(0, 180), url: `/sunnah/${item.collectionId}/${item.hadithNumber}` },
   };

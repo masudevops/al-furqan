@@ -1,3 +1,2 @@
-export default function GoalsPage() {
-  return null;
-}
+import { notFound } from "next/navigation";
+export default function GoalsPage() { notFound(); }

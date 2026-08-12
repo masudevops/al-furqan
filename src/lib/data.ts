@@ -464,7 +464,12 @@ const normalizeSearchResults = (response: unknown, query: string) => {
   }));
 
   const verseItems: SearchItem[] = toArray(result.verses).map((item) => {
-    const text = asNullableString(item.text);
+    const translations = toArray(item.translations);
+    const firstTranslation = translations[0];
+    const text =
+      asNullableString(item.text) ??
+      asNullableString(item.highlightedText ?? item.highlighted_text ?? item.translation) ??
+      asNullableString(firstTranslation?.text ?? firstTranslation?.translation);
     const arabicText =
       asNullableString(
         item.textUthmani ??
@@ -480,10 +485,7 @@ const normalizeSearchResults = (response: unknown, query: string) => {
     return {
       arabicText,
       readerUrl: buildReaderUrlFromKey(verseKey),
-      text:
-        text ??
-        (arabicText ? null : `Open ${asString(verseKey, "this result")} in the reader`) ??
-        undefined,
+      text: text ?? (arabicText ? undefined : `Quran ${asString(verseKey, "verse result")}`),
       verseKey,
     };
   });

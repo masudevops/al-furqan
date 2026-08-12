@@ -13,16 +13,16 @@ Verified against official documentation on 2026-08-09. “Verified” means docu
 | Word-by-word | Content v4 verses | App | content | Yes | Planned |
 | Tajweed-annotated Uthmani text | Content v4 verses | App | content | Yes | Implemented as optional sanitized color lens in verse mode |
 | Search | Search v1 | App | search | Yes | UI and server adapter complete; client token exchange rejected in production and pre-live on 2026-08-09; owner approval required |
-| Bookmarks | User | User | bookmark | Yes | Server route inherited; owner approval required |
+| Bookmarks | User | User | bookmark | Yes | Production scope enabled; signed-in product UI remains to be completed |
 | Notes | User | User | note | Yes | Server route inherited; owner approval required |
 | Collections | User | User | collection | Yes | Server route inherited; owner approval required |
 | Goals | User | User | goal | Yes | Server route inherited; owner approval required |
-| Preferences | User | User | preference | Yes | Server route inherited; owner approval required |
+| Preferences | User | User | preference | Yes | Production scope enabled; signed-in product UI remains to be completed |
 | Reading sessions | User | User | reading_session | Yes | Planned; owner approval required |
 
 SDK boundary: `@quranjs/api/server` is required for Content, Search, confidential exchange, refresh, and normal web User API calls. `@quranjs/api/public` is limited to public-client/browser-safe OAuth helpers. Production and pre-live user stacks must not be mixed.
 
-Requested v1 scopes: `openid offline_access user note collection bookmark goal preference reading_session`. Every feature scope is **OWNER CONFIRMATION REQUIRED** for the actual client. `post` and `comment` were removed.
+Requested v1 scopes: `openid offline_access user note collection bookmark goal preference reading_session`. The owner confirmed on 2026-08-09 that Search and the requested user-related scopes were enabled for the production client. The signed-in synchronization experience still requires deployed end-to-end validation before it is considered complete. `post` and `comment` remain separate and were not included in that confirmation.
 
 ## Environment verification
 

@@ -8,7 +8,7 @@ This report compares the installed `@quranjs/api` SDK, the official Quran.Founda
 
 - **Confirmed now:** Quran.Foundation Content API v4 through the server-side app-token flow and the `content` scope.
 - **Documented but not approved/working for this client:** Search v1. Both production and pre-production token requests for `search` were rejected during verification. Keep the sourced unavailable state until Quran.Foundation approves the scope.
-- **Documented but not confirmed for this client:** User scopes (`bookmark`, `collection`, `note`, `goal`, `preference`, `reading_session`, `activity_day`, and `streak`). Route and OAuth plumbing is not evidence that the production client has those permissions. These remain **OWNER CONFIRMATION REQUIRED**.
+- **Owner-confirmed on 2026-08-09:** Search and the requested user scopes (`bookmark`, `collection`, `note`, `goal`, `preference`, and related user access) were enabled for production. Signed-in synchronization still needs complete product UI and deployed end-to-end validation.
 
 The Phase 3 brief describes tafsir, word-by-word, Mushaf view, Quran search, synced bookmarks, and memorization tools as already built. The current source does not support that description: some have server scaffolding, while others are not implemented. The table below is the release-accurate status.
 

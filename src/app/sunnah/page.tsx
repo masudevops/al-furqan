@@ -4,7 +4,7 @@ import { ummahHadithAdapter } from "@/lib/hadith";
 
 export const metadata: Metadata = {
   title: "Sunnah Library — Major Hadith Collections in Arabic & English",
-  description: "Browse and search major Hadith collections in Arabic and English with collection references and provider-supplied authenticity grades.",
+  description: "Browse and search major Hadith collections in Arabic and English with collection references and reported authenticity grades.",
   alternates: { canonical: "/sunnah" },
 };
 export const revalidate = 3600;

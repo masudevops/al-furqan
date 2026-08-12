@@ -8,7 +8,7 @@ export async function generateMetadata({ params }: { params: { collection: strin
   const catalog = await ummahHadithAdapter.collections().catch(() => []);
   const collection = catalog.find((item) => item.id === params.collection);
   if (!collection) return { title: "Hadith collection unavailable", robots: { index: false, follow: true } };
-  return { title: `${collection.name} — Arabic & English Hadith`, description: `Browse ${collection.name} in Arabic and English with canonical Hadith references and provider-supplied grades.`, alternates: { canonical: `/sunnah/${collection.id}` } };
+  return { title: `${collection.name} — Arabic & English Hadith`, description: `Browse ${collection.name} in Arabic and English with canonical Hadith references and reported grades.`, alternates: { canonical: `/sunnah/${collection.id}` } };
 }
 
 export default async function CollectionPage({ params }: { params: { collection: string } }) {

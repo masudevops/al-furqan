@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import useSWR from "swr";
 
+import ContentState from "./content-state";
 import type { QuranReflectItem, QuranReflectPayload } from "@/lib/types";
 import styles from "./quran-tools.module.css";
 
@@ -31,9 +32,9 @@ export default function QuranReflectPage() {
 
   return <main className={`${styles.page} ${styles.reflectPage}`}>
     <header className={styles.header}><div><Link href="/quran">← Quran</Link><h1>Lessons & Reflections</h1><p>Explore Quran Reflect&apos;s QDC-curated lessons and reflections, each connected to the Ayahs it discusses.</p></div></header>
-    {isLoading ? <p className={styles.loading}>Loading lessons and reflections…</p> : null}
-    {unavailable ? <p className={styles.error}>Lessons and reflections are unavailable right now.</p> : null}
-    {data && !data.error && !data.items.length ? <p className={styles.error}>No curated lessons or reflections are available right now.</p> : null}
+    {isLoading ? <ContentState message="Loading lessons and reflections…"/> : null}
+    {unavailable ? <ContentState kind="error" message="Lessons and reflections are unavailable right now."/> : null}
+    {data && !data.error && !data.items.length ? <ContentState kind="empty" message="No curated lessons or reflections are available right now."/> : null}
     <section className={styles.reflectionList} aria-live="polite">{data?.items.map((item) => {
       const published = formatDate(item.publishedAt);
       return <article className={styles.reflectionCard} key={item.id}>
@@ -44,7 +45,7 @@ export default function QuranReflectPage() {
         </header>
         {item.references.length ? <nav aria-label="Referenced Ayahs">{item.references.map((reference) => <Link href={`/quran/${reference.chapterId}/${reference.from}`} key={`${reference.chapterId}:${reference.from}`}>Quran {reference.chapterId}:{reference.from}{reference.to !== reference.from ? `–${reference.to}` : ""}</Link>)}</nav> : null}
         {item.excerpt ? <p className={styles.reflectionExcerpt} translate="no">{item.excerpt}</p> : null}
-        <footer><small>Source: Quran Reflect</small><Link className={styles.readMore} href={`/reflect/${item.id}`}>Read {item.postType === "lesson" ? "lesson" : "reflection"} <span aria-hidden="true">→</span></Link></footer>
+        <footer><span/><Link className={styles.readMore} href={`/reflect/${item.id}`}>Read {item.postType === "lesson" ? "lesson" : "reflection"} <span aria-hidden="true">→</span></Link></footer>
       </article>;
     })}</section>
     {data && data.pages > 1 ? <nav className={styles.pagination} aria-label="Lessons and reflections pages"><button disabled={page <= 1 || isLoading} onClick={() => setPage((value) => Math.max(1, value - 1))}>← Previous</button><span>Page {page} of {data.pages}</span><button disabled={page >= data.pages || isLoading} onClick={() => setPage((value) => Math.min(data.pages, value + 1))}>Next →</button></nav> : null}

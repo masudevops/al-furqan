@@ -42,3 +42,11 @@
 .chapterInfo{border:1px solid var(--line);border-top:0;background:var(--card);padding:24px;line-height:1.75}.chapterInfo h2,.chapterInfo h3{font-family:Georgia,"Times New Roman",serif}.chapterInfo span+span::before{content:" "}.chapterInfo small{display:block;margin-top:18px;color:var(--muted)}.footnotes{display:grid;gap:8px;margin-top:12px}.footnote{border:1px solid var(--line);background:var(--soft);padding:9px 12px}.footnote summary{cursor:pointer;color:var(--green);font-size:12px;font-weight:650;line-height:1.45}.footnote div{padding-top:10px;line-height:1.65}.footnote small{color:var(--muted)}
 .ayahStudy{border-top:1px solid var(--line);margin-top:18px;padding-top:14px}.ayahStudy>summary{color:var(--green);cursor:pointer;font:650 12px var(--font-mono)}.ayahStudy article{border-left:3px solid var(--line);line-height:1.65;margin-top:14px;padding:12px 16px}.ayahStudy article strong,.ayahStudy article small{display:block}.ayahStudy article small{color:var(--muted);margin-top:6px}.ayahStudy article div{margin-top:9px}
 @media(max-width:760px){.readerTools input{appearance:none;-webkit-appearance:none;-webkit-text-fill-color:var(--ink);box-sizing:border-box;font:500 16px/1.2 var(--font-ui);height:38px;margin-left:8px;opacity:1;padding:7px 9px;width:58px}.studyTools>a,.studyTools>button,.studyMore summary{font-size:11px;padding:8px 9px}}
+
+/* v1 release hardening: reliable touch targets and compact icon actions. */
+.iconAction{display:grid;place-items:center;width:44px;height:44px;border:1px solid var(--line);border-radius:50%;color:var(--ink)}
+.iconAction svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round}
+.actions>button,.actions>a{min-height:44px;min-width:44px}
+.readerTools .readerSettingsButton,.saveVerse,.playVerse,.verseActions summary{min-width:44px;min-height:44px}
+.settings header button{min-width:44px;min-height:44px}
+@media(max-width:900px){.actions .iconAction{display:none}.mobileNav a,.mobileNav button{min-height:44px}.moreMenu a{min-height:44px;align-items:center}}

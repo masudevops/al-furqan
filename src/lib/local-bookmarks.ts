@@ -31,5 +31,11 @@ export function toggleLocalBookmark(bookmark: Omit<LocalBookmark, "savedAt">): L
   return next;
 }
 
+export function removeLocalBookmark(id: string): LocalBookmark[] {
+  const next = readLocalBookmarks().filter((item) => item.id !== id);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  return next;
+}
+
 export const hasLocalBookmark = (items: LocalBookmark[], id: string) =>
   items.some((item) => item.id === id);

@@ -561,6 +561,8 @@ export const loadContentPreviewData = async (
       nameArabic: asNullableString(chapter.nameArabic),
       nameSimple: asString(chapter.nameSimple, `Chapter ${asString(chapter.id)}`),
       readerUrl: `/quran/${asString(chapter.id)}`,
+      revelationOrder: asNullableNumber(chapter.revelationOrder ?? chapter.revelation_order),
+      revelationPlace: asNullableString(chapter.revelationPlace ?? chapter.revelation_place),
       translatedName: asNullableString(asObject(chapter.translatedName).name),
       versesCount: asNullableNumber(chapter.versesCount),
     }));

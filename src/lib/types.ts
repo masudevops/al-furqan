@@ -52,6 +52,8 @@ export interface ContentPreviewItem {
   nameArabic: string | null;
   nameSimple: string;
   readerUrl: string;
+  revelationOrder: number | null;
+  revelationPlace: string | null;
   translatedName: string | null;
   versesCount: number | null;
 }

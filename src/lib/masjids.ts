@@ -18,7 +18,7 @@ export async function fetchOpenStreetMapMasjids({latitude,longitude,radius}:Near
 
 export async function fetchTakbeerTimeMasjids({latitude,longitude,radius}:NearbyInput):Promise<Mosque[]>{
   const url=new URL("https://takbeertime.com/api/mosques/nearby");url.search=new URLSearchParams({lat:String(latitude),lng:String(longitude),radius:String(radius),limit:"100"}).toString();
-  const response=await fetch(url,{headers:{Accept:"application/json","User-Agent":"Al-Furqan/1.0 (https://al-furqan.app)"},next:{revalidate:3600}}),payload=await response.json();
+  const response=await fetch(url,{headers:{Accept:"application/json"},signal:AbortSignal.timeout(12000),next:{revalidate:3600}}),payload=await response.json();
   if(!response.ok||!Array.isArray(payload.data))throw new Error("Invalid Takbeer Time response");
   return payload.data.map((item:Record<string,unknown>)=>{const lat=Number(item.latitude),lon=Number(item.longitude),verified=item.effectiveKeeperIsVerifiedSchedule===true&&item.effectiveTimings&&typeof item.effectiveTimings==="object"?item.effectiveTimings as Record<string,string|string[]>:null;return{id:`takbeer:${item.id}`,name:text(item.name)||text(item.nameArabic)||"Unnamed mosque",latitude:lat,longitude:lon,address:[text(item.addressLine1),text(item.city),text(item.country)].filter(Boolean).join(", ")||null,distanceKm:Number(item.distanceMeters)/1000||distance(latitude,longitude,lat,lon),phone:null,website:null,congregationTimes:verified}}).filter((item:Mosque)=>Number.isFinite(item.latitude)&&Number.isFinite(item.longitude));
 }

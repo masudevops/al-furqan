@@ -19,5 +19,7 @@ As a visitor, I want a more complete nearby-masjid list with useful verified det
 - [x] Show address, phone, website and directions when available.
 - [x] Show congregation times only when the provider explicitly marks the effective schedule verified.
 - [x] Continue returning partial results if either provider is temporarily unavailable.
+- [x] Let users widen the search radius to 50 km in sparse areas.
+- [x] Apply a bounded supplemental-provider timeout and cache successful merged responses at the edge.
 - [x] Cache upstream reads for one hour and browser results per session/location.
 - [x] Document provider constraints and data provenance.

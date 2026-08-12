@@ -28,7 +28,7 @@ Production: [al-furqan.app](https://al-furqan.app)
 - Daily Quran verse and daily Hadith, selected deterministically once per UTC day.
 - Full Salah Times page with explicit location setup, manual fallback, next-prayer countdown, calculation method, Asr school, Hijri date, and monthly calendar.
 - Hisnul Muslim Dua browsing by category with Arabic, transliteration, translation, references, bookmarks, and source-matched audio where available.
-- Masjid Finder using nearby OpenStreetMap places with distance, available address information, and external map directions.
+- Masjid Finder combining nearby OpenStreetMap and Takbeer Time listings with deduplication, distance, available contact details, verified congregation times, and external map directions.
 - Ramadan timetable and locally adjustable calculated Hijri display date.
 - Qibla bearing and compass implementation retained behind a public feature flag; it is disabled by default until mobile-browser orientation behavior is validated across supported devices.
 
@@ -120,7 +120,7 @@ The browser never receives Quran.Foundation client secrets, refresh tokens, raw 
 | Salah times and calculated Qibla bearing | AlAdhan | Salah active; Qibla UI disabled by default |
 | Dua and Dhikr text | fitrahive/dua-dhikr | Active with limited current English catalog |
 | Matched Dua recordings | Hisnul Muslim audio | Interim streamed audio; omitted when matching is ambiguous |
-| Nearby masjids and manual geocoding | OpenStreetMap Overpass and Nominatim | Active; completeness varies by community coverage |
+| Nearby masjids and manual geocoding | OpenStreetMap Overpass, Takbeer Time, and Nominatim | Active with merged/deduplicated listings; completeness varies by community coverage |
 | Ramadan, adjustable Hijri conversion, Qibla distance, and similar-Ayah relationships | UmmahAPI and its declared upstreams | Active where exposed in the UI |
 | 99 Names of Allah | No approved source | Blocked until scholarly and translation provenance is available |
 

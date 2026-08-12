@@ -13,6 +13,7 @@ flowchart LR
   App --> DD["dua-dhikr and matched audio"]
   App --> AA["AlAdhan"]
   App --> OSM["OpenStreetMap services"]
+  App --> Takbeer["Takbeer Time masjid directory"]
   App <--> Redis["Redis session store"]
   User <--> Local["Browser-local preferences and bookmarks"]
 ```

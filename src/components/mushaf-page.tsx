@@ -26,10 +26,8 @@ function TajweedLegend() {
 
 export default function MushafPage({ pageNumber }: { pageNumber: number }) {
   const { data, error, isLoading } = useSWR<MushafPayload>(`/api/quran/mushaf/${pageNumber}?layout=qcf-v4`, fetcher);
-  const [tajweedEnabled, setTajweedEnabled] = useState(true);
   const [readingTheme, setReadingTheme] = useState("sepia");
 
-  useEffect(() => setTajweedEnabled(localStorage.getItem("af-tajweed") !== "false"), []);
   useEffect(() => {
     const root = document.documentElement;
     const updateTheme = () => setReadingTheme(root.dataset.theme ?? "sepia");
@@ -40,23 +38,13 @@ export default function MushafPage({ pageNumber }: { pageNumber: number }) {
   },[]);
   useEffect(() => {
     if (!data) return;
-    const mushafFont = new FontFace(
-      `qcf-p${pageNumber}`,
-      `url(https://verses.quran.foundation/fonts/quran/hafs/v2/woff2/p${pageNumber}.woff2)`,
-      { display: "block" },
-    );
     const tajweedFont = new FontFace(
       `qcf-p${pageNumber}-v4`,
       `url(https://verses.quran.foundation/fonts/quran/hafs/v4/colrv1/woff2/p${pageNumber}.woff2)`,
       { display: "block" },
     );
-    Promise.all([mushafFont.load(),tajweedFont.load()]).then((loaded) => loaded.forEach((font) => document.fonts.add(font))).catch(() => undefined);
+    tajweedFont.load().then((font) => document.fonts.add(font)).catch(() => undefined);
   }, [data, pageNumber]);
-
-  const changeTajweed = (enabled: boolean) => {
-    setTajweedEnabled(enabled);
-    localStorage.setItem("af-tajweed", String(enabled));
-  };
 
   return <main className={styles.page}>
     <header className={styles.header}>
@@ -72,10 +60,6 @@ export default function MushafPage({ pageNumber }: { pageNumber: number }) {
         </> : <><h1>Mushaf</h1><p>Page {pageNumber}</p></>}
       </div>
       <div className={styles.mushafControls}>
-        <div className={styles.readingModes} role="group" aria-label="Mushaf reading style">
-          <button type="button" aria-pressed={!tajweedEnabled} onClick={() => changeTajweed(false)}>Mushaf font</button>
-          <button type="button" aria-pressed={tajweedEnabled} onClick={() => changeTajweed(true)}>Tajweed</button>
-        </div>
         <form className={styles.tools} action="/quran/mushaf/1" onSubmit={(event) => {
           event.preventDefault();
           const value = new FormData(event.currentTarget).get("page");
@@ -88,7 +72,7 @@ export default function MushafPage({ pageNumber }: { pageNumber: number }) {
     </header>
     {isLoading ? <p>Loading official Mushaf page…</p> : null}
     {error ? <p className={styles.error}>This Mushaf page is unavailable. No substitute Quran text has been used.</p> : null}
-    {data && tajweedEnabled ? <>
+    {data ? <>
       <TajweedLegend />
       <section className={`${styles.mushaf} ${styles.tajweedPage}`} lang="ar" dir="rtl" translate="no">
         <style>{`@font-palette-values --mushaf-tajweed-palette { font-family: "qcf-p${pageNumber}-v4"; base-palette: ${readingTheme==="dark"?1:readingTheme==="sepia"?2:0}; }`}</style>
@@ -102,12 +86,6 @@ export default function MushafPage({ pageNumber }: { pageNumber: number }) {
         <footer className={styles.mushafFooter}><span>{data.verseKeys[0]}</span><span>{pageNumber} / 604</span><span>{data.verseKeys.at(-1)}</span></footer>
       </section>
     </> : null}
-    {data && !tajweedEnabled ? <section className={styles.mushaf} lang="ar" dir="rtl" translate="no">
-      {data.lines.map((line) => <div className={styles.line} key={line.lineNumber} data-line={line.lineNumber}>
-        {line.words.map((word, index) => <span className={styles.word} style={{ fontFamily: word.charType === "end" ? "UthmanicHafs, serif" : `qcf-p${pageNumber}` }} title={word.verseKey} key={`${word.verseKey}-${word.position}-${index}`}>{word.charType === "end" ? word.arabicText : word.qcfCode || word.arabicText}</span>)}
-      </div>)}
-      <footer className={styles.mushafFooter}><span>{data.verseKeys[0]}</span><span>{pageNumber} / 604</span><span>{data.verseKeys.at(-1)}</span></footer>
-    </section> : null}
     <nav className={styles.tools}>{pageNumber > 1 ? <Link href={`/quran/mushaf/${pageNumber - 1}`}>← Previous page</Link> : <span />}{pageNumber < 604 ? <Link href={`/quran/mushaf/${pageNumber + 1}`}>Next page →</Link> : null}</nav>
   </main>;
 }

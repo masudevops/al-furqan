@@ -215,6 +215,7 @@ export interface MushafPayload {
   juzNumbers:number[];
   pageNumber:number;
   lines:Array<{lineNumber:number;words:MushafWord[]}>;
+  tajweedLines:Array<{lineNumber:number;words:MushafWord[]}>;
   tajweedVerses:MushafTajweedVerse[];
   verseKeys:string[];
 }

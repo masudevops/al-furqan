@@ -111,14 +111,17 @@ describe("Quran Reflect presentation", () => {
 
 describe("Tajweed page data", () => {
   it("carries sanitized official Tajweed markup into Mushaf page mode", async () => {
-    const byPage = vi.fn(async () => [{
+    const verses = [{
       hizbNumber: 1,
       juzNumber: 1,
       textUthmani: "الرَّحْمَٰنِ",
       textUthmaniTajweed: "<tajweed class=madda_normal>ـٰ</tajweed>",
       verseKey: "1:3",
       words: [{ charTypeName: "word", codeV2: "glyph", lineNumber: 2, position: 1, textUthmani: "الرَّحْمَٰنِ" }],
-    }]);
+    }];
+    const byPage = vi.fn(async (_page:number,options:{mushaf:number}) => options.mushaf===19
+      ? [{...verses[0],words:[{...verses[0].words[0],codeV2:"colored-glyph"}]}]
+      : verses);
     sdkMocks.serverClient = { content: { v4: { chapters: { list: vi.fn(async () => [{ id: 1, nameSimple: "Al-Fatihah" }]) }, verses: { byPage } } } };
 
     const data = await loadMushafPage({} as never, 1);
@@ -127,12 +130,14 @@ describe("Tajweed page data", () => {
       fields: expect.objectContaining({ textUthmaniTajweed: true }),
       mushaf: 1,
     }));
+    expect(byPage).toHaveBeenCalledWith(1, expect.objectContaining({ mushaf: 19 }));
     expect(data.tajweedVerses).toEqual([{
       arabicText: "الرَّحْمَٰنِ",
       tajweedHtml: '<tajweed class="madda_normal">ـٰ</tajweed>',
       verseKey: "1:3",
     }]);
     expect(data).toMatchObject({ chapterNames: ["Al-Fatihah"], hizbNumbers: [1], juzNumbers: [1], pageNumber: 1 });
+    expect(data.tajweedLines[0].words[0].qcfCode).toBe("colored-glyph");
   });
 
   it("carries sanitized official Tajweed markup into structural reading", async () => {

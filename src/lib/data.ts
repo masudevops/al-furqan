@@ -840,8 +840,9 @@ export const loadReaderData = async (
 
 export const loadMushafPage = async (session:StoredSession,pageNumber:number) => {
   const {serverClient}=await createClients(session);
-  const [response,chapterResponse]=await Promise.all([
+  const [response,tajweedResponse,chapterResponse]=await Promise.all([
     serverClient.content.v4.verses.byPage(pageNumber,{mushaf:1,words:true,perPage:50,fields:{codeV2:true,textUthmani:true,textUthmaniTajweed:true},wordFields:{codeV2:true,textUthmani:true,verseKey:true}}),
+    serverClient.content.v4.verses.byPage(pageNumber,{mushaf:19,words:true,perPage:50,fields:{codeV2:true,textUthmani:true},wordFields:{codeV2:true,textUthmani:true,verseKey:true}}),
     serverClient.content.v4.chapters.list(),
   ]);
   const verses=toArray(response,["data","verses"]); const lines=new Map<number,Array<Record<string,unknown>>>(); const verseKeys:string[]=[];
@@ -851,6 +852,16 @@ export const loadMushafPage = async (session:StoredSession,pageNumber:number) =>
     tajweedHtml:sanitizeTajweedMarkup(verse.textUthmaniTajweed??verse.text_uthmani_tajweed),
     verseKey:asString(verse.verseKey??verse.verse_key),
   }));
+  const tajweedLines=new Map<number,Array<Record<string,unknown>>>();
+  for(const verse of toArray(tajweedResponse,["data","verses"])){
+    const verseKey=asString(verse.verseKey??verse.verse_key);
+    for(const word of normalizeWords(verse.words)){
+      const line=word.lineNumber??0;
+      const items=tajweedLines.get(line)??[];
+      items.push({...word,verseKey});
+      tajweedLines.set(line,items);
+    }
+  }
   const uniqueNumbers=(values:Array<number|null>)=>Array.from(new Set(values.filter((value):value is number=>value!==null)));
   const chapterIds=uniqueNumbers(verses.map(verse=>asNullableNumber(verse.chapterId??verse.chapter_id)??asNullableNumber(asString(verse.verseKey??verse.verse_key).split(":")[0])));
   const chapters=toArray(chapterResponse,["data","chapters"]);
@@ -866,6 +877,7 @@ export const loadMushafPage = async (session:StoredSession,pageNumber:number) =>
     pageNumber,
     verseKeys,
     tajweedVerses,
+    tajweedLines:Array.from(tajweedLines.entries()).sort(([a],[b])=>a-b).map(([lineNumber,words])=>({lineNumber,words})),
     lines:Array.from(lines.entries()).sort(([a],[b])=>a-b).map(([lineNumber,words])=>({lineNumber,words})),
   };
 };

@@ -25,18 +25,32 @@ function TajweedLegend() {
 }
 
 export default function MushafPage({ pageNumber }: { pageNumber: number }) {
-  const { data, error, isLoading } = useSWR<MushafPayload>(`/api/quran/mushaf/${pageNumber}`, fetcher);
+  const { data, error, isLoading } = useSWR<MushafPayload>(`/api/quran/mushaf/${pageNumber}?layout=qcf-v4`, fetcher);
   const [tajweedEnabled, setTajweedEnabled] = useState(true);
+  const [readingTheme, setReadingTheme] = useState("sepia");
 
   useEffect(() => setTajweedEnabled(localStorage.getItem("af-tajweed") !== "false"), []);
   useEffect(() => {
+    const root = document.documentElement;
+    const updateTheme = () => setReadingTheme(root.dataset.theme ?? "sepia");
+    updateTheme();
+    const observer = new MutationObserver(updateTheme);
+    observer.observe(root,{attributes:true,attributeFilter:["data-theme"]});
+    return () => observer.disconnect();
+  },[]);
+  useEffect(() => {
     if (!data) return;
-    const font = new FontFace(
+    const mushafFont = new FontFace(
       `qcf-p${pageNumber}`,
       `url(https://verses.quran.foundation/fonts/quran/hafs/v2/woff2/p${pageNumber}.woff2)`,
       { display: "block" },
     );
-    font.load().then((loaded) => document.fonts.add(loaded)).catch(() => undefined);
+    const tajweedFont = new FontFace(
+      `qcf-p${pageNumber}-v4`,
+      `url(https://verses.quran.foundation/fonts/quran/hafs/v4/colrv1/woff2/p${pageNumber}.woff2)`,
+      { display: "block" },
+    );
+    Promise.all([mushafFont.load(),tajweedFont.load()]).then((loaded) => loaded.forEach((font) => document.fonts.add(font))).catch(() => undefined);
   }, [data, pageNumber]);
 
   const changeTajweed = (enabled: boolean) => {
@@ -77,11 +91,14 @@ export default function MushafPage({ pageNumber }: { pageNumber: number }) {
     {data && tajweedEnabled ? <>
       <TajweedLegend />
       <section className={`${styles.mushaf} ${styles.tajweedPage}`} lang="ar" dir="rtl" translate="no">
-        <div className={`${styles.tajweedFlow} ${styles.tajweed}`}>
+        <style>{`@font-palette-values --mushaf-tajweed-palette { font-family: "qcf-p${pageNumber}-v4"; base-palette: ${readingTheme==="dark"?1:readingTheme==="sepia"?2:0}; }`}</style>
+        {data.tajweedLines?.length ? data.tajweedLines.map((line) => <div className={`${styles.line} ${styles.tajweedGlyphLine}`} key={line.lineNumber} data-line={line.lineNumber}>
+          {line.words.map((word,index) => <span className={styles.word} style={{fontFamily:word.charType==="end"?"UthmanicHafs, serif":`qcf-p${pageNumber}-v4`}} title={word.verseKey} key={`${word.verseKey}-${word.position}-${index}`}>{word.charType==="end"?word.arabicText:word.qcfCode||word.arabicText}</span>)}
+        </div>) : <div className={`${styles.tajweedFlow} ${styles.tajweed}`}>
           {data.tajweedVerses.map((verse) => verse.tajweedHtml
             ? <Link className={styles.tajweedAyah} href={`/quran/${verse.verseKey.replace(":", "/")}`} aria-label={`Open Ayah ${verse.verseKey}`} dangerouslySetInnerHTML={{ __html: verse.tajweedHtml }} key={verse.verseKey} />
             : <Link className={styles.tajweedAyah} href={`/quran/${verse.verseKey.replace(":", "/")}`} aria-label={`Open Ayah ${verse.verseKey}`} key={verse.verseKey}>{verse.arabicText}</Link>)}
-        </div>
+        </div>}
         <footer className={styles.mushafFooter}><span>{data.verseKeys[0]}</span><span>{pageNumber} / 604</span><span>{data.verseKeys.at(-1)}</span></footer>
       </section>
     </> : null}

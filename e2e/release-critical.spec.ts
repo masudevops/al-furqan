@@ -53,3 +53,27 @@ test("invalid structural routes return a real 404", async ({ page }) => {
   expect(response?.status()).toBe(404);
   await expect(page.getByRole("heading", { name: "This page is not available." })).toBeVisible();
 });
+
+test("Mushaf view never exposes QCF glyph codes when its page font fails", async ({ page }) => {
+  await page.route("**/api/quran/mushaf/1?layout=qcf-v4", route => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      error: null,
+      chapterNames: ["Al-Fatihah"],
+      hizbNumbers: [1],
+      juzNumbers: [1],
+      pageNumber: 1,
+      lines: [],
+      tajweedLines: [{ lineNumber: 1, words: [{ arabicText: "بِسْمِ", charType: "word", lineNumber: 1, position: 1, qcfCode: "ENCODED_QCF_GLYPH", verseKey: "1:1" }] }],
+      tajweedVerses: [{ arabicText: "بِسْمِ اللَّهِ", tajweedHtml: "بِسْمِ اللَّهِ", verseKey: "1:1" }],
+      verseKeys: ["1:1"],
+    }),
+  }));
+  await page.route("https://verses.quran.foundation/fonts/quran/hafs/v4/colrv1/woff2/p1.woff2", route => route.abort("failed"));
+
+  await page.goto("/quran/mushaf/1");
+  await expect(page.getByText("بِسْمِ اللَّهِ")).toBeVisible();
+  await expect(page.getByText("ENCODED_QCF_GLYPH")).toHaveCount(0);
+  await expect(page.getByText(/Mushaf page font could not load/)).toBeVisible();
+});

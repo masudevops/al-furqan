@@ -29,6 +29,7 @@ import type {
 } from "@/lib/types";
 import { hasLocalBookmark, readLocalBookmarks, toggleLocalBookmark } from "@/lib/local-bookmarks";
 import { publicFeatures } from "@/lib/features";
+import { preferredRecitation, preferredTranslation, readerRequestKey } from "@/lib/reader-defaults";
 import styles from "./app-shell.module.css";
 
 type Theme = "light" | "dark" | "sepia";
@@ -46,12 +47,7 @@ type SearchPayload = {
   verseItems: SearchItem[];
 };
 
-export const preferredTranslation = (items: TranslationResource[]) =>
-  items.find((item) => /\b(saheeh|sahih) international\b/i.test(item.name));
-
-export const preferredRecitation = (items: RecitationResource[]) =>
-  items.find((item) => /minshawi/i.test(item.name) && /murattal/i.test(item.style ?? ""))
-  ?? items.find((item) => /minshawi/i.test(item.name));
+export { preferredRecitation, preferredTranslation };
 
 const fetchJson = async <T,>(url: string): Promise<T> => {
   const response = await fetch(url, { credentials: "include" });
@@ -227,10 +223,10 @@ export default function AppShell({ children }: { children: ReactNode }) {
     useSWR<ChapterRecitersPayload>(chapterId ? "/api/chapter-reciters" : null, fetchJson, { revalidateOnFocus: false });
   const { data: tafsirs, error: tafsirsError } =
     useSWR<TafsirsPayload>(chapterId ? "/api/tafsirs" : null, fetchJson, { revalidateOnFocus: false });
-  const readerKey = (id: string | number | undefined) => id && selectedTranslation && selectedRecitation ? `/api/reader/${id}?translation=${selectedTranslation}&recitation=${selectedRecitation}&script=${quranScript}${wordMode?"&words=1":""}${tafsirOpen&&selectedTafsir?`&tafsir=${selectedTafsir}`:""}` : null;
-  // Start loading a Surah when the reader points at or focuses its link, so the request overlaps navigation.
-  const warmReader = (id: string | number) => { const key = readerKey(id); if (key) void preload(key, fetchJson); };
-  const warmReaderProps = (id: string | number) => ({ onFocus: () => warmReader(id), onPointerEnter: () => warmReader(id), onTouchStart: () => warmReader(id) });
+  const readerKey = (id: string | number | undefined) => id && selectedTranslation && selectedRecitation ? readerRequestKey(id, { translationId: selectedTranslation, recitationId: selectedRecitation, script: quranScript, words: wordMode, tafsirId: tafsirOpen ? selectedTafsir : null }) : null;
+  // Prefetch a Surah page when its link is pointed at or focused. The page carries the Surah payload
+  // that the reader reuses, so navigation and reader data arrive together in one request.
+  const warmReaderProps = (id: string | number) => { const warm = () => router.prefetch(`/quran/${id}`); return { onFocus: warm, onPointerEnter: warm, onTouchStart: warm }; };
   const { data: liveReader, error: readerError, isLoading: readerLoading } =
     useSWR<ReaderPayload>(readerKey(chapterId), fetchJson, { revalidateOnFocus: false });
   // Toggling word-by-word, tafsir, or script refetches the chapter; keep showing the current one meanwhile.

@@ -19,3 +19,6 @@ test-results/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Locally built Masjid Finder tiles
+.masjid-tiles/

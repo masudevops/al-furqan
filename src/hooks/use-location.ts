@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { readSavedLocation, SavedLocation, saveLocation } from "@/lib/location";
+import { clearSavedLocation, readSavedLocation, SavedLocation, saveLocation } from "@/lib/location";
 
 export function useLocation() {
   const [location, setLocation] = useState<SavedLocation | null>(null);
@@ -28,7 +28,7 @@ export function useLocation() {
       saveLocation(next);
       setLocation(next);
       setStatus("idle");
-    }, () => setStatus("denied"), { enableHighAccuracy: true, maximumAge: 86_400_000, timeout: 12_000 });
+    }, () => setStatus("denied"), { enableHighAccuracy: true, maximumAge: 300_000, timeout: 12_000 });
   }, []);
 
   const submitManual = useCallback(async (event: FormEvent<HTMLFormElement>) => {
@@ -51,5 +51,12 @@ export function useLocation() {
     }
   }, []);
 
-  return { detect, error, location, setLocation, status, submitManual };
+  const clear = useCallback(() => {
+    clearSavedLocation();
+    setLocation(null);
+    setStatus("idle");
+    setError(null);
+  }, []);
+
+  return { clear, detect, error, location, setLocation, status, submitManual };
 }

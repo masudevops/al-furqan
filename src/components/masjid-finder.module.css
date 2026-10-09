@@ -1,0 +1,81 @@
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px 24px;border-block:1px solid var(--line);padding:14px 0;margin-bottom:26px}
+.place{display:flex;align-items:center;gap:12px;min-width:0}
+.pin{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--soft);color:var(--green)}
+.place strong{display:block;font:500 19px/1.2 Georgia,serif;overflow-wrap:anywhere}
+.placeActions{display:flex;gap:14px;margin-top:3px}
+.textButton{border:0;background:none;padding:0;color:var(--green);font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.textButton:disabled{opacity:.6;cursor:default}
+.radius{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px}
+.segments{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--card)}
+.segments button{border:0;background:none;color:var(--muted);border-radius:999px;padding:8px 14px;min-height:36px;cursor:pointer;font-size:13px}
+.segments button[aria-pressed="true"]{background:var(--green);color:var(--card);font-weight:650}
+.blocked{flex-basis:100%;margin:0;color:#a1433a;font-size:12px}
+
+.overview{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);gap:18px;margin-bottom:34px}
+.nearest{position:relative;overflow:hidden;background:var(--green);color:#fff;padding:clamp(26px,4vw,44px);display:flex;flex-direction:column;justify-content:space-between;gap:28px;min-height:330px}
+.nearest:after{content:"";position:absolute;width:420px;height:420px;right:-170px;bottom:-210px;border-radius:50%;border:1px solid #ffffff24;box-shadow:0 0 0 46px #ffffff08,0 0 0 92px #ffffff06}
+.nearest>*{position:relative;z-index:1}
+.nearestLabel{margin:0;color:#dceae5;font-size:13px}
+.nearest h2{font:500 clamp(30px,4.4vw,46px)/1.05 Georgia,serif;letter-spacing:-.02em;margin:10px 0 12px;overflow-wrap:anywhere}
+.nearestMeta{margin:0;color:#dceae5;line-height:1.55}
+.nearestDistance{font:500 clamp(46px,7vw,72px)/.9 Georgia,serif;letter-spacing:-.04em}
+.nearestDistance small{font-size:.32em;letter-spacing:0;margin-left:6px;color:#dceae5}
+.nearestFoot{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:18px}
+.nearestActions{display:flex;flex-wrap:wrap;align-items:center;gap:16px}
+.primaryLink{display:inline-flex;align-items:center;gap:8px;background:#fff;color:#17231c;font-weight:700;padding:13px 18px;min-height:44px}
+.nearest .secondaryLink{color:#fff;font-size:13px;text-decoration:underline;text-underline-offset:3px}
+
+.compass{border:1px solid var(--line);background:var(--card);padding:18px 18px 14px;display:flex;flex-direction:column}
+.compassHead{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.compassHead h2{font:500 20px Georgia,serif;margin:0}
+.compassHead span{color:var(--muted);font-size:12px}
+.compass svg{width:100%;max-width:340px;margin:8px auto 0;display:block;overflow:visible}
+.ring{fill:none;stroke:var(--line)}
+.ringLabel{fill:var(--muted);font-size:9px}
+.axis{stroke:var(--line);stroke-dasharray:2 4}
+.north{fill:var(--green);font:700 10px var(--font-ui),sans-serif}
+.you{fill:var(--ink)}
+.youHalo{fill:color-mix(in srgb,var(--ink) 12%,transparent)}
+.dot{fill:var(--green);stroke:var(--card);stroke-width:1.5;cursor:pointer;transition:r .15s;animation:appear .5s both}
+.dot:hover,.dot:focus-visible{r:7px;outline:none}
+.dotActive{fill:var(--ink);r:7px}
+.compassNote{margin:6px 0 0;color:var(--muted);font-size:11px;text-align:center}
+@keyframes appear{from{opacity:0}to{opacity:1}}
+
+.listHead{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:8px}
+.listHead h2{font:500 30px Georgia,serif;margin:0}
+.listHead p{margin:4px 0 0;color:var(--muted);font-size:13px}
+.filter{display:grid;gap:5px;color:var(--muted);font-size:12px;width:min(100%,280px)}
+.filter input{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:11px 12px;min-height:44px}
+.band{margin-top:26px}
+.band h3{display:flex;align-items:center;gap:12px;margin:0 0 4px;color:var(--muted);font-size:12px;font-weight:650}
+.bandRule{height:1px;flex:1;background:var(--line)}
+.band ol{list-style:none;margin:0;padding:0}
+.row{display:grid;grid-template-columns:86px minmax(0,1fr) auto;gap:20px;align-items:center;padding:18px 12px;border-bottom:1px solid var(--line);scroll-margin:120px;transition:background .2s}
+.rowActive{background:var(--soft)}
+.distance{font:500 26px/1 Georgia,serif;letter-spacing:-.02em}
+.distance small{display:block;margin-top:5px;color:var(--muted);font:12px var(--font-ui),sans-serif;letter-spacing:0}
+.row h4{font:500 20px/1.25 Georgia,serif;margin:0;overflow-wrap:anywhere}
+.address{margin:5px 0 0;color:var(--muted);font-size:13px;line-height:1.5}
+.links{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px}
+.links a{color:var(--green);font-size:12px}
+.times{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.times span{display:grid;gap:1px;background:var(--soft);padding:6px 9px}
+.times small{color:var(--muted);font-size:10px}
+.times strong{font-size:12px}
+.directions{border:1px solid var(--line);color:var(--green);padding:11px 14px;min-height:44px;display:inline-flex;align-items:center;white-space:nowrap}
+.directions:hover{border-color:var(--green)}
+.empty{border:1px dashed var(--line);padding:28px;text-align:center;color:var(--muted);margin-top:18px}
+.empty p{margin:0 0 12px}
+.status{color:var(--muted);padding:40px 0;text-align:center}
+.coverage{margin:0 0 18px;color:var(--muted);font-size:12px}
+.error{color:#a1433a}
+.source{color:var(--muted);font-size:11px;line-height:1.6;margin-top:28px}
+.source a{color:var(--green);text-decoration:underline}
+
+@media(max-width:820px){.overview{grid-template-columns:1fr}.nearest{min-height:0}}
+@media(max-width:560px){.toolbar{align-items:flex-start}.radius{width:100%;justify-content:space-between}.row{grid-template-columns:64px minmax(0,1fr);gap:8px 14px;padding:16px 4px}.distance{font-size:21px}.rowAction{grid-column:2}.listHead h2{font-size:25px}.filter{width:100%}}
+@media(prefers-reduced-motion:reduce){.dot{animation:none;transition:none}.row{transition:none}}
+/* Dark theme --green is a light tint meant for text, so the filled panel needs a deeper evergreen to keep white text legible. */
+:global(html[data-theme="dark"]) .nearest{background:color-mix(in srgb,var(--green) 34%,#0b1a13)}
+:global(html[data-theme="dark"]) .segments button[aria-pressed="true"]{color:#101713}

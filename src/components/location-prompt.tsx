@@ -1,11 +1,23 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useLocation } from "@/hooks/use-location";
 import styles from "./feature-pages.module.css";
 
-export default function LocationPrompt({ children }: { children: (location: NonNullable<ReturnType<typeof useLocation>["location"]>) => React.ReactNode }) {
-  const { detect, error, location, status, submitManual } = useLocation();
-  if (location) return <>{children(location)}</>;
+type LocationState = ReturnType<typeof useLocation>;
+export type LocationControls = Pick<LocationState, "clear" | "detect" | "status">;
+
+// `live` re-detects a previously detected position on mount when permission is already granted,
+// so features like Masjid Finder follow the visitor instead of reusing a stale saved position.
+export default function LocationPrompt({ children, live = false }: { children: (location: NonNullable<LocationState["location"]>, controls: LocationControls) => React.ReactNode; live?: boolean }) {
+  const { clear, detect, error, location, status, submitManual } = useLocation();
+  const refreshed = useRef(false);
+  useEffect(() => {
+    if (!live || refreshed.current || location?.label !== "Current location" || !navigator.permissions) return;
+    refreshed.current = true;
+    navigator.permissions.query({ name: "geolocation" }).then((permission) => { if (permission.state === "granted") detect(); }).catch(() => undefined);
+  }, [detect, live, location]);
+  if (location) return <>{children(location, { clear, detect, status })}</>;
   return <section className={styles.locationCard} aria-labelledby="location-title">
     <span className={styles.eyebrow}>Location needed</span>
     <h2 id="location-title">Use your location for accurate local results</h2>

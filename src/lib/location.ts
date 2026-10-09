@@ -23,3 +23,7 @@ export function saveLocation(location: SavedLocation) {
   if (location.city) localStorage.setItem("af-prayer-city", location.city);
   if (location.country) localStorage.setItem("af-prayer-country", location.country);
 }
+
+export function clearSavedLocation() {
+  localStorage.removeItem(LOCATION_STORAGE_KEY);
+}

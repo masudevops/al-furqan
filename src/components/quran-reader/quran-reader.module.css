@@ -1,0 +1,193 @@
+.srOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.quranFont{font-family:"UthmanicHafs","Amiri Quran","Scheherazade New","Geeza Pro","Times New Roman",serif!important;font-weight:400!important}
+
+/* Sticky reading toolbar */
+.toolbar{position:sticky;top:76px;z-index:18;background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.toolbarInner{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px;min-height:56px;padding-inline:max(18px,calc((100vw - 1240px)/2))}
+.progress{position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--green);transform-origin:left;transition:transform .2s ease}
+.surahSelect{position:relative;justify-self:start;display:flex;min-width:0;max-width:100%;border-radius:8px;margin-left:-10px}
+.surahSelect select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px}
+.surahSelect select:disabled{cursor:default}
+.surahSelectValue{display:flex;align-items:center;gap:6px;min-width:0;height:40px;padding:0 10px;border:1px solid transparent;border-radius:8px;color:var(--ink);font:650 15px var(--font-ui);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.surahSelect:hover .surahSelectValue{border-color:var(--line);background:var(--card)}
+.surahSelect:has(select:focus-visible){outline:3px solid color-mix(in srgb,var(--green) 55%,transparent);outline-offset:2px}
+.surahSelectValue svg{width:16px;height:16px;flex:none;fill:none;stroke:var(--muted);stroke-width:1.8}
+.position{display:flex;align-items:baseline;gap:10px;margin:0;color:var(--muted);font-size:13px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.position strong{color:var(--ink);font-weight:650}
+.toolbarEnd{justify-self:end;display:flex;align-items:center;gap:8px}
+.modeSwitch{display:flex;align-items:center;padding:3px;border:1px solid var(--line);border-radius:999px;background:var(--card)}
+.modeSwitch>*{display:flex;align-items:center;gap:7px;height:34px;padding:0 14px;border-radius:999px;color:var(--muted);font-size:13px;font-weight:600;white-space:nowrap}
+.modeSwitch>[aria-current]{background:var(--soft);color:var(--green)}
+.modeSwitch>a:hover{color:var(--ink)}
+.modeSwitch svg,.toolbarButton svg{width:17px;height:17px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.toolbarButton{display:flex;align-items:center;justify-content:center;gap:7px;height:42px;min-width:42px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);font:600 13px var(--font-ui);cursor:pointer;list-style:none}
+.toolbarButton::-webkit-details-marker{display:none}
+.toolbarButton:hover,.toolsMenu[open]>.toolbarButton{border-color:var(--green);color:var(--green)}
+.toolbarButtonActive{background:var(--soft);color:var(--green)}
+button.toolbarButton{padding:0}
+
+/* Shared menu (Ayah "more" actions and toolbar Tools) */
+.menu{position:relative}
+.menu>summary{list-style:none}
+.menu>summary::-webkit-details-marker{display:none}
+.menu>div{position:absolute;right:0;top:calc(100% + 6px);z-index:25;display:grid;min-width:180px;padding:6px;border:1px solid var(--line);border-radius:12px;background:var(--card);box-shadow:0 14px 40px #0000001f}
+.menu>div>a,.menu>div>button{display:flex;align-items:center;gap:10px;min-height:42px;padding:0 12px;border:0;border-radius:8px;background:transparent;color:var(--ink);font:500 14px var(--font-ui);text-align:left;white-space:nowrap;cursor:pointer}
+.menu>div>a:hover,.menu>div>button:hover{background:var(--soft)}
+.menu>div svg{width:17px;height:17px;flex:none;fill:none;stroke:var(--green);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.toolsMenu>div{width:min(300px,calc(100vw - 32px));gap:2px}
+.toolsMenu>div>button[aria-pressed="true"]{background:var(--soft);color:var(--green)}
+.toolsMenu>div>button[aria-pressed]::after{content:"Off";margin-left:auto;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--muted);font-size:11px;font-weight:650}
+.toolsMenu>div>button[aria-pressed="true"]::after{content:"On";background:var(--green);color:var(--on-green)}
+.menuHeading{margin:8px 12px 4px;color:var(--muted);font-size:11px;font-weight:650;letter-spacing:.08em;text-transform:uppercase}
+.menuDivider{height:1px;margin:6px 4px;background:var(--line)}
+.jumpForm{display:flex;align-items:center;gap:8px;padding:6px 12px 8px}
+.jumpForm label{flex:1;display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--ink);font-size:14px}
+.jumpForm input{width:72px;height:38px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:500 16px var(--font-ui);padding:0 10px}
+.jumpForm button{height:38px;padding:0 14px;border:0;border-radius:8px;background:var(--green);color:var(--on-green);font-weight:650;cursor:pointer}
+
+/* Compact Surah header */
+.surahHeader{display:grid;gap:14px;padding:20px 24px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
+.backLink{display:inline-flex;align-items:center;gap:4px;justify-self:start;margin-left:-4px;color:var(--muted);font-size:13px;font-weight:550}
+.backLink:hover{color:var(--green)}
+.backLink svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8}
+.surahIdentity{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:16px}
+.surahNumber{display:grid;place-items:center;width:44px;height:44px;border:1px solid color-mix(in srgb,var(--green) 40%,var(--line));border-radius:50%;background:var(--soft);color:var(--green);font:650 15px var(--font-ui);font-variant-numeric:tabular-nums}
+.surahTitles{min-width:0}
+.surahTitles h1{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin:0;color:var(--ink);font:500 clamp(24px,3vw,32px)/1.15 Georgia,"Times New Roman",serif;letter-spacing:-.02em}
+.surahMeaning{color:var(--muted);font:400 clamp(16px,2vw,20px)/1.2 var(--font-ui);letter-spacing:0}
+.surahTitles p{margin:6px 0 0;color:var(--muted);font-size:13px}
+.surahArabic{color:var(--green);font:500 clamp(30px,4.4vw,44px)/1.3 Georgia,serif}
+.surahActions{display:flex;flex-wrap:wrap;gap:8px;padding-top:14px;border-top:1px solid var(--line)}
+.pill,.pillPrimary{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 16px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--ink);font:600 13px var(--font-ui);cursor:pointer}
+.pill:hover,.pill[aria-expanded="true"]{border-color:var(--green);color:var(--green)}
+.pillPrimary{border-color:var(--green);background:var(--green);color:var(--on-green)}
+.pillPrimary:hover{background:color-mix(in srgb,var(--green) 88%,var(--ink))}
+.pill svg,.pillPrimary svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.pillPrimary svg{fill:currentColor;stroke-width:1.2}
+.translationPill{margin-left:auto;max-width:100%;min-width:0}
+.translationPill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.readerNotices{display:flex;justify-content:center;margin:14px 0 4px}
+.tajweedLegend{position:relative;font-size:12px}
+.tajweedLegend summary{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--muted);font-weight:600;cursor:pointer;list-style:none}
+.tajweedLegend summary::-webkit-details-marker{display:none}
+.tajweedLegend summary svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;transition:transform .15s ease}
+.tajweedLegend[open] summary svg{transform:rotate(180deg)}
+.tajweedLegend summary:hover{color:var(--green);border-color:var(--green)}
+.tajweedLegend>div{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 16px;margin-top:10px;color:var(--muted)}
+.tajweedLegend>div span{display:flex;align-items:center;gap:6px}
+.tajweedLegend i{width:10px;height:10px;border-radius:50%}
+.tjMadd{background:var(--tj-madd)}.tjGhunnah{background:var(--tj-ghunnah)}.tjIkhfa{background:var(--tj-ikhfa)}.tjIdgham{background:var(--tj-idgham)}.tjQalqalah{background:var(--tj-qalqalah)}.tjSilent{background:var(--tj-silent)}
+
+/* Verse-by-verse layout */
+.verses{margin-top:8px}
+.verse{position:relative;padding:22px 0 18px;border-bottom:1px solid var(--line);scroll-margin-top:148px}
+.verse:last-child{border-bottom:0}
+.activeVerse::before{content:"";position:absolute;inset:10px auto 10px -18px;width:3px;border-radius:3px;background:var(--green)}
+.verseBar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-left:-10px;margin-right:-10px}
+.verseBarGroup{display:flex;align-items:center;gap:2px}
+.verseKey{min-width:44px;padding:0 10px;color:var(--muted);font:600 14px var(--font-ui);font-variant-numeric:tabular-nums}
+.verseKey:hover,.activeVerse .verseKey{color:var(--green)}
+.iconButton{display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:10px;background:transparent;color:var(--muted);cursor:pointer;list-style:none}
+.iconButton::-webkit-details-marker{display:none}
+.iconButton:hover,.menu[open]>.iconButton{background:var(--soft);color:var(--green)}
+.iconButton svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.iconButtonActive{color:var(--green)}
+.iconButton[aria-pressed="true"]{color:var(--green)}
+.iconButton[aria-pressed="true"] svg path:only-child{fill:currentColor;stroke-width:1.2}
+.bookmarkButton[aria-pressed="true"] svg{fill:currentColor}
+.narrowOnly{display:none!important}
+.copyConfirmation{margin-right:6px;color:var(--green);font-size:12px;font-weight:650}
+.arabic{margin:2px 0 0;color:var(--ink);font:400 var(--arabic-size)/2 Georgia,"Times New Roman",serif;text-align:right;word-spacing:.08em;overflow-wrap:break-word}
+.activeVerse .arabic{color:color-mix(in srgb,var(--ink) 86%,var(--green))}
+.ayahEnd,.tajweed :global(span.end){display:inline-grid;place-items:center;min-width:1.55em;height:1.55em;padding:0 .2em;margin-inline:.1em;border:1px solid color-mix(in srgb,var(--green) 45%,transparent);border-radius:999px;color:var(--green);font-size:.52em;line-height:1;vertical-align:.35em}
+/* The Uthmani Hafs font draws its own Ayah-end ornament around Arabic-Indic digits. */
+.quranFont .ayahEnd,.quranFont.tajweed :global(span.end){min-width:0;height:auto;padding:0;border:0;font-size:1em;line-height:inherit;vertical-align:baseline}
+.tajweed :global(tajweed.madda_normal),.tajweed :global(tajweed.madda_permissible),.tajweed :global(tajweed.madda_necessary){color:var(--tj-madd)}
+.tajweed :global(tajweed.ghunnah),.tajweed :global(tajweed.iqlab){color:var(--tj-ghunnah)}
+.tajweed :global(tajweed.ikhafa),.tajweed :global(tajweed.ikhafa_shafawi){color:var(--tj-ikhfa)}
+.tajweed :global(tajweed.idgham_shafawi),.tajweed :global(tajweed.idgham_ghunnah),.tajweed :global(tajweed.idgham_wo_ghunnah){color:var(--tj-idgham)}
+.tajweed :global(tajweed.qalaqah){color:var(--tj-qalqalah)}
+.tajweed :global(tajweed.ham_wasl),.tajweed :global(tajweed.laam_shamsiyah){color:var(--tj-silent)}
+.wordGrid{display:flex;direction:rtl;flex-wrap:wrap;gap:18px 14px;margin:18px 0 6px}
+.wordGrid>span{display:grid;gap:3px;min-width:54px;padding:6px 4px;border-radius:8px;text-align:center}
+.wordGrid b{color:var(--ink);font:400 clamp(26px,calc(var(--arabic-size) * .8),46px)/1.6 Georgia,serif}
+.wordGrid.quranFont b{font-family:inherit;font-weight:400}
+.wordGrid small,.wordGrid em{color:var(--muted);font-family:var(--font-ui);font-size:11px;font-style:normal}
+.wordGrid em{color:var(--translation)}
+.activeWord{background:color-mix(in srgb,var(--green) 16%,transparent)}
+.translationBlock{margin-top:8px}
+.translation{max-width:72ch;color:var(--translation);font-size:var(--translation-size);line-height:1.7}
+.translation sup{color:var(--green);font-size:.65em;margin-left:1px}
+.attribution{margin:6px 0 0;color:var(--muted);font-size:12px}
+.footnotes{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.footnote{flex:0 1 auto;font-size:13px}
+.footnote[open]{flex-basis:100%}
+.footnote summary{display:inline-flex;align-items:center;min-height:32px;padding:0 10px;border:1px solid var(--line);border-radius:999px;color:var(--green);font-weight:600;cursor:pointer;list-style:none}
+.footnote summary::-webkit-details-marker{display:none}
+.footnote[open] summary{background:var(--soft)}
+.footnote>div{margin-top:8px;padding:10px 14px;border-left:2px solid var(--line);color:var(--translation);line-height:1.65}
+.footnote small{display:block;padding-left:16px;color:var(--muted)}
+.studyRow{display:flex;flex-wrap:wrap;align-items:center;margin:12px 0 0 -10px}
+.studyRow button{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:var(--muted);font:500 13px var(--font-ui);cursor:pointer}
+.studyRow button+button::before{content:"";width:1px;height:14px;margin:0 10px 0 -10px;background:var(--line)}
+.studyRow button:hover,.studyRow button[aria-expanded="true"]{color:var(--green)}
+.studyRow button[aria-expanded="true"]{font-weight:650}
+.studyRow svg{width:17px;height:17px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.studyPanel{margin-top:10px;padding:4px 18px 14px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--soft) 45%,var(--card));line-height:1.7;color:var(--translation)}
+.studyPanel>header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-right:-12px}
+.studyPanel>header strong{color:var(--ink);font-size:13px}
+.studyPanel>p{margin:6px 0 0}
+/* Arabic Tafsir quotes Quranic marks that UI and system Arabic fonts lack; fall back to the Quran font glyph by glyph. */
+.studyPanel>p[dir]{font-family:var(--font-ui),"Geeza Pro","Noto Naskh Arabic","Segoe UI",Tahoma,"UthmanicHafs",serif}
+.reference{margin-top:12px;padding:2px 0 2px 14px;border-left:2px solid color-mix(in srgb,var(--green) 40%,var(--line))}
+.reference strong,.reference small{display:block}
+.reference strong{color:var(--ink);font-size:14px}
+.reference small{margin-top:6px;color:var(--muted);font-size:12px}
+.reference>div{margin-top:8px}
+.unavailable{color:var(--muted);font-style:italic}
+.panelState{color:var(--muted)}
+
+/* Bottom Surah navigation */
+.chapterNav{display:flex;justify-content:space-between;gap:12px;margin-top:20px;padding-top:20px;border-top:1px solid var(--line)}
+.chapterNav a{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--green);font-weight:600}
+.chapterNav a:hover{border-color:var(--green)}
+
+.skeleton{display:grid;gap:14px}
+.skeleton i{display:block;height:120px;border-radius:16px;background:linear-gradient(90deg,var(--card),var(--soft),var(--card));background-size:200% 100%;animation:shimmer 1.4s ease-in-out infinite}
+.skeleton i+i{height:180px}
+@keyframes shimmer{to{background-position:-200% 0}}
+
+@media(max-width:1080px){.toolbarInner{grid-template-columns:auto minmax(0,1fr) auto}.position{justify-content:center;overflow:hidden}.position span{overflow:hidden;text-overflow:ellipsis}.toolbarButtonLabel{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}.toolsMenu>.toolbarButton{padding:0;width:42px}}
+@media(max-width:900px){.toolbar{top:64px}.verse{scroll-margin-top:132px}.activeVerse::before{left:-12px}}
+@media(max-width:760px){
+.toolbarInner{grid-template-columns:minmax(0,1fr) auto;min-height:52px;gap:8px;padding-inline:14px}
+.position{display:none}
+.modeLabel,.toolbarButtonLabel{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.modeSwitch>*{padding:0 11px}
+.toolbarButton{padding:0;width:42px}
+.surahSelectValue{font-size:14px}
+.surahHeader{gap:12px;padding:14px 16px;margin-inline:14px;border-radius:14px}
+.surahIdentity{grid-template-columns:minmax(0,1fr) auto;gap:12px}
+.surahNumber{display:none}
+.surahTitles h1{font-size:24px}
+.surahMeaning{font-size:15px}
+.surahTitles p{font-size:12px}
+.surahArabic{font-size:32px}
+.surahActions{padding-top:12px;gap:6px}
+.pill,.pillPrimary{min-height:38px;padding:0 13px}
+.translationPill{margin-left:0;flex:1 1 100%;justify-content:space-between}
+.verses{padding-inline:18px}
+.verse{padding:16px 0 12px}
+.activeVerse::before{left:-12px}
+.wideOnly{display:none!important}
+.narrowOnly{display:flex!important}
+.arabic{font-size:calc(var(--arabic-size) * .82);line-height:2.1}
+.translation{line-height:1.65}
+.studyRow button{padding:0 8px;font-size:12px}
+.studyRow button+button::before{margin:0 8px 0 -8px}
+.readerNotices{margin:12px 14px 0}
+.chapterNav{margin-inline:14px}
+.skeleton{padding-inline:14px}
+}
+@media(max-width:360px){.studyRow svg{display:none}}
+@media(prefers-reduced-motion:reduce){.progress,.tajweedLegend summary svg{transition:none}.skeleton i{animation:none}}

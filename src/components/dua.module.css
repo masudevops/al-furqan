@@ -1,0 +1,56 @@
+/* Categories */
+.categoryGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.categoryCard{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:14px;padding:18px;border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--card);color:var(--ink);transition:border-color .15s ease}
+.categoryCard:hover{border-color:color-mix(in srgb,var(--green) 55%,var(--line))}
+.categoryCard>svg{width:18px;height:18px;color:var(--green)}
+.categoryIcon{display:grid;place-items:center;width:46px;height:46px;border-radius:50%;background:color-mix(in srgb,var(--green) 13%,var(--card));color:var(--green)}
+.categoryIcon svg{width:22px;height:22px}
+.categoryText{display:grid;gap:2px;min-width:0}
+.categoryText strong{font:500 19px/1.2 var(--font-serif)}
+.categoryText span{color:var(--muted);font-size:13px}
+
+/* Category list */
+.search{display:flex;align-items:center;gap:8px;min-height:46px;padding:0 16px;margin-bottom:8px;border:1px solid var(--line);border-radius:var(--radius-pill);background:var(--card)}
+.search:focus-within{border-color:var(--green)}
+.search svg{width:18px;height:18px;color:var(--muted)}
+.search input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:400 15px var(--font-ui);outline:none}
+.list{margin:0;padding:0;list-style:none}
+.list li+li{border-top:1px solid var(--line)}
+.list a{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:14px;min-height:60px;padding:12px 10px;margin:0 -10px;border-radius:var(--radius);color:var(--ink)}
+.list a:hover{background:color-mix(in srgb,var(--soft) 55%,transparent)}
+.list a>svg{width:16px;height:16px;color:var(--muted)}
+.number{display:grid;place-items:center;min-width:32px;height:32px;padding:0 6px;border-radius:var(--radius-pill);background:var(--soft);color:var(--green);font-size:13px;font-weight:650;font-variant-numeric:tabular-nums}
+.title{font-size:16px;line-height:1.45}
+
+/* Detail */
+.detail{padding:clamp(20px,4vw,30px);border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--card)}
+.audio{display:grid;grid-template-columns:auto auto minmax(200px,1fr);align-items:center;gap:12px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+.audioIcon{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:color-mix(in srgb,var(--green) 13%,var(--card));color:var(--green)}
+.audioIcon svg{width:18px;height:18px}
+.audio div{display:grid;gap:2px}
+.audio strong{font-size:14px}
+.audio span{color:var(--muted);font-size:12px}
+.audio audio{width:100%;height:40px}
+.noAudio{margin:0;padding-bottom:16px;border-bottom:1px solid var(--line);color:var(--muted);font-size:13px}
+.error{grid-column:1/-1;margin:0;color:#a1433a;font-size:13px}
+.arabic{margin:26px 0 0;color:var(--ink);font:400 clamp(26px,4vw,34px)/2.05 "Geeza Pro","Noto Naskh Arabic","Amiri","Times New Roman",serif;text-align:right}
+.transliteration{margin:18px 0 0;color:var(--muted);font-style:italic;line-height:1.7}
+.translation{margin:14px 0 0;color:var(--translation);font-size:17px;line-height:1.75}
+.note{margin-top:18px;padding:14px 16px;border-radius:var(--radius);background:color-mix(in srgb,var(--soft) 55%,var(--card))}
+.note h2{margin:0 0 4px;color:var(--green);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.note p{margin:0;color:var(--translation);line-height:1.65}
+.reference{margin:22px 0 0;padding-top:14px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;line-height:1.5}
+.bookmark[aria-pressed="true"]{color:var(--green)}
+.bookmark[aria-pressed="true"] svg{fill:currentColor}
+.copied{margin:-8px 0 12px;color:var(--green);font-size:13px;font-weight:650}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:20px}
+
+/* Loading */
+.loadingGrid,.loadingList{display:grid;gap:12px}
+.loadingGrid{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.loadingGrid i,.loadingList i{display:block;height:84px;border-radius:var(--radius-lg);background:linear-gradient(90deg,var(--card),var(--soft),var(--card));background-size:200% 100%;animation:shimmer 1.4s ease-in-out infinite}
+.loadingList i{height:56px;border-radius:var(--radius)}
+@keyframes shimmer{to{background-position:-200% 0}}
+
+@media(max-width:620px){.audio{grid-template-columns:auto 1fr}.audio audio{grid-column:1/-1}.translation{font-size:16px}}
+@media(prefers-reduced-motion:reduce){.loadingGrid i,.loadingList i{animation:none}.categoryCard{transition:none}}

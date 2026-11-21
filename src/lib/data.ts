@@ -18,6 +18,7 @@ import type {
   FeedItem,
   FootnotePayload,
   AyahStudyPayload,
+  AyahTafsirPayload,
   NoteItem,
   ReaderPayload,
   QuranScript,
@@ -994,6 +995,25 @@ export const loadQuranReflectPost = async (session: StoredSession, id: number) =
     title: presentation.title,
     verified: post.verified === true,
   };
+};
+
+export const parseAyahTafsir = (response: unknown, verseKey: string, tafsirId: number): AyahTafsirPayload => {
+  const root = asObject(response);
+  const verse = asObject(root.verse ?? root);
+  const tafsir = toArray(verse.tafsirs)[0];
+  return {
+    tafsirId,
+    tafsirName: asNullableString(tafsir?.resourceName ?? tafsir?.resource_name ?? tafsir?.name),
+    tafsirText: plainSourceText(tafsir?.text),
+    verseKey,
+  };
+};
+
+// One Ayah's Tafsir, so opening a single study panel does not refetch the whole Surah.
+export const loadAyahTafsir = async (session: StoredSession, verseKey: string, tafsirId: number): Promise<AyahTafsirPayload> => {
+  const { serverClient } = await createClients(session);
+  const response = await serverClient.content.v4.verses.byKey(verseKey, { tafsirs: [tafsirId] });
+  return parseAyahTafsir(response, verseKey, tafsirId);
 };
 
 export const loadAyahStudy = async (session: StoredSession, verseKey: string): Promise<AyahStudyPayload> => {

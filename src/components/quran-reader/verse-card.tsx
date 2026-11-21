@@ -4,7 +4,7 @@ import Link from "next/link";
 import { memo, useId, useState } from "react";
 import useSWR, { preload } from "swr";
 
-import type { AyahStudyPayload, FootnotePayload, ReaderPayload } from "@/lib/types";
+import type { AyahStudyPayload, AyahTafsirPayload, FootnotePayload, ReaderPayload } from "@/lib/types";
 import type { toggleLocalBookmark } from "@/lib/local-bookmarks";
 import { fetchJson } from "./fetch-json";
 import { ReaderIcon, type ReaderIconName } from "./icons";
@@ -20,12 +20,11 @@ export type VerseActions = {
   copy: (verseKey: string, chapter: number | null, verse: number | null, details: HTMLDetailsElement | null) => void;
   share: (verseKey: string, chapter: number | null, verse: number | null, details: HTMLDetailsElement | null) => void;
   toggleBookmark: (bookmark: Parameters<typeof toggleLocalBookmark>[0]) => void;
-  requestTafsir: () => void;
 };
 
 type VerseCardProps = {
-  verse: ReaderVerse; chapterId: number; chapterName: string; isActive: boolean; isPlaying: boolean; isSaved: boolean; isCopied: boolean;
-  activeWordPosition: number | null; wordMode: boolean; tajweedEnabled: boolean; uthmaniScript: boolean; tafsirAvailable: boolean; tafsirEverywhere: boolean;
+  verse: ReaderVerse; chapterId: number; chapterName: string; isActive: boolean; isPlaying: boolean; isSaved: boolean; isCopied: boolean; bookmarkNotice: "saved" | "removed" | null;
+  activeWordPosition: number | null; wordMode: boolean; tajweedEnabled: boolean; uthmaniScript: boolean; tafsirAvailable: boolean; tafsirEverywhere: boolean; tafsirId: number | null;
   contentPending: boolean; translationResourceName?: string; translationAuthor?: string | null; tafsirResourceName?: string; actions: VerseActions;
 };
 
@@ -36,6 +35,21 @@ function TranslationFootnote({ id, label }: { id: number; label: string }) {
   const [open, setOpen] = useState(false);
   const { data, error, isLoading } = useSWR<FootnotePayload>(open ? `/api/quran/footnotes/${id}` : null, fetchJson, { revalidateOnFocus: false });
   return <details className={styles.footnote} onToggle={(event) => setOpen(event.currentTarget.open)}><summary>Footnote {label}</summary>{isLoading ? <p>Loading footnote…</p> : null}{error ? <p className={styles.unavailable}>This footnote is unavailable right now.</p> : null}{data ? <><div translate="no" dangerouslySetInnerHTML={{ __html: data.textHtml }} /><small>Translation footnote · {data.languageName ?? "source language"}</small></> : null}</details>;
+}
+
+function AyahTafsir({ verse, tafsirId, tafsirEverywhere, contentPending, fallbackName }: { verse: ReaderVerse; tafsirId: number | null; tafsirEverywhere: boolean; contentPending: boolean; fallbackName?: string }) {
+  // "Tafsir under every Ayah" loads with the Surah; a single panel fetches only its own Ayah.
+  const url = !tafsirEverywhere && tafsirId && verse.verseKey ? `/api/quran/tafsir/${verse.verseKey.replace(":", "/")}?tafsir=${tafsirId}` : null;
+  const { data, error, isLoading } = useSWR<AyahTafsirPayload>(url, fetchJson, studyOptions);
+  const text = tafsirEverywhere ? verse.tafsirText : data?.tafsirText;
+  const name = (tafsirEverywhere ? verse.tafsirName : data?.tafsirName) ?? fallbackName ?? "Selected source";
+  return <>
+    <p className={styles.panelSource}>{name}</p>
+    {text ? <p translate="no" dir="auto">{text}</p>
+      : (tafsirEverywhere ? contentPending : isLoading || (!data && !error)) ? <p className={styles.panelState}>Loading tafsir…</p>
+      : error ? <p className={styles.unavailable}>This Tafsir is unavailable right now.</p>
+      : <p className={styles.unavailable}>No tafsir entry was returned for this Ayah.</p>}
+  </>;
 }
 
 function StudyReferences({ verseKey, kind }: { verseKey: string; kind: "hadith" | "answers" }) {
@@ -56,17 +70,14 @@ function IconButton({ label, icon, onClick, pressed, className }: { label: strin
 }
 
 // Memoized so audio progress, bookmarks, and other reader state only re-render the Ayahs they affect.
-const VerseCard = memo(function VerseCard({ verse, chapterId, chapterName, isActive, isPlaying, isSaved, isCopied, activeWordPosition, wordMode, tajweedEnabled, uthmaniScript, tafsirAvailable, tafsirEverywhere, contentPending, translationResourceName, translationAuthor, tafsirResourceName, actions }: VerseCardProps) {
+const VerseCard = memo(function VerseCard({ verse, chapterId, chapterName, isActive, isPlaying, isSaved, isCopied, bookmarkNotice, activeWordPosition, wordMode, tajweedEnabled, uthmaniScript, tafsirAvailable, tafsirEverywhere, tafsirId, contentPending, translationResourceName, translationAuthor, tafsirResourceName, actions }: VerseCardProps) {
   // undefined follows the Surah-wide Tafsir setting until the reader picks a panel for this Ayah.
   const [panel, setPanel] = useState<StudyPanel | null | undefined>(undefined);
   const panelId = useId();
   const activePanel = panel === undefined ? (tafsirEverywhere ? "tafsir" : null) : panel;
   const verseKey = verse.verseKey ?? `${chapterId}:${verse.verseNumber}`;
   const label = `Ayah ${verse.verseNumber}`;
-  const togglePanel = (kind: StudyPanel) => {
-    if (kind === "tafsir") actions.requestTafsir();
-    setPanel(activePanel === kind ? null : kind);
-  };
+  const togglePanel = (kind: StudyPanel) => setPanel(activePanel === kind ? null : kind);
   const warmStudy = () => { if (verse.verseKey) void preload(studyRequestUrl(verse.verseKey), fetchJson); };
   // The Uthmani Hafs font is applied only to plain Uthmani text. The Tajweed source encodes some marks (e.g. U+0672)
   // that this font cannot render, so Tajweed keeps the system font until a verified Tajweed font pipeline exists.
@@ -87,6 +98,7 @@ const VerseCard = memo(function VerseCard({ verse, chapterId, chapterName, isAct
       </div>
       <div className={styles.verseBarGroup}>
         {isCopied ? <span className={styles.copyConfirmation} role="status">Link copied</span> : null}
+        {bookmarkNotice ? <span className={styles.copyConfirmation} role="status">{bookmarkNotice === "saved" ? <>Saved · <Link href="/library">Library</Link></> : "Bookmark removed"}</span> : null}
         <IconButton label={`Copy link to ${label}`} icon="copy" className={styles.wideOnly} onClick={() => actions.copy(verseKey, chapterId, verse.verseNumber, null)} />
         <IconButton label={`Share ${label}`} icon="share" className={styles.wideOnly} onClick={() => actions.share(verseKey, chapterId, verse.verseNumber, null)} />
         <Popover className={styles.menu} summaryClassName={styles.iconButton} label={`More actions for ${label}`} summary={<ReaderIcon name="more" />}>
@@ -112,9 +124,9 @@ const VerseCard = memo(function VerseCard({ verse, chapterId, chapterName, isAct
       : <p className={styles.unavailable}>The selected translation is unavailable for this Ayah.</p>}
     {studyLinks.length ? <div className={styles.studyRow} role="group" aria-label={`Study ${label}`}>{studyLinks.map((link) => <button type="button" key={link.kind} aria-expanded={activePanel === link.kind} aria-controls={activePanel === link.kind ? panelId : undefined} onClick={() => togglePanel(link.kind)} {...(link.kind === "tafsir" ? {} : { onFocus: warmStudy, onPointerEnter: warmStudy })}><ReaderIcon name={link.icon} />{link.label}</button>)}</div> : null}
     {activePanel ? <section id={panelId} className={styles.studyPanel} aria-label={`${activePanel === "tafsir" ? "Tafsir" : activePanel === "hadith" ? "Hadith" : "Answers"} for ${label}`}>
-      <header><strong>{activePanel === "tafsir" ? `Tafsir · ${verse.tafsirName ?? tafsirResourceName ?? "Selected source"}` : activePanel === "hadith" ? "Hadith linked to this Ayah" : "Answers about this Ayah"}</strong><button type="button" className={styles.iconButton} aria-label="Close panel" title="Close panel" onClick={() => setPanel(null)}><ReaderIcon name="close" /></button></header>
+      <header><strong>{activePanel === "tafsir" ? "Tafsir" : activePanel === "hadith" ? "Hadith linked to this Ayah" : "Answers about this Ayah"}</strong><button type="button" className={styles.iconButton} aria-label="Close panel" title="Close panel" onClick={() => setPanel(null)}><ReaderIcon name="close" /></button></header>
       {activePanel === "tafsir"
-        ? verse.tafsirText ? <p translate="no" dir="auto">{verse.tafsirText}</p> : contentPending ? <p className={styles.panelState}>Loading tafsir…</p> : <p className={styles.unavailable}>No tafsir entry was returned for this Ayah.</p>
+        ? <AyahTafsir verse={verse} tafsirId={tafsirId} tafsirEverywhere={tafsirEverywhere} contentPending={contentPending} fallbackName={tafsirResourceName} />
         : verse.verseKey ? <StudyReferences verseKey={verse.verseKey} kind={activePanel} /> : null}
     </section> : null}
   </article>;

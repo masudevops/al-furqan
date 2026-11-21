@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import useSWR, { preload } from "swr";
 import { loadBrowserMushafFont, mushafFontFamily } from "@/core/quran/mushaf-font";
+import { ReaderIcon } from "@/components/quran-reader/icons";
+import readerStyles from "@/components/quran-reader/quran-reader.module.css";
+import { saveMushafPage, saveReadingMode, versesHrefForMushafPage } from "@/lib/reading-mode";
 import type { MushafPayload } from "@/lib/types";
 import styles from "./quran-tools.module.css";
 
@@ -61,6 +64,8 @@ export default function MushafPage({ pageNumber }: { pageNumber: number }) {
     return () => { active = false; };
   }, [pageNumber, router]);
 
+  useEffect(() => saveMushafPage(pageNumber), [pageNumber]);
+
   const fontReady = fontPageReady === pageNumber;
   const fontFailed = fontPageFailed === pageNumber;
 
@@ -78,6 +83,10 @@ export default function MushafPage({ pageNumber }: { pageNumber: number }) {
         </> : <><h1>Mushaf</h1><p>Page {pageNumber}</p></>}
       </div>
       <div className={styles.mushafControls}>
+        <nav className={readerStyles.modeSwitch} aria-label="Reading mode">
+          <Link href={versesHrefForMushafPage(data?.verseKeys[0])} prefetch={false} onClick={() => saveReadingMode("verses")}><ReaderIcon name="verses" /><span className={readerStyles.modeLabel}>Verse by Verse</span></Link>
+          <span aria-current="page"><ReaderIcon name="page" /><span className={readerStyles.modeLabel}>Mushaf</span></span>
+        </nav>
         <form className={styles.tools} action="/quran/mushaf/1" onSubmit={(event) => {
           event.preventDefault();
           const value = new FormData(event.currentTarget).get("page");

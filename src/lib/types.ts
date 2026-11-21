@@ -128,6 +128,13 @@ export interface ReaderVerse {
   rubNumber: number | null;
 }
 
+export interface AyahTafsirPayload {
+  tafsirId: number;
+  tafsirName: string | null;
+  tafsirText: string | null;
+  verseKey: string;
+}
+
 export interface FootnotePayload {
   id: number;
   languageName: string | null;

@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ReactNode, memo, useEffect, useId, useRef, useState } from "react";
+import { memo, useEffect, useId, useRef, useState } from "react";
 
 import type { ContentPreviewItem, ReaderPayload } from "@/lib/types";
 import { ReaderIcon } from "./icons";
-import Popover from "./popover";
 import { saveReadingMode } from "@/lib/reading-mode";
 import { mushafHrefFor, positionLabels, positionOfVerse } from "./reader-position";
 import styles from "./quran-reader.module.css";
@@ -15,8 +14,7 @@ type ReaderToolbarProps = {
   chapter: ReaderPayload["chapter"];
   chapters?: ContentPreviewItem[];
   verses: ReaderPayload["verses"];
-  tools: (close: () => void) => ReactNode;
-  toolsActive: boolean;
+  settingsActive: boolean;
   onOpenSettings: () => void;
 };
 
@@ -44,7 +42,7 @@ function useVerseUnderToolbar(barRef: React.RefObject<HTMLElement>, verses: Read
   return verseKey;
 }
 
-const ReaderToolbar = memo(function ReaderToolbar({ chapter, chapters, verses, tools, toolsActive, onOpenSettings }: ReaderToolbarProps) {
+const ReaderToolbar = memo(function ReaderToolbar({ chapter, chapters, verses, settingsActive, onOpenSettings }: ReaderToolbarProps) {
   const router = useRouter();
   const barRef = useRef<HTMLDivElement>(null);
   const selectId = useId();
@@ -72,10 +70,7 @@ const ReaderToolbar = memo(function ReaderToolbar({ chapter, chapters, verses, t
           <span aria-current="page"><ReaderIcon name="verses" /><span className={styles.modeLabel}>Verse by Verse</span></span>
           <Link href={mushafHrefFor(position)} prefetch={false} onClick={() => saveReadingMode("mushaf")}><ReaderIcon name="page" /><span className={styles.modeLabel}>Mushaf</span></Link>
         </nav>
-        <Popover className={`${styles.menu} ${styles.toolsMenu}`} summaryClassName={`${styles.toolbarButton} ${toolsActive ? styles.toolbarButtonActive : ""}`} label="Study tools" summary={<><ReaderIcon name="tools" /><span className={styles.toolbarButtonLabel}>Tools</span></>}>
-          {tools}
-        </Popover>
-        <button type="button" className={styles.toolbarButton} aria-label="Open reader settings" title="Reader settings" onClick={onOpenSettings}><ReaderIcon name="settings" /></button>
+        <button type="button" className={`${styles.toolbarButton} ${styles.settingsButton}`} aria-label="Open reader settings" title="Settings" onClick={onOpenSettings}><ReaderIcon name="gear" />{settingsActive ? <span className={styles.activeDot} aria-hidden="true" /> : null}</button>
       </div>
     </div>
     <span className={styles.progress} style={{ transform: `scaleX(${progress})` }} aria-hidden="true" />

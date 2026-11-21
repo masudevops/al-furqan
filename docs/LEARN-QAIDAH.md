@@ -22,7 +22,7 @@
 | Practice words and their recitation | Quran.Foundation Content API v4 (`verses.byChapter`, words with `text_uthmani` and `audio_url`), Surahs 1, 93–95, 97, 99–114 | Words are never constructed; audio is served from `verses.quran.foundation` |
 | Day 1–7 grouping | Standard alphabetical order, four letters a day | A placeholder until a teacher sets the lesson plan |
 
-**Not included, by design (project rule: no AI-written religious or linguistic content):** teaching names (e.g. "Alif", "Ba"), pronunciation guidance, makharij explanations, vowel/tanween/sukun/madd lessons (days 8–30), and isolated-letter pronunciation audio. The UI states these are awaiting review.
+**Not included, by design (project rule: no AI-written religious or linguistic content):** teaching names (e.g. "Alif", "Ba"), pronunciation guidance, makharij explanations, vowel/tanween/sukun/madd lessons (days 8–30), and reviewed pronunciation audio (the letter recordings below are unreviewed). The UI states these are awaiting review.
 
 ## Before publishing
 
@@ -33,7 +33,43 @@
 
 ## Letter pronunciation audio
 
-Decision (2026-11-21): letter recordings are deferred until a licensed API or recording set is available. Options considered: a commissioned or licensed reciter recording (preferred), volunteer CC BY-SA recordings (Wikimedia Commons / Lingua Libre, consistency unknown), the Quran's own muqatta'at recitations (only ص ق ن alone; others in groups such as الٓمٓ), and device text-to-speech (rejected — unreviewed machine pronunciation). No play button is shown for letters until a source is added, so there is no dead control.
+Decision (updated 2026-11-21): each letter card has a play button using an **MIT-licensed recording set**, self-hosted in `public/learn/letters/` with its `LICENSE.txt` and `SOURCE.txt`.
+
+- **Source:** [razunatmohammed88-cyber/arabic-alphabet-audio](https://github.com/razunatmohammed88-cyber/arabic-alphabet-audio) (MIT, © 2025). Found via the `theilgaz/mahfuz` app, which downloads the same files; we take them from the original repository, not from mahfuz (whose own license is stated only in its README).
+- **What is known:** human recordings made on an Android phone (file metadata); all 28 files are distinct. The speaker is **unidentified** and the set has **not been reviewed** — every play button and the lesson footer say so.
+- **Reviewer checklist:** confirm each recording is the correct letter (source file names are loose, e.g. `taa'` = ت and `taa` = ط) and that pronunciation is acceptable for teaching; replace any that fail, or remove the set if a reviewed recording or licensed API becomes available.
+- Rejected alternatives: device text-to-speech (unreviewed machine pronunciation); `nooresahar/noorani` (no license); copying `theilgaz/mahfuz` (separate app, license only stated in README, unreviewed lesson text).
+
+| Letter | Unicode | Our file | Source file |
+|---|---|---|---|
+| ا | U+0627 ALEF | `0627.mp3` | `alif.mp3` |
+| ب | U+0628 BEH | `0628.mp3` | `baa.mp3` |
+| ت | U+062A TEH | `062A.mp3` | `taa'.mp3` |
+| ث | U+062B THEH | `062B.mp3` | `thaa.mp3` |
+| ج | U+062C JEEM | `062C.mp3` | `jiim.mp3` |
+| ح | U+062D HAH | `062D.mp3` | `haa.mp3` |
+| خ | U+062E KHAH | `062E.mp3` | `khaa.mp3` |
+| د | U+062F DAL | `062F.mp3` | `daal.mp3` |
+| ذ | U+0630 THAL | `0630.mp3` | `thaal.mp3` |
+| ر | U+0631 REH | `0631.mp3` | `raa.mp3` |
+| ز | U+0632 ZAIN | `0632.mp3` | `zaay.mp3` |
+| س | U+0633 SEEN | `0633.mp3` | `siin.mp3` |
+| ش | U+0634 SHEEN | `0634.mp3` | `shiin.mp3` |
+| ص | U+0635 SAD | `0635.mp3` | `saad.mp3` |
+| ض | U+0636 DAD | `0636.mp3` | `daad.mp3` |
+| ط | U+0637 TAH | `0637.mp3` | `taa.mp3` |
+| ظ | U+0638 ZAH | `0638.mp3` | `thaa'.mp3` |
+| ع | U+0639 AIN | `0639.mp3` | `àyn.mp3` |
+| غ | U+063A GHAIN | `063A.mp3` | `ghayn.mp3` |
+| ف | U+0641 FEH | `0641.mp3` | `faa.mp3` |
+| ق | U+0642 QAF | `0642.mp3` | `qaaf.mp3` |
+| ك | U+0643 KAF | `0643.mp3` | `kaaf.mp3` |
+| ل | U+0644 LAM | `0644.mp3` | `laam.mp3` |
+| م | U+0645 MEEM | `0645.mp3` | `miim.mp3` |
+| ن | U+0646 NOON | `0646.mp3` | `nuun.mp3` |
+| ه | U+0647 HEH | `0647.mp3` | `haa'.mp3` |
+| و | U+0648 WAW | `0648.mp3` | `waaw.mp3` |
+| ي | U+064A YEH | `064A.mp3` | `yaa.mp3` |
 
 ## Introducing an API later
 

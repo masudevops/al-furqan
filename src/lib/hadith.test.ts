@@ -31,6 +31,13 @@ describe("ummahHadithAdapter", () => {
     await expect(ummahHadithAdapter.list("bukhari", 2)).resolves.toEqual({ items: [expect.objectContaining({ arabic: "نص عربي", authenticityContext: "Sahih", grades: [{ grade: "Sahih", scholar: "Authority not identified by provider" }], hadithNumber: 7, text: "English source text" })], page: 2, pages: 4, total: 100 });
   });
 
+  it("treats a numbering gap in the source dataset as no record, not an outage", async () => {
+    vi.mocked(fetch).mockImplementationOnce(() => Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({ success: false, error: "Hadith not found" }) } as Response));
+    await expect(ummahHadithAdapter.one("muslim", 8)).resolves.toBeNull();
+    vi.mocked(fetch).mockImplementationOnce(() => Promise.resolve({ ok: false, status: 503, json: () => Promise.resolve({ success: false }) } as Response));
+    await expect(ummahHadithAdapter.one("muslim", 3)).rejects.toThrow("UmmahAPI request failed: 503");
+  });
+
   it("uses provider full-text search", async () => {
     vi.mocked(fetch).mockImplementationOnce(() => response({ hadiths: [record()], total_found: 1 }));
     await expect(ummahHadithAdapter.list("bukhari", 1, "prayer")).resolves.toMatchObject({ page: 1, pages: 1, total: 1 });

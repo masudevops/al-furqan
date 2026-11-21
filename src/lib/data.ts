@@ -21,6 +21,7 @@ import type {
   AyahTafsirPayload,
   TajweedGlyphPayload,
   TajweedGlyphWord,
+  PracticeWordPayload,
   NoteItem,
   ReaderPayload,
   QuranScript,
@@ -1014,6 +1015,33 @@ export const loadChapterTajweedGlyphs = async (session: StoredSession, chapterId
       wordFields: { codeV2: true, pageNumber: true },
     })));
   return parseTajweedGlyphs(responses, chapterId);
+};
+
+// Short Surahs whose words give every letter real examples for Learn practice.
+export const PRACTICE_CHAPTERS = [1, 93, 94, 95, 97, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114] as const;
+const WORD_AUDIO_BASE = "https://verses.quran.foundation/";
+
+export const parsePracticeWords = (responses: unknown[]): PracticeWordPayload => {
+  const seen = new Set<string>();
+  const words = responses.flatMap((response) => toArray(response, ["data", "verses"])).flatMap((verse) => {
+    const verseKey = asString(verse.verseKey ?? verse.verse_key);
+    return toArray(verse.words).flatMap((word) => {
+      const text = asString(word.textUthmani ?? word.text_uthmani ?? word.text);
+      const charType = asString(word.charTypeName ?? word.char_type_name, "word");
+      const audio = asNullableString(word.audioUrl ?? word.audio_url);
+      if (charType !== "word" || !text || seen.has(text)) return [];
+      seen.add(text);
+      return [{ text, audioUrl: audio ? (audio.startsWith("http") ? audio : `${WORD_AUDIO_BASE}${audio.replace(/^\//, "")}`) : null, verseKey, position: Number(asNullableNumber(word.position) ?? 0) }];
+    });
+  });
+  return { chapters: [...PRACTICE_CHAPTERS], words };
+};
+
+export const loadPracticeWords = async (session: StoredSession): Promise<PracticeWordPayload> => {
+  const { serverClient } = await createClients(session);
+  const responses = await Promise.all(PRACTICE_CHAPTERS.map((chapterId) =>
+    serverClient.content.v4.verses.byChapter(String(chapterId), { perPage: 50, words: true, wordFields: { textUthmani: true } })));
+  return parsePracticeWords(responses);
 };
 
 export const parseAyahTafsir = (response: unknown, verseKey: string, tafsirId: number): AyahTafsirPayload => {

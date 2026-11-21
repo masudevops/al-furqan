@@ -127,6 +127,11 @@ export interface ReaderVerse {
   rubNumber: number | null;
 }
 
+export interface PracticeWordPayload {
+  chapters: number[];
+  words: Array<{ text: string; audioUrl: string | null; verseKey: string; position: number }>;
+}
+
 export interface TajweedGlyphWord {
   charType: string;
   code: string | null;

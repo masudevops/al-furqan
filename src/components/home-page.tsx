@@ -31,6 +31,7 @@ export default function HomePage({ lastRead, resumeHref, resumeInMushaf, chapter
     ...(publicFeatures.dua ? [{ href: "/dua", icon: "dua" as const, title: "Dua", description: "Morning and evening dhikr and daily duas, with their sources." }] : []),
     ...(publicFeatures.masjidFinder ? [{ href: "/masjid-finder", icon: "masjid" as const, title: "Masjid Finder", description: "Masjids around you, how far they are, and directions." }] : []),
     ...(publicFeatures.qibla ? [{ href: "/qibla", icon: "compass" as const, title: "Qibla", description: "The direction of prayer from where you are." }] : []),
+    ...(publicFeatures.learn ? [{ href: "/learn", icon: "quran" as const, title: "Learn", description: "Learn to read the Quran, starting with the Arabic letters." }] : []),
   ];
 
   return <main className={styles.main}>

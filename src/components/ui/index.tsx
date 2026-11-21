@@ -32,9 +32,9 @@ type Variant = "primary" | "secondary" | "ghost";
 const buttonClass = (variant: Variant = "secondary", small?: boolean, className?: string) =>
   cx(styles.button, variant === "primary" && styles.primary, variant === "ghost" && styles.ghost, small && styles.small, className);
 
-type ButtonProps = ComponentPropsWithoutRef<"button"> & { variant?: Variant; small?: boolean; icon?: IconName };
-export function Button({ variant, small, icon, className, children, type = "button", ...props }: ButtonProps) {
-  return <button type={type} className={buttonClass(variant, small, className)} {...props}>{icon ? <Icon name={icon} /> : null}{children}</button>;
+type ButtonProps = ComponentPropsWithoutRef<"button"> & { variant?: Variant; small?: boolean; icon?: IconName; trailingIcon?: IconName };
+export function Button({ variant, small, icon, trailingIcon, className, children, type = "button", ...props }: ButtonProps) {
+  return <button type={type} className={buttonClass(variant, small, className)} {...props}>{icon ? <Icon name={icon} /> : null}{children}{trailingIcon ? <Icon name={trailingIcon} /> : null}</button>;
 }
 
 type ButtonLinkProps = ComponentPropsWithoutRef<typeof Link> & { variant?: Variant; small?: boolean; icon?: IconName; trailingIcon?: IconName };

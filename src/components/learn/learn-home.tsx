@@ -27,22 +27,21 @@ export default function LearnHome() {
     <DraftNotice />
     <section className={styles.course} aria-labelledby="course-title">
       <div className={styles.courseHead}>
-        <div><p className={styles.courseKicker}>Course</p><h2 id="course-title">Noorani Qaidah</h2><p className={styles.courseMeta}>{COURSE_DAYS} days · days 1–{available} available in preview</p></div>
+        <div><p className={styles.courseKicker}>Course</p><h2 id="course-title">Noorani Qaidah</h2><p className={styles.courseMeta}>{COURSE_DAYS} days · letters, forms, marks, listening and reading along</p></div>
         <ButtonLink variant="primary" href={`/learn/qaidah/${upNext ?? 1}`} trailingIcon="arrowRight">{done === 0 ? "Start day 1" : upNext ? `Continue with day ${upNext}` : "Review day 1"}</ButtonLink>
       </div>
       <div className={styles.courseProgress}><span style={{ width: `${(done / available) * 100}%` }} /></div>
-      <p className={styles.courseMeta}>{done} of {available} preview lessons completed. Go at your own pace — there is no streak to keep.</p>
+      <p className={styles.courseMeta}>{done} of {available} lessons completed. Go at your own pace — there is no streak to keep.</p>
       <ol className={styles.days}>
         {QAIDAH_LESSONS.map((lesson) => {
           const complete = progress.completedDays.includes(lesson.day);
           return <li key={lesson.day}><Link href={`/learn/qaidah/${lesson.day}`} aria-current={lesson.day === upNext ? "step" : undefined}>
             <span className={complete ? styles.dayDone : styles.dayNumber}>{complete ? <Icon name="check" /> : lesson.day}</span>
-            <span className={styles.dayText}><strong>Day {lesson.day}</strong><span>{complete ? "Completed" : lesson.day === upNext ? "Up next" : "Letters"}</span></span>
-            <span className={styles.dayLetters} lang="ar" dir="rtl" translate="no">{lesson.letters.join(" ")}</span>
+            <span className={styles.dayText}><strong>{lesson.letters.length ? `Day ${lesson.day}` : lesson.title}</strong><span>{complete ? "Completed" : lesson.day === upNext ? `Up next · ${lesson.subtitle}` : lesson.letters.length ? lesson.subtitle : `Day ${lesson.day} · ${lesson.subtitle}`}</span></span>
+            {lesson.letters.length ? <span className={styles.dayLetters} lang="ar" dir="rtl" translate="no">{lesson.letters.join(" ")}</span> : <span />}
             <Icon name="arrowRight" />
           </Link></li>;
         })}
-        <li className={styles.dayLocked}><span className={styles.dayNumber}>8</span><span className={styles.dayText}><strong>Days 8–{COURSE_DAYS}</strong><span>Vowels, joining and reading — added after qualified review</span></span></li>
       </ol>
     </section>
   </Page>;

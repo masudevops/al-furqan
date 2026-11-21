@@ -1021,26 +1021,42 @@ export const loadChapterTajweedGlyphs = async (session: StoredSession, chapterId
 export const PRACTICE_CHAPTERS = [1, 93, 94, 95, 97, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114] as const;
 const WORD_AUDIO_BASE = "https://verses.quran.foundation/";
 
-export const parsePracticeWords = (responses: unknown[]): PracticeWordPayload => {
+// Surahs read word by word, in order, on the last Learn days.
+export const READ_ALONG_CHAPTERS = [1, 108, 112, 114] as const;
+
+export const parsePracticeWords = (responses: unknown[], chapterIds: readonly number[] = PRACTICE_CHAPTERS): PracticeWordPayload => {
   const seen = new Set<string>();
-  const words = responses.flatMap((response) => toArray(response, ["data", "verses"])).flatMap((verse) => {
-    const verseKey = asString(verse.verseKey ?? verse.verse_key);
-    return toArray(verse.words).flatMap((word) => {
-      const text = asString(word.textUthmani ?? word.text_uthmani ?? word.text);
-      const charType = asString(word.charTypeName ?? word.char_type_name, "word");
-      const audio = asNullableString(word.audioUrl ?? word.audio_url);
-      if (charType !== "word" || !text || seen.has(text)) return [];
-      seen.add(text);
-      return [{ text, audioUrl: audio ? (audio.startsWith("http") ? audio : `${WORD_AUDIO_BASE}${audio.replace(/^\//, "")}`) : null, verseKey, position: Number(asNullableNumber(word.position) ?? 0) }];
-    });
+  const words: PracticeWordPayload["words"] = [];
+  const sequences: PracticeWordPayload["sequences"] = {};
+  responses.forEach((response, index) => {
+    const chapterId = chapterIds[index];
+    for (const verse of toArray(response, ["data", "verses"])) {
+      const verseKey = asString(verse.verseKey ?? verse.verse_key);
+      for (const word of toArray(verse.words)) {
+        const text = asString(word.textUthmani ?? word.text_uthmani ?? word.text);
+        const charType = asString(word.charTypeName ?? word.char_type_name, "word");
+        if (charType !== "word" || !text) continue;
+        const audio = asNullableString(word.audioUrl ?? word.audio_url);
+        const item = {
+          text,
+          audioUrl: audio ? (audio.startsWith("http") ? audio : `${WORD_AUDIO_BASE}${audio.replace(/^\//, "")}`) : null,
+          verseKey,
+          position: Number(asNullableNumber(word.position) ?? 0),
+          transliteration: asNullableString(asObject(word.transliteration).text),
+          translation: asNullableString(asObject(word.translation).text),
+        };
+        if ((READ_ALONG_CHAPTERS as readonly number[]).includes(chapterId)) (sequences[chapterId] ??= []).push(item);
+        if (!seen.has(text)) { seen.add(text); words.push(item); }
+      }
+    }
   });
-  return { chapters: [...PRACTICE_CHAPTERS], words };
+  return { chapters: [...chapterIds], sequences, words };
 };
 
 export const loadPracticeWords = async (session: StoredSession): Promise<PracticeWordPayload> => {
   const { serverClient } = await createClients(session);
   const responses = await Promise.all(PRACTICE_CHAPTERS.map((chapterId) =>
-    serverClient.content.v4.verses.byChapter(String(chapterId), { perPage: 50, words: true, wordFields: { textUthmani: true } })));
+    serverClient.content.v4.verses.byChapter(String(chapterId), { perPage: 50, words: true, language: "en", wordFields: { textUthmani: true } })));
   return parsePracticeWords(responses);
 };
 

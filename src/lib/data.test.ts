@@ -464,7 +464,8 @@ describe("Learn practice words", () => {
         { char_type_name: "end", text_uthmani: "١", audio_url: null, position: 5 },
       ] }] },
       { verses: [{ verse_key: "113:1", words: [{ char_type_name: "word", text_uthmani: "قُلْ", audio_url: "wbw/113_001_001.mp3", position: 1 }] }] },
-    ]);
-    expect(payload.words).toEqual([{ text: "قُلْ", audioUrl: "https://verses.quran.foundation/wbw/112_001_001.mp3", verseKey: "112:1", position: 1 }]);
+    ], [112, 113]);
+    expect(payload.sequences[112]?.map((word) => word.text)).toEqual(["قُلْ"]);
+    expect(payload.words).toEqual([{ text: "قُلْ", audioUrl: "https://verses.quran.foundation/wbw/112_001_001.mp3", verseKey: "112:1", position: 1, transliteration: null, translation: null }]);
   });
 });

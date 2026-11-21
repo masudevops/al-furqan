@@ -5,12 +5,24 @@
 
 ## What exists
 
-- `/learn` — course overview: a 30-day Noorani Qaidah path with days 1–7 available, progress, and a "go at your own pace" note (no streaks).
-- `/learn/qaidah/{1–7}` — four steps per day:
-  1. **Learn** — the day's four letters, each with its Unicode name and code point, its contextual forms (isolated / start / middle / end, shown with a tatweel), and real Quran words that begin with it, playable with Quran.Foundation word recitation.
-  2. **Recognise** — eight "which letter is this?" questions on random forms, plus up to four review questions on earlier letters the learner got wrong or has not seen recently.
-  3. **In the Quran** — "which word begins with this letter?" using only real Quran words, each playable.
-  4. **Finish** — scores, mark the day complete, practise again, next day.
+- `/learn` — course overview: all 30 days with progress and a "go at your own pace" note (no streaks).
+- **Days 1–7 — letters** (four steps): meet four letters (Unicode name, code point, letter recording, contextual forms, real Quran words that begin with each) → recognise them in random forms (+ spaced review of earlier mistakes) → find them at the start of real Quran words → finish.
+- **Days 8–30** (Learn → Practice → Finish), every exercise built only from sourced material:
+
+| Days | Focus | Practice |
+|---|---|---|
+| 8 | Review all 28 letters | Recognition, weighted to the learner's mistakes |
+| 9–11 | Start, middle, end forms | Identify letters shown in one position (right-joining letters only have end forms) |
+| 12 | First letters | Which letter begins a real Quran word |
+| 13–15 | Fatha, kasra, damma | Which word contains the mark |
+| 16 | Short vowels together | Which short vowel is on the word's first letter |
+| 17–19 | Tanween (fathatan, dammatan, kasratan), sukun, shadda | Which word contains the mark |
+| 20 | Review of marks | Mixed |
+| 21–22 | Maddah, superscript alef | Which word contains the mark |
+| 23 | Review of all ten marks | Mixed |
+| 24–26 | Listen: short, medium, longer words | Play a recited word and choose it (options are not playable) |
+| 27–30 | Read along: Al-Kawthar, Al-Ikhlas, An-Nas, Al-Fatihah | Word by word with recitation, transliteration and translation; then listen-and-choose within the Surah |
+
 - Progress is stored on the device in versioned local storage (`af-learn-v1`, `src/lib/learn/progress.ts`); unknown versions start fresh. No account is needed.
 
 ## Content provenance
@@ -20,13 +32,17 @@
 | The 28 letters, their order, Unicode names, code points, joining types | Unicode Character Database (generated with Python `unicodedata`, Unicode 13.0) | `src/lib/learn/alphabet-data.ts` is generated, not hand-typed |
 | Contextual letter forms | The letter plus a tatweel (U+0640), shaped by the font | Shown in a standard Arabic font: the Uthmani Quran font draws an isolated yeh without dots |
 | Practice words and their recitation | Quran.Foundation Content API v4 (`verses.byChapter`, words with `text_uthmani` and `audio_url`), Surahs 1, 93–95, 97, 99–114 | Words are never constructed; audio is served from `verses.quran.foundation` |
-| Day 1–7 grouping | Standard alphabetical order, four letters a day | A placeholder until a teacher sets the lesson plan |
+| Vowel and annotation marks, their names and code points | Unicode Character Database (`src/lib/learn/marks-data.ts`, generated) | A mark shown alone sits on a dotted circle (U+25CC) |
+| Mark detection in words | Presence of the mark's code point in Quran.Foundation `text_uthmani` | "First-letter vowel" questions only use words with exactly one short vowel on the first letter |
+| Word transliteration and translation | Quran.Foundation word-by-word (`transliteration`, `translation`, English) | Shown in Learn and read-along |
+| Read-along word order | Quran.Foundation words for Surahs 1, 108, 112, 114 in order | `sequences` in `/api/learn/words` |
+| Lesson order and grouping (all 30 days) | Placeholder built from the material above | Pending a qualified teacher's lesson plan |
 
-**Not included, by design (project rule: no AI-written religious or linguistic content):** teaching names (e.g. "Alif", "Ba"), pronunciation guidance, makharij explanations, vowel/tanween/sukun/madd lessons (days 8–30), and reviewed pronunciation audio (the letter recordings below are unreviewed). The UI states these are awaiting review.
+**Not included, by design (project rule: no AI-written religious or linguistic content):** teaching names (e.g. "Alif", "Ba"), explanations of how each mark is pronounced, makharij, tajweed rules, and reviewed pronunciation audio (the letter recordings below are unreviewed). Days 8–30 teach recognition only — finding marks and letters in real recited words — and every lesson says teaching notes await review.
 
 ## Before publishing
 
-1. A qualified teacher reviews and supplies: the lesson plan for all 30 days, teaching names and short explanations, and sign-off per lesson (`QaidahLesson.review.reviewer`).
+1. A qualified teacher reviews and supplies: the lesson plan for all 30 days (currently a placeholder order), teaching names and short explanations for letters and marks, and sign-off per lesson (`QaidahLesson.review.reviewer`).
 2. Letter and syllable recordings by a qualified reciter, with written permission, registered in `DATA-SOURCES.md`.
 3. Open questions for the reviewer: whether words starting with hamza on alef (أ إ) or hamzat al-wasl (ٱ) should count as "begins with alef" (currently they do), and the grouping of letters by day.
 4. Set each lesson's `status` to `"published"`, then turn on `NEXT_PUBLIC_FEATURE_LEARN`.

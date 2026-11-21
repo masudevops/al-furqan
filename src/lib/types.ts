@@ -129,8 +129,12 @@ export interface ReaderVerse {
 
 export interface PracticeWordPayload {
   chapters: number[];
-  words: Array<{ text: string; audioUrl: string | null; verseKey: string; position: number }>;
+  words: PracticeWordItem[];
+  // Words in reading order for the read-along Surahs, keyed by chapter.
+  sequences: Record<number, PracticeWordItem[]>;
 }
+
+export interface PracticeWordItem { text: string; audioUrl: string | null; verseKey: string; position: number; transliteration: string | null; translation: string | null }
 
 export interface TajweedGlyphWord {
   charType: string;

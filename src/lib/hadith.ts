@@ -17,6 +17,9 @@ const validSlug = (value: string) => /^[a-z0-9-]+$/.test(value);
 const excludedCollections = new Set(["shahwaliullah", "shah-waliullah"]);
 const isAllowedCollection = (id: string, name = "") => !excludedCollections.has(id.toLowerCase()) && !name.toLowerCase().includes("shah waliullah");
 
+// The source dataset has numbering gaps (e.g. Sahih Muslim has no text for #8); a 404 means "no record", not an outage.
+export class HadithNotFoundError extends Error {}
+
 const fetchJson = async (path: string): Promise<Json> => {
   const baseUrl = process.env.UMMAH_API_URL?.trim() || DEFAULT_BASE_URL;
   const headers: HeadersInit = {};
@@ -24,6 +27,7 @@ const fetchJson = async (path: string): Promise<Json> => {
   if (key) headers["X-API-Key"] = key;
   const response = await fetch(new URL(path, baseUrl), { headers, next: { revalidate: 3_600 } });
   const payload = object(await response.json());
+  if (response.status === 404) throw new HadithNotFoundError("UmmahAPI has no record for this request.");
   if (!response.ok || payload.success !== true) throw new Error(`UmmahAPI request failed: ${response.status}`);
   return payload;
 };
@@ -65,6 +69,11 @@ export const ummahHadithAdapter: HadithSourceAdapter = {
   },
   async one(collection, hadithNumber) {
     if (!validSlug(collection) || !isAllowedCollection(collection) || !Number.isInteger(hadithNumber) || hadithNumber < 1) return null;
-    return normalizeRecord(object((await fetchJson(`/api/hadith/${collection}/${hadithNumber}`)).data));
+    try {
+      return normalizeRecord(object((await fetchJson(`/api/hadith/${collection}/${hadithNumber}`)).data));
+    } catch (error) {
+      if (error instanceof HadithNotFoundError) return null;
+      throw error;
+    }
   },
 };

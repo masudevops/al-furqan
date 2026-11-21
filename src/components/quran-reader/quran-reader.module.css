@@ -22,9 +22,11 @@
 .modeSwitch svg,.toolbarButton svg{width:17px;height:17px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .toolbarButton{display:flex;align-items:center;justify-content:center;gap:7px;height:42px;min-width:42px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);font:600 13px var(--font-ui);cursor:pointer;list-style:none}
 .toolbarButton::-webkit-details-marker{display:none}
-.toolbarButton:hover,.toolsMenu[open]>.toolbarButton{border-color:var(--green);color:var(--green)}
-.toolbarButtonActive{background:var(--soft);color:var(--green)}
 button.toolbarButton{padding:0}
+.toolbarButton:hover{border-color:var(--green);color:var(--green)}
+.settingsButton{position:relative;width:42px}
+.settingsButton svg{width:20px;height:20px}
+.activeDot{position:absolute;top:7px;right:7px;width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 2px var(--card)}
 
 /* Shared menu (Ayah "more" actions and toolbar Tools) */
 .menu{position:relative}
@@ -34,16 +36,6 @@ button.toolbarButton{padding:0}
 .menu>div>a,.menu>div>button{display:flex;align-items:center;gap:10px;min-height:42px;padding:0 12px;border:0;border-radius:8px;background:transparent;color:var(--ink);font:500 14px var(--font-ui);text-align:left;white-space:nowrap;cursor:pointer}
 .menu>div>a:hover,.menu>div>button:hover{background:var(--soft)}
 .menu>div svg{width:17px;height:17px;flex:none;fill:none;stroke:var(--green);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.toolsMenu>div{width:min(300px,calc(100vw - 32px));gap:2px}
-.toolsMenu>div>button[aria-pressed="true"]{background:var(--soft);color:var(--green)}
-.toolsMenu>div>button[aria-pressed]::after{content:"Off";margin-left:auto;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--muted);font-size:11px;font-weight:650}
-.toolsMenu>div>button[aria-pressed="true"]::after{content:"On";background:var(--green);color:var(--on-green)}
-.menuHeading{margin:8px 12px 4px;color:var(--muted);font-size:11px;font-weight:650;letter-spacing:.08em;text-transform:uppercase}
-.menuDivider{height:1px;margin:6px 4px;background:var(--line)}
-.jumpForm{display:flex;align-items:center;gap:8px;padding:6px 12px 8px}
-.jumpForm label{flex:1;display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--ink);font-size:14px}
-.jumpForm input{width:72px;height:38px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:500 16px var(--font-ui);padding:0 10px}
-.jumpForm button{height:38px;padding:0 14px;border:0;border-radius:8px;background:var(--green);color:var(--on-green);font-weight:650;cursor:pointer}
 
 /* Compact Surah header */
 .surahHeader{display:grid;gap:14px;padding:20px 24px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
@@ -144,12 +136,12 @@ button.toolbarButton{padding:0}
 .skeleton i+i{height:180px}
 @keyframes shimmer{to{background-position:-200% 0}}
 
-@media(max-width:1080px){.toolbarInner{grid-template-columns:auto minmax(0,1fr) auto}.position{justify-content:center;overflow:hidden}.position span{overflow:hidden;text-overflow:ellipsis}.toolbarButtonLabel{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}.toolsMenu>.toolbarButton{padding:0;width:42px}}
+@media(max-width:1080px){.toolbarInner{grid-template-columns:auto minmax(0,1fr) auto}.position{justify-content:center;overflow:hidden}.position span{overflow:hidden;text-overflow:ellipsis}}
 @media(max-width:900px){.toolbar{top:64px}.verse{scroll-margin-top:132px}.activeVerse::before{left:-12px}}
 @media(max-width:760px){
 .toolbarInner{grid-template-columns:minmax(0,1fr) auto;min-height:52px;gap:8px;padding-inline:14px}
 .position{display:none}
-.modeLabel,.toolbarButtonLabel{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.modeLabel{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .modeSwitch>*{padding:0 11px}
 .toolbarButton{padding:0;width:42px}
 .surahSelectValue{font-size:14px}

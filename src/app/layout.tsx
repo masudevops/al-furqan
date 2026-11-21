@@ -19,6 +19,7 @@ const monoFont = localFont({
 
 const enabledExtras = enabledFeatureLabels();
 const extrasCopy = enabledExtras.length ? `, plus ${enabledExtras.join(", ")}` : "";
+const ICON_VERSION = "20261121";
 const socialImageUrl = "https://al-furqan.app/opengraph-image?v=20260811-2";
 
 export const metadata: Metadata = {
@@ -30,14 +31,15 @@ export const metadata: Metadata = {
   },
   description: `A free, ad-free Quran and Sunnah companion with Tajweed, translations, Tafsir and audio${extrasCopy}.`,
   // Raster favicons first for browsers without SVG favicon support; the SVG stays for crisp rendering where supported.
+  // Versioned URLs: the CDN and browsers cached the old SVG response for /favicon.ico as immutable.
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "16x16 32x32 48x48" },
-      { url: "/icons/icon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: `/favicon.ico?v=${ICON_VERSION}`, sizes: "16x16 32x32 48x48" },
+      { url: `/icons/icon-32.png?v=${ICON_VERSION}`, sizes: "32x32", type: "image/png" },
+      { url: `/icons/icon-192.png?v=${ICON_VERSION}`, sizes: "192x192", type: "image/png" },
+      { url: `/icon.svg?v=${ICON_VERSION}`, type: "image/svg+xml" },
     ],
-    shortcut: [{ url: "/favicon.ico" }],
+    shortcut: [{ url: `/favicon.ico?v=${ICON_VERSION}` }],
     apple: [{ url: "/apple-icon", sizes: "180x180", type: "image/png" }],
   },
   openGraph: {

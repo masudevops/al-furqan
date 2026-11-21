@@ -13,3 +13,11 @@ Dark mode uses deep charcoal surfaces (`#141615` / `#1b1e1c`), soft off-white in
 - The Surah header is a compact card: number, transliterated name, English meaning (only when the source provides one), Ayah count, revelation place, Arabic name, and Listen / Surah info / translation actions.
 - Each Ayah is separated by a hairline, not a card: action row (reference, play, bookmark · copy, share, more), Arabic, translation with attribution and footnotes, then a quiet study row (Tafsir, Hadith, Answers) that opens inline panels. Only study links backed by a working source are shown.
 - Plain Uthmani text uses Quran.Foundation's Uthmani Hafs font. Tajweed text and IndoPak/Imlaei scripts keep platform fonts until a verified font pipeline exists for them. Below 760px the Arabic renders at 0.82× the reader's chosen size so common Ayahs wrap cleanly on phones.
+
+## Shared building blocks
+
+Every section builds on the same tokens and primitives so the site reads as one product.
+
+- **Tokens** (`globals.css`): `--radius-sm` 8px (inputs), `--radius` 12px, `--radius-lg` 16px (cards), `--radius-pill` (buttons, chips), `--shadow-pop` (menus only), `--font-serif` (headings), `--on-green` (text on filled accent).
+- **Primitives** (`src/components/ui`): `Page`, `PageHeader` (compact kicker / serif title / one-line description / actions, no oversized hero), `Button` and `ButtonLink` (primary, secondary, ghost; pill-shaped, 44px targets), `IconButton`, `Chip` (filters and tabs; `aria-pressed`/`aria-selected` show the active state), `Badge`, `Card`, `SectionHeading`, `Skeleton`, and the shared `Icon` set (outline, 24px grid, `currentColor`).
+- **Rules:** square corners and Unicode glyph icons are retired; filled green is reserved for the single primary action on a screen; loading uses skeletons shaped like the content, not spinners, except for short actions.

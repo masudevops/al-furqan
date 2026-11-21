@@ -9,7 +9,7 @@ export async function GET(_request: Request, { params }: { params: { chapterId: 
     return publicContentJson({ error: "Enter a valid Surah number." }, 400);
   }
   try {
-    return publicContentJson(await loadChapterTajweedGlyphs(createPublicContentSession(), chapterId));
+    return publicContentJson(await loadChapterTajweedGlyphs(createPublicContentSession(), chapterId), 200, "stable");
   } catch (error) {
     console.error("Tajweed glyph request failed", { chapterId, message: error instanceof Error ? error.message : "Unknown error" });
     return publicContentJson({ error: "Official Tajweed glyphs are unavailable right now." }, 502);

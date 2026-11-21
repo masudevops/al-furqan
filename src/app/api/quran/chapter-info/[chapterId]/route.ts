@@ -7,7 +7,7 @@ export async function GET(_request: Request, { params }: { params: { chapterId: 
   const chapterId = parsePositiveInteger(params.chapterId);
   if (!chapterId || chapterId > 114) return publicContentJson({ message: "A valid chapter is required." }, 400);
   try {
-    return publicContentJson(await loadChapterInfo(createPublicContentSession(), chapterId));
+    return publicContentJson(await loadChapterInfo(createPublicContentSession(), chapterId), 200, "stable");
   } catch {
     return publicContentJson({ message: "Chapter information is unavailable right now." }, 502);
   }

@@ -66,17 +66,6 @@ button.toolbarButton{padding:0}
 .pillPrimary svg{fill:currentColor;stroke-width:1.2}
 .translationPill{margin-left:auto;max-width:100%;min-width:0}
 .translationPill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.readerNotices{display:flex;justify-content:center;margin:14px 0 4px}
-.tajweedLegend{position:relative;font-size:12px}
-.tajweedLegend summary{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--muted);font-weight:600;cursor:pointer;list-style:none}
-.tajweedLegend summary::-webkit-details-marker{display:none}
-.tajweedLegend summary svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;transition:transform .15s ease}
-.tajweedLegend[open] summary svg{transform:rotate(180deg)}
-.tajweedLegend summary:hover{color:var(--green);border-color:var(--green)}
-.tajweedLegend>div{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 16px;margin-top:10px;color:var(--muted)}
-.tajweedLegend>div span{display:flex;align-items:center;gap:6px}
-.tajweedLegend i{width:10px;height:10px;border-radius:50%}
-.tjMadd{background:var(--tj-madd)}.tjGhunnah{background:var(--tj-ghunnah)}.tjIkhfa{background:var(--tj-ikhfa)}.tjIdgham{background:var(--tj-idgham)}.tjQalqalah{background:var(--tj-qalqalah)}.tjSilent{background:var(--tj-silent)}
 
 /* Verse-by-verse layout */
 .verses{margin-top:8px}
@@ -97,17 +86,13 @@ button.toolbarButton{padding:0}
 .bookmarkButton[aria-pressed="true"] svg{fill:currentColor}
 .narrowOnly{display:none!important}
 .copyConfirmation{margin-right:6px;color:var(--green);font-size:12px;font-weight:650}
-.arabic{margin:2px 0 0;color:var(--ink);font:400 var(--arabic-size)/2 Georgia,"Times New Roman",serif;text-align:right;word-spacing:.08em;overflow-wrap:break-word}
+.arabic{margin:2px 0 0;color:var(--ink);font:400 var(--arabic-size,34px)/2 Georgia,"Times New Roman",serif;text-align:right;word-spacing:.08em;overflow-wrap:break-word}
 .activeVerse .arabic{color:color-mix(in srgb,var(--ink) 86%,var(--green))}
-.ayahEnd,.tajweed :global(span.end){display:inline-grid;place-items:center;min-width:1.55em;height:1.55em;padding:0 .2em;margin-inline:.1em;border:1px solid color-mix(in srgb,var(--green) 45%,transparent);border-radius:999px;color:var(--green);font-size:.52em;line-height:1;vertical-align:.35em}
+.ayahEnd{display:inline-grid;place-items:center;min-width:1.55em;height:1.55em;padding:0 .2em;margin-inline:.1em;border:1px solid color-mix(in srgb,var(--green) 45%,transparent);border-radius:999px;color:var(--green);font-size:.52em;line-height:1;vertical-align:.35em}
 /* The Uthmani Hafs font draws its own Ayah-end ornament around Arabic-Indic digits. */
-.quranFont .ayahEnd,.quranFont.tajweed :global(span.end){min-width:0;height:auto;padding:0;border:0;font-size:1em;line-height:inherit;vertical-align:baseline}
-.tajweed :global(tajweed.madda_normal),.tajweed :global(tajweed.madda_permissible),.tajweed :global(tajweed.madda_necessary){color:var(--tj-madd)}
-.tajweed :global(tajweed.ghunnah),.tajweed :global(tajweed.iqlab){color:var(--tj-ghunnah)}
-.tajweed :global(tajweed.ikhafa),.tajweed :global(tajweed.ikhafa_shafawi){color:var(--tj-ikhfa)}
-.tajweed :global(tajweed.idgham_shafawi),.tajweed :global(tajweed.idgham_ghunnah),.tajweed :global(tajweed.idgham_wo_ghunnah){color:var(--tj-idgham)}
-.tajweed :global(tajweed.qalaqah){color:var(--tj-qalqalah)}
-.tajweed :global(tajweed.ham_wasl),.tajweed :global(tajweed.laam_shamsiyah){color:var(--tj-silent)}
+.quranFont .ayahEnd{min-width:0;height:auto;padding:0;border:0;font-size:1em;line-height:inherit;vertical-align:baseline}
+.qcfTajweed{line-height:2.1;word-spacing:0}
+.qcfWord{display:inline;font-weight:400}
 .wordGrid{display:flex;direction:rtl;flex-wrap:wrap;gap:18px 14px;margin:18px 0 6px}
 .wordGrid>span{display:grid;gap:3px;min-width:54px;padding:6px 4px;border-radius:8px;text-align:center}
 .wordGrid b{color:var(--ink);font:400 clamp(26px,calc(var(--arabic-size) * .8),46px)/1.6 Georgia,serif}
@@ -187,9 +172,8 @@ button.toolbarButton{padding:0}
 .translation{line-height:1.65}
 .studyRow button{padding:0 8px;font-size:12px}
 .studyRow button+button::before{margin:0 8px 0 -8px}
-.readerNotices{margin:12px 14px 0}
 .chapterNav{margin-inline:14px}
 .skeleton{padding-inline:14px}
 }
 @media(max-width:360px){.studyRow svg{display:none}}
-@media(prefers-reduced-motion:reduce){.progress,.tajweedLegend summary svg{transition:none}.skeleton i{animation:none}}
+@media(prefers-reduced-motion:reduce){.progress{transition:none}.skeleton i{animation:none}}

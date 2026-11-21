@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   buildReaderUrlFromKey,
   parseAyahTafsir,
+  parseTajweedGlyphs,
   deriveReflectPresentation,
   ensureUserScope,
   getGrantedScopes,
@@ -457,5 +458,18 @@ describe("single-Ayah Tafsir", () => {
 
   it("reports a missing entry instead of inventing text", () => {
     expect(parseAyahTafsir({ verse: { tafsirs: [] } }, "2:1", 169)).toEqual({ tafsirId: 169, tafsirName: null, tafsirText: null, verseKey: "2:1" });
+  });
+});
+
+describe("Surah Tajweed glyphs", () => {
+  it("keeps each word's official V4 glyph and page across paginated responses", () => {
+    const payload = parseTajweedGlyphs([
+      { verses: [{ verse_key: "2:2", words: [{ char_type_name: "word", code_v2: "ﱃ", page_number: 2 }, { char_type_name: "end", code_v2: "ﱌ", page_number: 2 }] }] },
+      { verses: [{ verse_key: "2:51", words: [{ char_type_name: "word", code_v2: "ﭑ", page_number: 8 }] }] },
+    ], 2);
+    expect(payload).toEqual({ chapterId: 2, verses: [
+      { verseKey: "2:2", words: [{ charType: "word", code: "ﱃ", pageNumber: 2 }, { charType: "end", code: "ﱌ", pageNumber: 2 }] },
+      { verseKey: "2:51", words: [{ charType: "word", code: "ﭑ", pageNumber: 8 }] },
+    ] });
   });
 });

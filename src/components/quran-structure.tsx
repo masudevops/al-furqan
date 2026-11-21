@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
+import QcfTajweedText, { glyphPages, hasCompleteGlyphs, tajweedPaletteCss, useDocumentTheme } from "@/components/quran-reader/qcf-tajweed";
+import readerStyles from "@/components/quran-reader/quran-reader.module.css";
+import type { TajweedGlyphWord } from "@/lib/types";
 import styles from "./quran-tools.module.css";
 
 const fetcher = (url: string) => fetch(url).then(async (response) => {
@@ -37,7 +40,7 @@ export function QuranRangeReader() {
 
 interface StructureVerse {
   arabicText: string;
-  tajweedHtml: string | null;
+  tajweedWords?: TajweedGlyphWord[];
   verseKey: string;
   pageNumber: number;
 }
@@ -46,6 +49,8 @@ export function QuranStructureReader({ kind, id }: { kind: string; id: number })
   const valid = kind === "juz" || kind === "hizb" || kind === "rub" || kind === "ruku" || kind === "manzil";
   const { data, error, isLoading } = useSWR<{ items: StructureVerse[] }>(valid ? `/api/quran/structure?kind=${kind}&id=${id}` : null, fetcher);
   const [tajweedEnabled, setTajweedEnabled] = useState(false);
+  const theme = useDocumentTheme();
+  const tajweedPalettes = useMemo(() => tajweedPaletteCss(glyphPages((data?.items ?? []).flatMap((item) => item.tajweedWords ?? [])), theme), [data, theme]);
   useEffect(() => setTajweedEnabled(localStorage.getItem("af-tajweed") === "true"), []);
   const label = kind === "rub" ? "Rub el Hizb" : kind[0]?.toUpperCase() + kind.slice(1);
   return <main className={styles.page}>
@@ -55,7 +60,7 @@ export function QuranStructureReader({ kind, id }: { kind: string; id: number })
     </header>
     {isLoading ? <p>Loading Quran verses…</p> : null}
     {error ? <p className={styles.error}>This Quran section is unavailable right now.</p> : null}
-    {tajweedEnabled && data ? <div className={styles.tajweedLegend} aria-label="Tajweed color legend"><strong>Tajweed colors</strong><span><i className={styles.tjMadd} />Madd</span><span><i className={styles.tjGhunnah} />Ghunnah</span><span><i className={styles.tjIkhfa} />Ikhfa</span><span><i className={styles.tjIdgham} />Idgham</span><span><i className={styles.tjQalqalah} />Qalqalah</span><span><i className={styles.tjSilent} />Silent letters</span></div> : null}
-    <section className={styles.verseList}>{data?.items.map((item) => <article className={styles.verse} key={item.verseKey}><Link href={`/quran/${item.verseKey.replace(":", "/")}`}>{item.verseKey} · Mushaf page {item.pageNumber}</Link>{tajweedEnabled && item.tajweedHtml ? <p className={styles.tajweed} lang="ar" dir="rtl" translate="no" dangerouslySetInnerHTML={{ __html: item.tajweedHtml }} /> : <p lang="ar" dir="rtl" translate="no">{item.arabicText}</p>}</article>)}</section>
+    {tajweedEnabled && tajweedPalettes ? <style>{tajweedPalettes}</style> : null}
+    <section className={styles.verseList}>{data?.items.map((item) => <article className={styles.verse} key={item.verseKey}><Link href={`/quran/${item.verseKey.replace(":", "/")}`}>{item.verseKey} · Mushaf page {item.pageNumber}</Link>{tajweedEnabled && item.tajweedWords && hasCompleteGlyphs(item.tajweedWords) ? <QcfTajweedText words={item.tajweedWords} verseNumber={Number(item.verseKey.split(":")[1]) || null} plainText={item.arabicText} plainClassName={`${readerStyles.arabic} ${readerStyles.quranFont}`} /> : <p className={`${readerStyles.arabic} ${readerStyles.quranFont}`} lang="ar" dir="rtl" translate="no">{item.arabicText}</p>}</article>)}</section>
   </main>;
 }

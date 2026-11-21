@@ -4,11 +4,12 @@ import Link from "next/link";
 import { memo, useId, useState } from "react";
 import useSWR, { preload } from "swr";
 
-import type { AyahStudyPayload, AyahTafsirPayload, FootnotePayload, ReaderPayload } from "@/lib/types";
+import type { AyahStudyPayload, AyahTafsirPayload, FootnotePayload, ReaderPayload, TajweedGlyphWord } from "@/lib/types";
 import type { toggleLocalBookmark } from "@/lib/local-bookmarks";
 import { fetchJson } from "./fetch-json";
 import { ReaderIcon, type ReaderIconName } from "./icons";
 import Popover from "./popover";
+import QcfTajweedText from "./qcf-tajweed";
 import { toArabicIndicDigits } from "./reader-position";
 import styles from "./quran-reader.module.css";
 
@@ -24,7 +25,7 @@ export type VerseActions = {
 
 type VerseCardProps = {
   verse: ReaderVerse; chapterId: number; chapterName: string; isActive: boolean; isPlaying: boolean; isSaved: boolean; isCopied: boolean; bookmarkNotice: "saved" | "removed" | null;
-  activeWordPosition: number | null; wordMode: boolean; tajweedEnabled: boolean; uthmaniScript: boolean; tafsirAvailable: boolean; tafsirEverywhere: boolean; tafsirId: number | null;
+  activeWordPosition: number | null; wordMode: boolean; tajweedEnabled: boolean; tajweedWords: TajweedGlyphWord[] | null; uthmaniScript: boolean; tafsirAvailable: boolean; tafsirEverywhere: boolean; tafsirId: number | null;
   contentPending: boolean; translationResourceName?: string; translationAuthor?: string | null; tafsirResourceName?: string; actions: VerseActions;
 };
 
@@ -70,7 +71,7 @@ function IconButton({ label, icon, onClick, pressed, className }: { label: strin
 }
 
 // Memoized so audio progress, bookmarks, and other reader state only re-render the Ayahs they affect.
-const VerseCard = memo(function VerseCard({ verse, chapterId, chapterName, isActive, isPlaying, isSaved, isCopied, bookmarkNotice, activeWordPosition, wordMode, tajweedEnabled, uthmaniScript, tafsirAvailable, tafsirEverywhere, tafsirId, contentPending, translationResourceName, translationAuthor, tafsirResourceName, actions }: VerseCardProps) {
+const VerseCard = memo(function VerseCard({ verse, chapterId, chapterName, isActive, isPlaying, isSaved, isCopied, bookmarkNotice, activeWordPosition, wordMode, tajweedEnabled, tajweedWords, uthmaniScript, tafsirAvailable, tafsirEverywhere, tafsirId, contentPending, translationResourceName, translationAuthor, tafsirResourceName, actions }: VerseCardProps) {
   // undefined follows the Surah-wide Tafsir setting until the reader picks a panel for this Ayah.
   const [panel, setPanel] = useState<StudyPanel | null | undefined>(undefined);
   const panelId = useId();
@@ -79,11 +80,9 @@ const VerseCard = memo(function VerseCard({ verse, chapterId, chapterName, isAct
   const label = `Ayah ${verse.verseNumber}`;
   const togglePanel = (kind: StudyPanel) => setPanel(activePanel === kind ? null : kind);
   const warmStudy = () => { if (verse.verseKey) void preload(studyRequestUrl(verse.verseKey), fetchJson); };
-  // The Uthmani Hafs font is applied only to plain Uthmani text. The Tajweed source encodes some marks (e.g. U+0672)
-  // that this font cannot render, so Tajweed keeps the system font until a verified Tajweed font pipeline exists.
-  const showTajweed = tajweedEnabled && Boolean(verse.tajweedHtml);
-  const quranFont = !showTajweed && uthmaniScript;
-  const arabicClass = `${styles.arabic} ${quranFont ? styles.quranFont : ""}`;
+  // Tajweed uses the official QCF V4 glyphs; text_uthmani_tajweed is never rendered because it encodes marks
+  // (e.g. U+0672) that no available font displays correctly. Plain Uthmani text uses the Uthmani Hafs font.
+  const arabicClass = `${styles.arabic} ${uthmaniScript ? styles.quranFont : ""}`;
   const studyLinks: Array<{ kind: StudyPanel; label: string; icon: ReaderIconName }> = [
     ...(tafsirAvailable ? [{ kind: "tafsir" as const, label: "Tafsir", icon: "book" as const }] : []),
     ...(verse.verseKey ? [{ kind: "hadith" as const, label: "Hadith", icon: "scroll" as const }, { kind: "answers" as const, label: "Answers", icon: "answer" as const }] : []),
@@ -112,8 +111,8 @@ const VerseCard = memo(function VerseCard({ verse, chapterId, chapterName, isAct
     </div>
     {wordMode && verse.words.length
       ? <div className={`${styles.wordGrid} ${uthmaniScript ? styles.quranFont : ""}`} lang="ar" dir="rtl" translate="no">{verse.words.filter((word) => word.charType === "word").map((word) => <span className={activeWordPosition === word.position ? styles.activeWord : ""} key={word.position}><b>{word.arabicText}</b><small dir="ltr">{word.transliteration}</small><em dir="ltr">{word.translation}</em></span>)}</div>
-      : showTajweed
-        ? <p className={`${arabicClass} ${styles.tajweed}`} lang="ar" dir="rtl" translate="no" dangerouslySetInnerHTML={{ __html: verse.tajweedHtml ?? "" }} />
+      : tajweedEnabled && tajweedWords
+        ? <QcfTajweedText words={tajweedWords} verseNumber={verse.verseNumber} plainText={verse.arabicText} plainClassName={arabicClass} />
         : <p className={arabicClass} lang="ar" dir="rtl" translate="no">{verse.arabicText}{verse.verseNumber ? <> <span className={styles.ayahEnd}>{toArabicIndicDigits(verse.verseNumber)}</span></> : null}</p>}
     {verse.translationText
       ? <div className={styles.translationBlock}>

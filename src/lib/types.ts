@@ -128,6 +128,17 @@ export interface ReaderVerse {
   rubNumber: number | null;
 }
 
+export interface TajweedGlyphWord {
+  charType: string;
+  code: string | null;
+  pageNumber: number | null;
+}
+
+export interface TajweedGlyphPayload {
+  chapterId: number;
+  verses: Array<{ verseKey: string; words: TajweedGlyphWord[] }>;
+}
+
 export interface AyahTafsirPayload {
   tafsirId: number;
   tafsirName: string | null;

@@ -19,6 +19,8 @@ import type {
   FootnotePayload,
   AyahStudyPayload,
   AyahTafsirPayload,
+  TajweedGlyphPayload,
+  TajweedGlyphWord,
   NoteItem,
   ReaderPayload,
   QuranScript,
@@ -889,12 +891,12 @@ export const loadMushafPage = async (session:StoredSession,pageNumber:number) =>
 
 export const loadStructureVerses = async (session:StoredSession,kind:"juz"|"hizb"|"rub"|"ruku"|"manzil",id:number) => {
   const {serverClient}=await createClients(session); const all:JsonObject[]=[];
-  const fetchPage=(page:number)=>{const query={page,perPage:50,fields:{textUthmani:true,textUthmaniTajweed:true}};if(kind==="juz")return serverClient.content.v4.verses.byJuz(id,query);if(kind==="hizb")return serverClient.content.v4.verses.byHizb(id,query);if(kind==="rub")return serverClient.content.v4.verses.byRub(id,query);const operation=kind==="ruku"?"versesByRukuNumber":"versesByManzilNumber";const path=kind==="ruku"?{ruku_number:id}:{manzil_number:id};return serverClient.raw.content.v4[operation]({path,query})};
+  const fetchPage=(page:number)=>{const query={page,perPage:50,mushaf:19,words:true,wordFields:{codeV2:true,pageNumber:true},fields:{textUthmani:true,textUthmaniTajweed:true}};if(kind==="juz")return serverClient.content.v4.verses.byJuz(id,query);if(kind==="hizb")return serverClient.content.v4.verses.byHizb(id,query);if(kind==="rub")return serverClient.content.v4.verses.byRub(id,query);const operation=kind==="ruku"?"versesByRukuNumber":"versesByManzilNumber";const path=kind==="ruku"?{ruku_number:id}:{manzil_number:id};return serverClient.raw.content.v4[operation]({path,query})};
   const first=await fetchPage(1);const firstChunk=toArray(first,["data","verses"]);all.push(...firstChunk);
   const responseObject=asObject(first);const dataObject=asObject(responseObject.data);const pagination=asObject(responseObject.pagination??dataObject.pagination);const reportedPages=asNullableNumber(pagination.totalPages??pagination.total_pages);
   if(reportedPages&&reportedPages>1){const remaining=await Promise.all(Array.from({length:Math.min(20,reportedPages)-1},(_,index)=>fetchPage(index+2)));all.push(...remaining.flatMap(response=>toArray(response,["data","verses"]))) }
   else if(firstChunk.length===50){for(let page=2;page<=20;page++){const chunk=toArray(await fetchPage(page),["data","verses"]);all.push(...chunk);if(chunk.length<50)break}}
-  return all.map(verse=>({arabicText:asString(verse.textUthmani??verse.text_uthmani),tajweedHtml:sanitizeTajweedMarkup(verse.textUthmaniTajweed??verse.text_uthmani_tajweed),verseKey:asString(verse.verseKey??verse.verse_key),pageNumber:asNullableNumber(verse.pageNumber??verse.page_number)}));
+  return all.map(verse=>({arabicText:asString(verse.textUthmani??verse.text_uthmani),tajweedHtml:sanitizeTajweedMarkup(verse.textUthmaniTajweed??verse.text_uthmani_tajweed),tajweedWords:toGlyphWords(verse.words),verseKey:asString(verse.verseKey??verse.verse_key),pageNumber:asNullableNumber(verse.pageNumber??verse.page_number)}));
 };
 
 export const loadVerseRange = async (session: StoredSession, from: string, to: string) => {
@@ -995,6 +997,38 @@ export const loadQuranReflectPost = async (session: StoredSession, id: number) =
     title: presentation.title,
     verified: post.verified === true,
   };
+};
+
+const toGlyphWords = (value: unknown): TajweedGlyphWord[] => toArray(value).map((word) => ({
+  charType: asString(word.charTypeName ?? word.char_type_name, "word"),
+  code: asNullableString(word.codeV2 ?? word.code_v2),
+  pageNumber: asNullableNumber(word.pageNumber ?? word.page_number),
+}));
+
+// Official QCF V4 Tajweed glyphs (Mushaf 19) for a whole Surah. Each word keeps its own Mushaf page,
+// because a glyph code is only valid with that page's font.
+export const parseTajweedGlyphs = (responses: unknown[], chapterId: number): TajweedGlyphPayload => ({
+  chapterId,
+  verses: responses.flatMap((response) => toArray(response, ["data", "verses"])).map((verse) => ({
+    verseKey: asString(verse.verseKey ?? verse.verse_key),
+    words: toGlyphWords(verse.words),
+  })).filter((verse) => verse.verseKey),
+});
+
+export const loadChapterTajweedGlyphs = async (session: StoredSession, chapterId: number): Promise<TajweedGlyphPayload> => {
+  const { serverClient } = await createClients(session);
+  const chapterResponse = asObject(await serverClient.content.v4.chapters.get(String(chapterId)));
+  const chapter = asObject(chapterResponse.chapter ?? chapterResponse);
+  const versesCount = asNullableNumber(chapter.versesCount ?? chapter.verses_count) ?? READER_PAGE_SIZE;
+  const responses = await Promise.all(Array.from({ length: Math.max(1, Math.ceil(versesCount / READER_PAGE_SIZE)) }, (_value, index) =>
+    serverClient.content.v4.verses.byChapter(String(chapterId), {
+      mushaf: 19,
+      page: index + 1,
+      perPage: READER_PAGE_SIZE,
+      words: true,
+      wordFields: { codeV2: true, pageNumber: true },
+    })));
+  return parseTajweedGlyphs(responses, chapterId);
 };
 
 export const parseAyahTafsir = (response: unknown, verseKey: string, tafsirId: number): AyahTafsirPayload => {

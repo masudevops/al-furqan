@@ -19,18 +19,6 @@ const fetcher = (url: string) => fetch(url).then(async (response) => {
 
 const mushafApiUrl = (pageNumber: number) => `/api/quran/mushaf/${pageNumber}?layout=qcf-v4`;
 
-function TajweedLegend() {
-  return <aside className={styles.tajweedLegend} aria-label="Tajweed color legend">
-    <strong>Tajweed colors</strong>
-    <span><i className={styles.tjMadd} />Madd</span>
-    <span><i className={styles.tjGhunnah} />Ghunnah</span>
-    <span><i className={styles.tjIkhfa} />Ikhfa</span>
-    <span><i className={styles.tjIdgham} />Idgham</span>
-    <span><i className={styles.tjQalqalah} />Qalqalah</span>
-    <span><i className={styles.tjSilent} />Silent letters</span>
-  </aside>;
-}
-
 export default function MushafPage({ pageNumber }: { pageNumber: number }) {
   const router = useRouter();
   const { data, error, isLoading } = useSWR<MushafPayload>(mushafApiUrl(pageNumber), fetcher, { revalidateOnFocus: false });
@@ -101,18 +89,16 @@ export default function MushafPage({ pageNumber }: { pageNumber: number }) {
     {isLoading ? <p>Loading official Mushaf page…</p> : null}
     {error ? <p className={styles.error}>This Mushaf page is unavailable. No substitute Quran text has been used.</p> : null}
     {data ? <>
-      <TajweedLegend />
       <section className={`${styles.mushaf} ${styles.tajweedPage}`} lang="ar" dir="rtl" translate="no">
         <style>{`@font-palette-values --mushaf-tajweed-palette { font-family: "${mushafFontFamily(pageNumber)}"; base-palette: ${readingTheme==="dark"?1:readingTheme==="sepia"?2:0}; }`}</style>
         {!fontReady && !fontFailed && data.tajweedLines?.length ? <div className={styles.mushafFontLoading} role="status"><span />Preparing Mushaf page…</div> : null}
         {fontReady && data.tajweedLines?.length ? data.tajweedLines.map((line) => <div className={`${styles.line} ${styles.tajweedGlyphLine}`} key={line.lineNumber} data-line={line.lineNumber}>
           {line.words.map((word,index) => <span className={styles.word} style={{fontFamily:word.charType==="end"?"UthmanicHafs, serif":mushafFontFamily(pageNumber)}} title={word.verseKey} key={`${word.verseKey}-${word.position}-${index}`}>{word.charType==="end"?word.arabicText:word.qcfCode||word.arabicText}</span>)}
         </div>) : fontFailed || !data.tajweedLines?.length ? <div className={`${styles.tajweedFlow} ${styles.tajweed}`}>
-          {data.tajweedVerses.map((verse) => verse.tajweedHtml
-            ? <Link className={styles.tajweedAyah} href={`/quran/${verse.verseKey.replace(":", "/")}`} aria-label={`Open Ayah ${verse.verseKey}`} dangerouslySetInnerHTML={{ __html: verse.tajweedHtml }} key={verse.verseKey} />
-            : <Link className={styles.tajweedAyah} href={`/quran/${verse.verseKey.replace(":", "/")}`} aria-label={`Open Ayah ${verse.verseKey}`} key={verse.verseKey}>{verse.arabicText}</Link>)}
+          {/* Plain Uthmani text: text_uthmani_tajweed encodes marks (e.g. U+0672) that platform fonts render as the wrong letter. */}
+          {data.tajweedVerses.map((verse) => <Link className={styles.tajweedAyah} href={`/quran/${verse.verseKey.replace(":", "/")}`} aria-label={`Open Ayah ${verse.verseKey}`} key={verse.verseKey}>{verse.arabicText}</Link>)}
         </div> : null}
-        {fontFailed ? <p className={styles.fontUnavailable} role="status">The Mushaf page font could not load. Verified Tajweed text is shown instead.</p> : null}
+        {fontFailed ? <p className={styles.fontUnavailable} role="status">The Mushaf page font could not load. Verified Quran text without Tajweed colors is shown instead.</p> : null}
         <footer className={styles.mushafFooter}><span>{data.verseKeys[0]}</span><span>{pageNumber} / 604</span><span>{data.verseKeys.at(-1)}</span></footer>
       </section>
     </> : null}

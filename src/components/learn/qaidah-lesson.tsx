@@ -84,7 +84,7 @@ export default function QaidahLesson({ day }: { day: number }) {
   const nextLesson = QAIDAH_LESSONS.find((item) => item.day === day + 1);
 
   return <Page narrow>
-    <PageHeader back={{ href: "/learn", label: "Noorani Qaidah" }} kicker={`Day ${day} of 30`} kickerIcon="quran" title={<>Letters <span className={styles.titleLetters} lang="ar" dir="rtl" translate="no">{lesson.letters.join(" ")}</span></>} />
+    <PageHeader back={{ href: "/learn", label: "Noorani Qaidah" }} kicker={`Day ${day} of 30`} kickerIcon="learn" title={<>Letters <span className={styles.titleLetters} lang="ar" dir="rtl" translate="no">{lesson.letters.join(" ")}</span></>} />
     <DraftNotice />
     <ol className={styles.steps} aria-label="Lesson steps">{STEPS.map((label, index) => <li key={label}><button type="button" aria-current={index === step ? "step" : undefined} className={index < step ? styles.stepDone : undefined} onClick={() => goTo(index)}><span>{index < step ? <Icon name="check" /> : index + 1}</span>{label}</button></li>)}</ol>
 

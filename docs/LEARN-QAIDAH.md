@@ -31,6 +31,10 @@
 3. Open questions for the reviewer: whether words starting with hamza on alef (أ إ) or hamzat al-wasl (ٱ) should count as "begins with alef" (currently they do), and the grouping of letters by day.
 4. Set each lesson's `status` to `"published"`, then turn on `NEXT_PUBLIC_FEATURE_LEARN`.
 
+## Letter pronunciation audio
+
+Decision (2026-11-21): letter recordings are deferred until a licensed API or recording set is available. Options considered: a commissioned or licensed reciter recording (preferred), volunteer CC BY-SA recordings (Wikimedia Commons / Lingua Libre, consistency unknown), the Quran's own muqatta'at recitations (only ص ق ن alone; others in groups such as الٓمٓ), and device text-to-speech (rejected — unreviewed machine pronunciation). No play button is shown for letters until a source is added, so there is no dead control.
+
 ## Introducing an API later
 
 Lesson content is read through the `QaidahContentSource` interface (`src/lib/learn/source.ts`); today `localQaidahSource` returns the draft curriculum in `curriculum.ts`. A future source only needs to implement `lessons()` returning `QaidahLesson[]`. Options evaluated on 2026-11-21:

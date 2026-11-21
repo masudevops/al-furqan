@@ -23,7 +23,7 @@ export default function LearnHome() {
   const upNext = nextDay(progress, available);
 
   return <Page narrow>
-    <PageHeader kicker="Learn" kickerIcon="quran" title="Learn to read the Quran" description="Start with the Arabic letters, one short lesson a day, practising on real words from the Quran." />
+    <PageHeader kicker="Learn" kickerIcon="learn" title="Learn to read the Quran" description="Start with the Arabic letters, one short lesson a day, practising on real words from the Quran." />
     <DraftNotice />
     <section className={styles.course} aria-labelledby="course-title">
       <div className={styles.courseHead}>

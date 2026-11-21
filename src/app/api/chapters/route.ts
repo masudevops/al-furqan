@@ -5,5 +5,5 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const payload = await loadContentPreviewData(createPublicContentSession(), 114);
-  return publicContentJson(payload, payload.error ? 502 : 200);
+  return publicContentJson(payload, payload.error ? 502 : 200, "stable");
 }

@@ -13,7 +13,8 @@ test("primary navigation and themes remain usable", async ({ page }) => {
   await expect(page.locator("html")).toHaveAttribute("data-theme", "sepia");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   await page.getByRole("link", { name: "Quran", exact: true }).first().click();
-  await expect(page).toHaveURL(/\/quran$/);
+  // The dev server compiles /quran on first visit, which can exceed the default 5s.
+  await expect(page).toHaveURL(/\/quran$/, { timeout: 20_000 });
 });
 
 test("settings is a keyboard modal and restores focus", async ({ page }) => {

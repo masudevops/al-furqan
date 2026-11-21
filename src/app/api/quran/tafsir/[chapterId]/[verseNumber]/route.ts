@@ -13,7 +13,7 @@ export async function GET(request: NextRequest, { params }: { params: { chapterI
     return publicContentJson({ error: "Enter a valid Ayah reference and Tafsir source." }, 400);
   }
   try {
-    return publicContentJson(await loadAyahTafsir(createPublicContentSession(), `${chapterId}:${verseNumber}`, tafsirId));
+    return publicContentJson(await loadAyahTafsir(createPublicContentSession(), `${chapterId}:${verseNumber}`, tafsirId), 200, "stable");
   } catch (error) {
     console.error("Ayah tafsir request failed", { chapterId, message: error instanceof Error ? error.message : "Unknown error", tafsirId, verseNumber });
     return publicContentJson({ error: "This Tafsir is unavailable right now." }, 502);

@@ -131,6 +131,9 @@ button.toolbarButton{padding:0}
 .chapterNav a{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--green);font-weight:600}
 .chapterNav a:hover{border-color:var(--green)}
 
+.infoSkeleton{display:grid;gap:10px;padding:4px 0}
+.infoSkeleton i{display:block;height:12px;border-radius:6px;background:linear-gradient(90deg,var(--soft),color-mix(in srgb,var(--soft) 40%,var(--card)),var(--soft));background-size:200% 100%;animation:shimmer 1.4s ease-in-out infinite}
+.infoSkeleton i:nth-child(1){width:40%;height:16px}.infoSkeleton i:nth-child(4){width:65%}
 .skeleton{display:grid;gap:14px}
 .skeleton i{display:block;height:120px;border-radius:16px;background:linear-gradient(90deg,var(--card),var(--soft),var(--card));background-size:200% 100%;animation:shimmer 1.4s ease-in-out infinite}
 .skeleton i+i{height:180px}
@@ -168,4 +171,4 @@ button.toolbarButton{padding:0}
 .skeleton{padding-inline:14px}
 }
 @media(max-width:360px){.studyRow svg{display:none}}
-@media(prefers-reduced-motion:reduce){.progress{transition:none}.skeleton i{animation:none}}
+@media(prefers-reduced-motion:reduce){.progress{transition:none}.skeleton i,.infoSkeleton i{animation:none}}

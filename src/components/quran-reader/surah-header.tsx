@@ -12,12 +12,13 @@ type SurahHeaderProps = {
   onListen: () => void;
   infoOpen: boolean;
   onToggleInfo: () => void;
+  onWarmInfo?: () => void;
   translationLabel?: string;
   onOpenSettings: () => void;
   quranFont: boolean;
 };
 
-export default function SurahHeader({ chapter, catalogItem, listenState, onListen, infoOpen, onToggleInfo, translationLabel, onOpenSettings, quranFont }: SurahHeaderProps) {
+export default function SurahHeader({ chapter, catalogItem, listenState, onListen, infoOpen, onToggleInfo, onWarmInfo, translationLabel, onOpenSettings, quranFont }: SurahHeaderProps) {
   const meaning = englishMeaning(catalogItem?.translatedName);
   const revelation = revelationLabel(catalogItem?.revelationPlace);
   const facts = [chapter.versesCount ? `${chapter.versesCount} Ayahs` : null, revelation ? `Revealed in ${revelation}` : null].filter(Boolean).join(" · ");
@@ -33,7 +34,7 @@ export default function SurahHeader({ chapter, catalogItem, listenState, onListe
     </div>
     <div className={styles.surahActions}>
       {listenState !== "unavailable" ? <button type="button" className={styles.pillPrimary} onClick={onListen}><ReaderIcon name={listenState === "playing" ? "pause" : "play"} />{listenState === "playing" ? "Pause" : listenState === "paused" ? "Resume" : "Listen"}</button> : null}
-      <button type="button" className={styles.pill} aria-expanded={infoOpen} onClick={onToggleInfo}><ReaderIcon name="info" />Surah info</button>
+      <button type="button" className={styles.pill} aria-expanded={infoOpen} onClick={onToggleInfo} onPointerEnter={onWarmInfo} onFocus={onWarmInfo} onTouchStart={onWarmInfo}><ReaderIcon name="info" />Surah info</button>
       {translationLabel ? <button type="button" className={`${styles.pill} ${styles.translationPill}`} onClick={onOpenSettings} aria-label={`Translation: ${translationLabel}. Change translation`}><span>Translation: {translationLabel}</span><ReaderIcon name="chevron" /></button> : null}
     </div>
   </header>;

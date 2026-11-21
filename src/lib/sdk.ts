@@ -70,7 +70,7 @@ interface ServerContentClient {
     chapters: {
       get: (chapterId: string) => Promise<unknown>;
       getInfo: (chapterId: string, params?: UnknownRecord) => Promise<unknown>;
-      list: () => Promise<unknown>;
+      list: (params?: UnknownRecord) => Promise<unknown>;
     };
     hadithReferences: {
       byAyah: (key: string, params?: UnknownRecord) => Promise<unknown>;

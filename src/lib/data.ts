@@ -555,7 +555,7 @@ export const loadContentPreviewData = async (
   };
 
   try {
-    const chapters = await serverClient.content.v4.chapters.list();
+    const chapters = await serverClient.content.v4.chapters.list({ language: "en" });
     const items = toArray(chapters, ["data", "chapters"]).slice(0, limit);
 
     payload.items = items.map((chapter) => ({

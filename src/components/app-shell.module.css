@@ -50,3 +50,5 @@
 .readerTools .readerSettingsButton,.saveVerse,.playVerse,.verseActions summary{min-width:44px;min-height:44px}
 .settings header button{min-width:44px;min-height:44px}
 @media(max-width:900px){.actions .iconAction{display:none}.mobileNav a,.mobileNav button{min-height:44px}.moreMenu a{min-height:44px;align-items:center}}
+.readerMain{width:min(960px,calc(100% - 40px));padding-top:22px}.readerMain>.chapterInfo,.memorizationPanel{margin-top:14px;border:1px solid var(--line);border-radius:14px;overflow:hidden;scroll-margin-top:150px}.memorizationPanel>.memorizationTools{border:0}.memorizationTools button{color:var(--on-green);border-radius:8px}.audioPlayer{border-radius:16px}
+@media(max-width:760px){.readerMain{width:100%;padding-top:14px}.readerMain>.chapterInfo,.memorizationPanel{margin-inline:14px}}

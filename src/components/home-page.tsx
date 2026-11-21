@@ -26,6 +26,7 @@ export default function HomePage({ lastRead, resumeHref, resumeInMushaf, chapter
   const meaning = englishMeaning(chapter?.translatedName);
   const sections: Section[] = [
     { href: "/quran", icon: "quran", title: "Quran", description: "All 114 Surahs with translation, Tafsir, Tajweed and recitation." },
+    ...(publicFeatures.learn ? [{ href: "/learn", icon: "learn" as const, title: "Learn", description: "Learn to read the Quran, starting with the Arabic letters." }] : []),
     { href: "/sunnah", icon: "scroll", title: "Sunnah", description: "Major Hadith collections in Arabic and English, with reported grades." },
     ...(publicFeatures.salahTimes ? [{ href: "/salah-times", icon: "salah" as const, title: "Salah Times", description: "Your next prayer, today's schedule and a monthly timetable." }] : []),
     ...(publicFeatures.dua ? [{ href: "/dua", icon: "dua" as const, title: "Dua", description: "Morning and evening dhikr and daily duas, with their sources." }] : []),

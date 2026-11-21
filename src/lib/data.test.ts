@@ -4,6 +4,7 @@ import {
   buildReaderUrlFromKey,
   parseAyahTafsir,
   parseTajweedGlyphs,
+  parsePracticeWords,
   deriveReflectPresentation,
   ensureUserScope,
   getGrantedScopes,
@@ -452,5 +453,18 @@ describe("Surah Tajweed glyphs", () => {
       { verseKey: "2:2", words: [{ charType: "word", code: "ﱃ", pageNumber: 2 }, { charType: "end", code: "ﱌ", pageNumber: 2 }] },
       { verseKey: "2:51", words: [{ charType: "word", code: "ﭑ", pageNumber: 8 }] },
     ] });
+  });
+});
+
+describe("Learn practice words", () => {
+  it("keeps unique real words with absolute Quran.Foundation word audio and skips Ayah-end markers", () => {
+    const payload = parsePracticeWords([
+      { verses: [{ verse_key: "112:1", words: [
+        { char_type_name: "word", text_uthmani: "قُلْ", audio_url: "wbw/112_001_001.mp3", position: 1 },
+        { char_type_name: "end", text_uthmani: "١", audio_url: null, position: 5 },
+      ] }] },
+      { verses: [{ verse_key: "113:1", words: [{ char_type_name: "word", text_uthmani: "قُلْ", audio_url: "wbw/113_001_001.mp3", position: 1 }] }] },
+    ]);
+    expect(payload.words).toEqual([{ text: "قُلْ", audioUrl: "https://verses.quran.foundation/wbw/112_001_001.mp3", verseKey: "112:1", position: 1 }]);
   });
 });

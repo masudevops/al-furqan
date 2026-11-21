@@ -86,3 +86,13 @@ describe("Lesson quizzes", () => {
 });
 
 const startsWith = (text: string, letter: string) => startsWithLetter(text, letter);
+
+describe("Letter recordings", () => {
+  it("ships a recording for every letter, with the source license alongside", async () => {
+    const { existsSync } = await import("node:fs");
+    const { letterAudioUrl } = await import("./letter-audio");
+    for (const letter of ARABIC_LETTERS) expect(existsSync(`public${letterAudioUrl(letter)}`), letter.unicodeName).toBe(true);
+    expect(existsSync("public/learn/letters/LICENSE.txt")).toBe(true);
+    expect(letterAudioUrl(letterByChar("ب")!)).toBe("/learn/letters/0628.mp3");
+  });
+});

@@ -8,6 +8,7 @@ import ContentState from "@/components/content-state";
 import { Button, ButtonLink, Icon, Page, PageHeader } from "@/components/ui";
 import { letterByChar, letterForms } from "@/lib/learn/alphabet";
 import { QAIDAH_LESSONS, lessonForDay, lettersLearnedBefore } from "@/lib/learn/curriculum";
+import { LETTER_AUDIO_SOURCE, letterAudioUrl } from "@/lib/learn/letter-audio";
 import { completeDay, emptyProgress, readProgress, recordAnswer, reviewPriority, writeProgress, type LearnProgress } from "@/lib/learn/progress";
 import { recognitionQuestions, seededRandom, wordQuestions, wordsStartingWith, type PracticeWord, type RecognitionQuestion, type WordQuestion } from "@/lib/learn/quiz";
 import type { PracticeWordPayload } from "@/lib/types";
@@ -95,13 +96,18 @@ export default function QaidahLesson({ day }: { day: number }) {
         const letter = letterByChar(char)!;
         const examples = wordData ? wordsStartingWith(wordData.words, char).slice(0, 3) : [];
         return <article className={styles.letterCard} key={char}>
-          <div className={styles.letterHero}><span className={styles.bigLetter} lang="ar" translate="no">{char}</span><span className={styles.unicode}>{letter.unicodeName}<small>{letter.codePoint}</small></span></div>
+          <div className={styles.letterHero}>
+            <button type="button" className={styles.letterPlay} aria-pressed={audio.playing === letterAudioUrl(letter)} aria-label={`Play recording of ${letter.unicodeName} (speaker unidentified, awaiting review)`} title="Recording · speaker unidentified · awaiting review" onClick={() => audio.play(letterAudioUrl(letter))}><Icon name={audio.playing === letterAudioUrl(letter) ? "pause" : "play"} /></button>
+            <span className={styles.bigLetter} lang="ar" translate="no">{char}</span>
+            <span className={styles.unicode}>{letter.unicodeName}<small>{letter.codePoint}</small></span>
+          </div>
+          <p className={styles.recordingNote}>Recording: {LETTER_AUDIO_SOURCE.name} ({LETTER_AUDIO_SOURCE.license}) · speaker {LETTER_AUDIO_SOURCE.speaker} · awaiting review</p>
           <div className={styles.forms}>{letterForms(letter).map((form) => <span key={form.position}><b lang="ar" translate="no">{form.text}</b><small>{POSITION_LABEL[form.position]}</small></span>)}</div>
           <div className={styles.examples}>
             <p>In the Quran</p>
             {wordError ? <span className={styles.muted}>Examples are unavailable right now.</span> : !wordData ? <span className={styles.muted}>Loading examples…</span> : examples.map((word) => <span className={styles.example} key={`${word.verseKey}-${word.position}`}><PlayWord word={word} audio={audio} /><b lang="ar" dir="rtl" translate="no">{word.text}</b><Link href={`/quran/${word.verseKey.replace(":", "/")}`}>{word.verseKey}</Link></span>)}
           </div>
-          <p className={styles.pending}><Icon name="info" />Pronunciation recording and teaching notes awaiting review.</p>
+          <p className={styles.pending}><Icon name="info" />Teaching notes awaiting review.</p>
         </article>;
       })}</div>
       {audio.failed ? <p className={styles.wrongText} role="alert">That recitation could not be played right now.</p> : null}
@@ -152,6 +158,6 @@ export default function QaidahLesson({ day }: { day: number }) {
       </div>
     </section> : null}
 
-    <p className={styles.sources}>Sources: {lesson.sources.join(" · ")}. Lesson status: draft, awaiting qualified review.</p>
+    <p className={styles.sources}>Sources: {lesson.sources.join(" · ")} · Letter recordings: <a href={LETTER_AUDIO_SOURCE.url} target="_blank" rel="noreferrer">{LETTER_AUDIO_SOURCE.name}</a>, {LETTER_AUDIO_SOURCE.copyright}, <a href={LETTER_AUDIO_SOURCE.licenseUrl} target="_blank" rel="noreferrer">{LETTER_AUDIO_SOURCE.license} license</a>, speaker unidentified. Lesson status: draft, awaiting qualified review.</p>
   </Page>;
 }

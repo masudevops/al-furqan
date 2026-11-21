@@ -1,0 +1,4 @@
+Arabic letter recordings
+Source: https://github.com/razunatmohammed88-cyber/arabic-alphabet-audio (MIT, (c) 2025 razunatmohammed88-cyber; see LICENSE.txt)
+Files are renamed by Unicode code point (e.g. 0628.mp3 = U+0628 ARABIC LETTER BEH); the original file for each is listed in docs/LEARN-QAIDAH.md.
+Speaker: unidentified. Status: awaiting review by a qualified teacher. Used only in the Learn preview (NEXT_PUBLIC_FEATURE_LEARN).

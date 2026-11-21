@@ -116,7 +116,6 @@ export interface ReaderVerse {
   translationName: string | null;
   translationText: string | null;
   translationFootnotes: Array<{ id: number; label: string }>;
-  tajweedHtml: string | null;
   tafsirName: string | null;
   tafsirText: string | null;
   verseKey: string | null;
@@ -225,7 +224,6 @@ export interface AyahStudyPayload {
 export interface MushafWord extends ReaderWord { verseKey: string }
 export interface MushafTajweedVerse {
   arabicText: string;
-  tajweedHtml: string | null;
   verseKey: string;
 }
 export interface MushafPayload {

@@ -101,18 +101,6 @@ const toArray = (value: unknown, keys: string[] = []): JsonObject[] => {
 
 const formatError = (error: unknown): string => String((error as Error)?.message ?? error);
 
-const TAJWEED_CLASSES = new Set(["ham_wasl", "laam_shamsiyah", "madda_normal", "madda_permissible", "madda_necessary", "qalaqah", "ikhafa_shafawi", "ikhafa", "idgham_shafawi", "idgham_ghunnah", "idgham_wo_ghunnah", "iqlab", "ghunnah"]);
-
-export const sanitizeTajweedMarkup = (value: unknown): string | null => {
-  if (typeof value !== "string" || !value) return null;
-  const escaped = value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  return escaped
-    .replace(/&lt;tajweed class=(?:&quot;|["'])?([a-z_]+)(?:&quot;|["'])?&gt;/g, (_match, rule: string) => TAJWEED_CLASSES.has(rule) ? `<tajweed class="${rule}">` : "")
-    .replace(/&lt;\/tajweed&gt;/g, "</tajweed>")
-    .replace(/&lt;span class=(?:&quot;|["'])?end(?:&quot;|["'])?&gt;/g, "<span class=\"end\">")
-    .replace(/&lt;\/span&gt;/g, "</span>");
-};
-
 const withReaderStage = async <T>(stage: string, operation: () => Promise<T>): Promise<T> => {
   try {
     return await operation();
@@ -767,7 +755,6 @@ export const loadReaderData = async (
       withReaderStage(`verse page ${index + 1}`, () => serverClient.content.v4.verses.byChapter(chapterId, {
         fields: {
           [scriptField]: true,
-          textUthmaniTajweed: true,
         },
         page: index + 1,
         perPage: READER_PAGE_SIZE,
@@ -816,7 +803,6 @@ export const loadReaderData = async (
         translationName: translation.name,
         translationText: translation.text,
         translationFootnotes: translation.footnotes,
-        tajweedHtml: sanitizeTajweedMarkup(verse.textUthmaniTajweed ?? verse.text_uthmani_tajweed),
         tafsirName: asNullableString(tafsir?.resourceName ?? tafsir?.resource_name ?? tafsir?.name),
         tafsirText: plainSourceText(tafsir?.text),
         verseKey: asNullableString(verse.verseKey),
@@ -848,7 +834,7 @@ export const loadReaderData = async (
 export const loadMushafPage = async (session:StoredSession,pageNumber:number) => {
   const {serverClient}=await createClients(session);
   const [response,tajweedResponse,chapterResponse]=await Promise.all([
-    serverClient.content.v4.verses.byPage(pageNumber,{mushaf:1,words:true,perPage:50,fields:{codeV2:true,textUthmani:true,textUthmaniTajweed:true},wordFields:{codeV2:true,textUthmani:true,verseKey:true}}),
+    serverClient.content.v4.verses.byPage(pageNumber,{mushaf:1,words:true,perPage:50,fields:{codeV2:true,textUthmani:true},wordFields:{codeV2:true,textUthmani:true,verseKey:true}}),
     serverClient.content.v4.verses.byPage(pageNumber,{mushaf:19,words:true,perPage:50,fields:{codeV2:true,textUthmani:true},wordFields:{codeV2:true,textUthmani:true,verseKey:true}}),
     serverClient.content.v4.chapters.list(),
   ]);
@@ -856,7 +842,6 @@ export const loadMushafPage = async (session:StoredSession,pageNumber:number) =>
   for(const verse of verses){const verseKey=asString(verse.verseKey??verse.verse_key);verseKeys.push(verseKey);for(const word of normalizeWords(verse.words)){const line=word.lineNumber??0;const items=lines.get(line)??[];items.push({...word,verseKey});lines.set(line,items)}}
   const tajweedVerses=verses.map(verse=>({
     arabicText:asString(verse.textUthmani??verse.text_uthmani),
-    tajweedHtml:sanitizeTajweedMarkup(verse.textUthmaniTajweed??verse.text_uthmani_tajweed),
     verseKey:asString(verse.verseKey??verse.verse_key),
   }));
   const tajweedLines=new Map<number,Array<Record<string,unknown>>>();
@@ -891,18 +876,18 @@ export const loadMushafPage = async (session:StoredSession,pageNumber:number) =>
 
 export const loadStructureVerses = async (session:StoredSession,kind:"juz"|"hizb"|"rub"|"ruku"|"manzil",id:number) => {
   const {serverClient}=await createClients(session); const all:JsonObject[]=[];
-  const fetchPage=(page:number)=>{const query={page,perPage:50,mushaf:19,words:true,wordFields:{codeV2:true,pageNumber:true},fields:{textUthmani:true,textUthmaniTajweed:true}};if(kind==="juz")return serverClient.content.v4.verses.byJuz(id,query);if(kind==="hizb")return serverClient.content.v4.verses.byHizb(id,query);if(kind==="rub")return serverClient.content.v4.verses.byRub(id,query);const operation=kind==="ruku"?"versesByRukuNumber":"versesByManzilNumber";const path=kind==="ruku"?{ruku_number:id}:{manzil_number:id};return serverClient.raw.content.v4[operation]({path,query})};
+  const fetchPage=(page:number)=>{const query={page,perPage:50,mushaf:19,words:true,wordFields:{codeV2:true,pageNumber:true},fields:{textUthmani:true}};if(kind==="juz")return serverClient.content.v4.verses.byJuz(id,query);if(kind==="hizb")return serverClient.content.v4.verses.byHizb(id,query);if(kind==="rub")return serverClient.content.v4.verses.byRub(id,query);const operation=kind==="ruku"?"versesByRukuNumber":"versesByManzilNumber";const path=kind==="ruku"?{ruku_number:id}:{manzil_number:id};return serverClient.raw.content.v4[operation]({path,query})};
   const first=await fetchPage(1);const firstChunk=toArray(first,["data","verses"]);all.push(...firstChunk);
   const responseObject=asObject(first);const dataObject=asObject(responseObject.data);const pagination=asObject(responseObject.pagination??dataObject.pagination);const reportedPages=asNullableNumber(pagination.totalPages??pagination.total_pages);
   if(reportedPages&&reportedPages>1){const remaining=await Promise.all(Array.from({length:Math.min(20,reportedPages)-1},(_,index)=>fetchPage(index+2)));all.push(...remaining.flatMap(response=>toArray(response,["data","verses"]))) }
   else if(firstChunk.length===50){for(let page=2;page<=20;page++){const chunk=toArray(await fetchPage(page),["data","verses"]);all.push(...chunk);if(chunk.length<50)break}}
-  return all.map(verse=>({arabicText:asString(verse.textUthmani??verse.text_uthmani),tajweedHtml:sanitizeTajweedMarkup(verse.textUthmaniTajweed??verse.text_uthmani_tajweed),tajweedWords:toGlyphWords(verse.words),verseKey:asString(verse.verseKey??verse.verse_key),pageNumber:asNullableNumber(verse.pageNumber??verse.page_number)}));
+  return all.map(verse=>({arabicText:asString(verse.textUthmani??verse.text_uthmani),tajweedWords:toGlyphWords(verse.words),verseKey:asString(verse.verseKey??verse.verse_key),pageNumber:asNullableNumber(verse.pageNumber??verse.page_number)}));
 };
 
 export const loadVerseRange = async (session: StoredSession, from: string, to: string) => {
   const { serverClient } = await createClients(session);
-  const response = await serverClient.content.v4.verses.byRange(from, to, { fields: { textUthmani: true, textUthmaniTajweed: true }, perPage: 50 });
-  return toArray(response, ["data", "verses"]).map((verse) => ({ arabicText: asString(verse.textUthmani ?? verse.text_uthmani), tajweedHtml: sanitizeTajweedMarkup(verse.textUthmaniTajweed ?? verse.text_uthmani_tajweed), verseKey: asString(verse.verseKey ?? verse.verse_key), pageNumber: asNullableNumber(verse.pageNumber ?? verse.page_number) }));
+  const response = await serverClient.content.v4.verses.byRange(from, to, { fields: { textUthmani: true }, perPage: 50 });
+  return toArray(response, ["data", "verses"]).map((verse) => ({ arabicText: asString(verse.textUthmani ?? verse.text_uthmani), verseKey: asString(verse.verseKey ?? verse.verse_key), pageNumber: asNullableNumber(verse.pageNumber ?? verse.page_number) }));
 };
 
 export const loadDailyVerse = async (session: StoredSession, day: string) => {

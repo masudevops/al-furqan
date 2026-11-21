@@ -17,7 +17,6 @@ import {
   loadTranslationResources,
   parsePositiveInteger,
   parseVerseKey,
-  sanitizeTajweedMarkup,
   sanitizeSourceHtml,
   sanitizeTranslationMarkup,
 } from "@/lib/data";
@@ -55,20 +54,6 @@ describe("buildReaderUrlFromKey", () => {
 
   it("returns null for invalid keys", () => {
     expect(buildReaderUrlFromKey("bad-value")).toBeNull();
-  });
-});
-
-describe("sanitizeTajweedMarkup", () => {
-  it("preserves only Quran.Foundation tajweed annotations", () => {
-    expect(sanitizeTajweedMarkup("<tajweed class=ghunnah>نّ</tajweed><span class=end>١</span>"))
-      .toBe('<tajweed class="ghunnah">نّ</tajweed><span class="end">١</span>');
-  });
-
-  it("escapes executable or unknown markup", () => {
-    const output = sanitizeTajweedMarkup('<script>alert(1)</script><tajweed class="unknown">x</tajweed>');
-    expect(output).not.toContain("<script>");
-    expect(output).not.toContain('<tajweed class="unknown">');
-    expect(output).toContain("&lt;script&gt;");
   });
 });
 
@@ -112,12 +97,11 @@ describe("Quran Reflect presentation", () => {
 });
 
 describe("Tajweed page data", () => {
-  it("carries sanitized official Tajweed markup into Mushaf page mode", async () => {
+  it("uses official QCF V4 glyphs and plain Uthmani text in Mushaf page mode", async () => {
     const verses = [{
       hizbNumber: 1,
       juzNumber: 1,
       textUthmani: "الرَّحْمَٰنِ",
-      textUthmaniTajweed: "<tajweed class=madda_normal>ـٰ</tajweed>",
       verseKey: "1:3",
       words: [{ charTypeName: "word", codeV2: "glyph", lineNumber: 2, position: 1, textUthmani: "الرَّحْمَٰنِ" }],
     }];
@@ -128,36 +112,33 @@ describe("Tajweed page data", () => {
 
     const data = await loadMushafPage({} as never, 1);
 
-    expect(byPage).toHaveBeenCalledWith(1, expect.objectContaining({
-      fields: expect.objectContaining({ textUthmaniTajweed: true }),
-      mushaf: 1,
-    }));
+    expect(byPage).toHaveBeenCalledWith(1, expect.objectContaining({ mushaf: 1 }));
+    expect(byPage.mock.calls.every(([, options]) => !("textUthmaniTajweed" in ((options as { fields?: object }).fields ?? {})))).toBe(true);
     expect(byPage).toHaveBeenCalledWith(1, expect.objectContaining({ mushaf: 19 }));
     expect(data.tajweedVerses).toEqual([{
       arabicText: "الرَّحْمَٰنِ",
-      tajweedHtml: '<tajweed class="madda_normal">ـٰ</tajweed>',
       verseKey: "1:3",
     }]);
     expect(data).toMatchObject({ chapterNames: ["Al-Fatihah"], hizbNumbers: [1], juzNumbers: [1], pageNumber: 1 });
     expect(data.tajweedLines[0].words[0].qcfCode).toBe("colored-glyph");
   });
 
-  it("carries sanitized official Tajweed markup into structural reading", async () => {
+  it("carries official QCF V4 glyph words into structural reading", async () => {
     const byJuz = vi.fn(async () => [{
       pageNumber: 1,
       textUthmani: "بِسْمِ",
-      textUthmaniTajweed: "<tajweed class=ham_wasl>ٱ</tajweed>",
       verseKey: "1:1",
+      words: [{ char_type_name: "word", code_v2: "\uFC41", page_number: 1 }],
     }]);
     sdkMocks.serverClient = { content: { v4: { verses: { byJuz } } } };
 
     const data = await loadStructureVerses({} as never, "juz", 1);
 
-    expect(byJuz).toHaveBeenCalledWith(1, expect.objectContaining({
-      fields: expect.objectContaining({ textUthmaniTajweed: true }),
-    }));
+    expect(byJuz).toHaveBeenCalledWith(1, expect.objectContaining({ fields: { textUthmani: true }, mushaf: 19 }));
+    expect(data[0]).not.toHaveProperty("tajweedHtml");
     expect(data[0]).toMatchObject({
-      tajweedHtml: '<tajweed class="ham_wasl">ٱ</tajweed>',
+      pageNumber: 1,
+      tajweedWords: [{ charType: "word", code: "\uFC41", pageNumber: 1 }],
       verseKey: "1:1",
     });
   });
@@ -218,7 +199,6 @@ describe("loadReaderData", () => {
       return Array.from({ length: count }, (_value, index) => ({
         id: start + index + 1,
         textUthmani: `Verse ${start + index + 1}`,
-        textUthmaniTajweed: `<tajweed class=ghunnah>Verse ${start + index + 1}</tajweed>`,
         translations: [{ resourceId: 131, text: `Translation ${start + index + 1}` }],
         verseKey: `2:${start + index + 1}`,
         verseNumber: start + index + 1,
@@ -256,8 +236,9 @@ describe("loadReaderData", () => {
       expect.objectContaining({ page: 2, perPage: 50 }),
     );
     expect(data.verses).toHaveLength(60);
+    expect(data.verses[59]).not.toHaveProperty("tajweedHtml");
     expect(data.verses[59]).toMatchObject({
-      tajweedHtml: '<tajweed class="ghunnah">Verse 60</tajweed>',
+      arabicText: "Verse 60",
       translationText: "Translation 60",
       verseKey: "2:60",
     });

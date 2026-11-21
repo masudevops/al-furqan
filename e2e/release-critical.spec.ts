@@ -66,7 +66,7 @@ test("Mushaf view never exposes QCF glyph codes when its page font fails", async
       pageNumber: 1,
       lines: [],
       tajweedLines: [{ lineNumber: 1, words: [{ arabicText: "بِسْمِ", charType: "word", lineNumber: 1, position: 1, qcfCode: "ENCODED_QCF_GLYPH", verseKey: "1:1" }] }],
-      tajweedVerses: [{ arabicText: "بِسْمِ اللَّهِ", tajweedHtml: "بِسْمِ اللَّهِ", verseKey: "1:1" }],
+      tajweedVerses: [{ arabicText: "بِسْمِ اللَّهِ", verseKey: "1:1" }],
       verseKeys: ["1:1"],
     }),
   }));

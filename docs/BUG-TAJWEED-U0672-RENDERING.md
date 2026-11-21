@@ -23,4 +23,4 @@ In Surah Al-Baqarah, 107 of 286 Ayahs contain U+0672 in the Tajweed source. U+06
 ## Follow-up
 
 - The old Tajweed color legend described the `text_uthmani_tajweed` class colors, which do not match the QCF V4 font palette. It was removed from all views until an official QCF V4 color key is sourced and registered.
-- `text_uthmani_tajweed` is still fetched and sanitized by the data layer but is no longer rendered; it can be dropped from requests in a cleanup.
+- Done: `text_uthmani_tajweed` is no longer requested by any loader; its sanitizer, the `tajweedHtml` fields, the `--tj-*` color variables, and the old Tajweed tag/legend CSS were removed.

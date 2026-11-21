@@ -99,7 +99,7 @@ export default function MushafPage({ pageNumber }: { pageNumber: number }) {
           {data.tajweedVerses.map((verse) => <Link className={styles.tajweedAyah} href={`/quran/${verse.verseKey.replace(":", "/")}`} aria-label={`Open Ayah ${verse.verseKey}`} key={verse.verseKey}>{verse.arabicText}</Link>)}
         </div> : null}
         {fontFailed ? <p className={styles.fontUnavailable} role="status">The Mushaf page font could not load. Verified Quran text without Tajweed colors is shown instead.</p> : null}
-        <footer className={styles.mushafFooter}><span>{data.verseKeys[0]}</span><span>{pageNumber} / 604</span><span>{data.verseKeys.at(-1)}</span></footer>
+        <footer className={styles.mushafFooter}><span>{data.verseKeys[0]}</span>{/* The footer sits inside the RTL Quran section; keep the page counter left-to-right so it reads "2 / 604". */}<span dir="ltr" aria-label={`Page ${pageNumber} of 604`}>{pageNumber} / 604</span><span>{data.verseKeys.at(-1)}</span></footer>
       </section>
     </> : null}
     <nav className={styles.tools}>{pageNumber > 1 ? <Link href={`/quran/mushaf/${pageNumber - 1}`}>← Previous page</Link> : <span />}{pageNumber < 604 ? <Link href={`/quran/mushaf/${pageNumber + 1}`}>Next page →</Link> : null}</nav>

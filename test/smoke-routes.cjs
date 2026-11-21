@@ -178,6 +178,9 @@ const run = async () => {
     const socialAssets = [
       ["/opengraph-image", "image/png"],
       ["/icon.svg", "image/svg+xml"],
+      ["/favicon.ico", "image/"],
+      ["/icons/icon-32.png", "image/png"],
+      ["/icons/icon-192.png", "image/png"],
       ["/apple-icon", "image/png"],
       ["/manifest.webmanifest", "application/manifest+json"],
     ];

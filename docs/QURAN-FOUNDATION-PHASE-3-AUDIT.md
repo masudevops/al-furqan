@@ -18,7 +18,7 @@ The Phase 3 brief describes tafsir, word-by-word, Mushaf view, Quran search, syn
 |---|---|---|
 | Chapters and chapter metadata | All 114 chapters are listed from Content v4 | Implemented |
 | Verses by chapter | Verse-by-verse reader uses authoritative Uthmani text | Implemented |
-| Tajweed text | Official `text_uthmani_tajweed` is rendered through a strict annotation allowlist | Implemented in verse mode |
+| Tajweed text | Superseded: verse, structure, and Mushaf views render official QCF V4 (Mushaf 19) glyphs; `text_uthmani_tajweed` is no longer requested (see `BUG-TAJWEED-U0672-RENDERING.md`) | Replaced |
 | Translation resources and verse translations | Resources are discovered dynamically; users can select available translations | Implemented |
 | Ayah-by-ayah recitations | Reciters are discovered dynamically with sequential verse playback | Implemented |
 | Search v1 | Same-origin adapter and UI code exist, but the required scope is rejected | Built but unavailable; not production-complete |

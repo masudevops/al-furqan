@@ -94,7 +94,7 @@ export default function MushafPage({ pageNumber }: { pageNumber: number }) {
         {!fontReady && !fontFailed && data.tajweedLines?.length ? <div className={styles.mushafFontLoading} role="status"><span />Preparing Mushaf page…</div> : null}
         {fontReady && data.tajweedLines?.length ? data.tajweedLines.map((line) => <div className={`${styles.line} ${styles.tajweedGlyphLine}`} key={line.lineNumber} data-line={line.lineNumber}>
           {line.words.map((word,index) => <span className={styles.word} style={{fontFamily:word.charType==="end"?"UthmanicHafs, serif":mushafFontFamily(pageNumber)}} title={word.verseKey} key={`${word.verseKey}-${word.position}-${index}`}>{word.charType==="end"?word.arabicText:word.qcfCode||word.arabicText}</span>)}
-        </div>) : fontFailed || !data.tajweedLines?.length ? <div className={`${styles.tajweedFlow} ${styles.tajweed}`}>
+        </div>) : fontFailed || !data.tajweedLines?.length ? <div className={styles.tajweedFlow}>
           {/* Plain Uthmani text: text_uthmani_tajweed encodes marks (e.g. U+0672) that platform fonts render as the wrong letter. */}
           {data.tajweedVerses.map((verse) => <Link className={styles.tajweedAyah} href={`/quran/${verse.verseKey.replace(":", "/")}`} aria-label={`Open Ayah ${verse.verseKey}`} key={verse.verseKey}>{verse.arabicText}</Link>)}
         </div> : null}

@@ -7,6 +7,7 @@ import { ReactNode, memo, useEffect, useId, useRef, useState } from "react";
 import type { ContentPreviewItem, ReaderPayload } from "@/lib/types";
 import { ReaderIcon } from "./icons";
 import Popover from "./popover";
+import { saveReadingMode } from "@/lib/reading-mode";
 import { mushafHrefFor, positionLabels, positionOfVerse } from "./reader-position";
 import styles from "./quran-reader.module.css";
 
@@ -69,7 +70,7 @@ const ReaderToolbar = memo(function ReaderToolbar({ chapter, chapters, verses, t
       <div className={styles.toolbarEnd}>
         <nav className={styles.modeSwitch} aria-label="Reading mode">
           <span aria-current="page"><ReaderIcon name="verses" /><span className={styles.modeLabel}>Verse by Verse</span></span>
-          <Link href={mushafHrefFor(position)} prefetch={false}><ReaderIcon name="page" /><span className={styles.modeLabel}>Mushaf</span></Link>
+          <Link href={mushafHrefFor(position)} prefetch={false} onClick={() => saveReadingMode("mushaf")}><ReaderIcon name="page" /><span className={styles.modeLabel}>Mushaf</span></Link>
         </nav>
         <Popover className={`${styles.menu} ${styles.toolsMenu}`} summaryClassName={`${styles.toolbarButton} ${toolsActive ? styles.toolbarButtonActive : ""}`} label="Study tools" summary={<><ReaderIcon name="tools" /><span className={styles.toolbarButtonLabel}>Tools</span></>}>
           {tools}

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   buildReaderUrlFromKey,
+  parseAyahTafsir,
   deriveReflectPresentation,
   ensureUserScope,
   getGrantedScopes,
@@ -445,5 +446,16 @@ describe("parseVerseKey", () => {
   it("rejects malformed values", () => {
     expect(parseVerseKey("1-7")).toBeNull();
     expect(parseVerseKey("chapter:1")).toBeNull();
+  });
+});
+
+describe("single-Ayah Tafsir", () => {
+  it("reads the requested source's text and name from a verse-by-key response", () => {
+    const payload = parseAyahTafsir({ verse: { verse_key: "2:255", tafsirs: [{ resource_name: "Ibn Kathir (Abridged)", text: "<p>The greatest Ayah.</p>" }] } }, "2:255", 169);
+    expect(payload).toEqual({ tafsirId: 169, tafsirName: "Ibn Kathir (Abridged)", tafsirText: "The greatest Ayah.", verseKey: "2:255" });
+  });
+
+  it("reports a missing entry instead of inventing text", () => {
+    expect(parseAyahTafsir({ verse: { tafsirs: [] } }, "2:1", 169)).toEqual({ tafsirId: 169, tafsirName: null, tafsirText: null, verseKey: "2:1" });
   });
 });

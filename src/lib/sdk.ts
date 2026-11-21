@@ -106,6 +106,7 @@ interface ServerContentClient {
       byHizb: (hizbNumber: number, params: UnknownRecord) => Promise<unknown>;
       byRub: (rubNumber: number, params: UnknownRecord) => Promise<unknown>;
       byRange: (from: string, to: string, params: UnknownRecord) => Promise<unknown>;
+      byKey: (verseKey: string, params: UnknownRecord) => Promise<unknown>;
     };
   };
 }

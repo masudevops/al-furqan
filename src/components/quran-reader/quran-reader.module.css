@@ -137,6 +137,8 @@ button.toolbarButton{padding:0}
 .studyPanel>header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-right:-12px}
 .studyPanel>header strong{color:var(--ink);font-size:13px}
 .studyPanel>p{margin:6px 0 0}
+.studyPanel>.panelSource{margin:0;color:var(--muted);font-size:12px}
+.copyConfirmation a{text-decoration:underline;text-underline-offset:2px}
 /* Arabic Tafsir quotes Quranic marks that UI and system Arabic fonts lack; fall back to the Quran font glyph by glyph. */
 .studyPanel>p[dir]{font-family:var(--font-ui),"Geeza Pro","Noto Naskh Arabic","Segoe UI",Tahoma,"UthmanicHafs",serif}
 .reference{margin-top:12px;padding:2px 0 2px 14px;border-left:2px solid color-mix(in srgb,var(--green) 40%,var(--line))}

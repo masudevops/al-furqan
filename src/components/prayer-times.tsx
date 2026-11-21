@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "@/hooks/use-location";
+import { Icon } from "@/components/ui";
 import styles from "./prayer-times.module.css";
 
 const PRAYERS = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"] as const;
@@ -42,7 +43,8 @@ export default function PrayerTimes() {
   const next = useMemo(() => getNextPrayer(payload, new Date(tick)), [payload, tick]);
   const countdown = next ? `${Math.floor(next.ms/3_600_000)}h ${Math.floor((next.ms%3_600_000)/60_000)}m` : null;
   return <Link href="/salah-times" className={styles.compactCard} aria-label="Open Salah Times">
-    <div><span>Next prayer{location ? ` · ${location.label}` : ""}</span><h2>{next ? next.name : location ? "Loading Salah Times…" : "Set your location"}</h2></div>
-    <strong>{countdown ?? (location ? "View schedule" : "View Salah Times")}</strong><b>→</b>
+    <span className={styles.icon} aria-hidden="true"><Icon name="salah" /></span>
+    <div><span>Next prayer{location ? ` · ${location.label}` : ""}</span><h2>{next ? next.name : location ? "Loading Salah Times…" : "Set your location for prayer times"}</h2></div>
+    <strong>{countdown ? `in ${countdown}` : location ? "View schedule" : "Set location"}</strong><Icon name="arrowRight" />
   </Link>;
 }

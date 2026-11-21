@@ -5,8 +5,7 @@ import { useParams, usePathname, useRouter } from "next/navigation";
 import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import useSWR, { preload } from "swr";
 
-import PrayerTimes from "@/components/prayer-times";
-import DailyContent from "@/components/daily-content";
+import HomePage from "@/components/home-page";
 import MutashabihatPanel from "@/components/mutashabihat-panel";
 import { fetchJson } from "@/components/quran-reader/fetch-json";
 import { glyphPages, hasCompleteGlyphs, tajweedPaletteCss } from "@/components/quran-reader/qcf-tajweed";
@@ -577,25 +576,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
     setSearchQuery(searchInput.trim());
   };
 
-  const renderHome = () => <main className={styles.main}>
-    <section className={styles.hero}>
-      <p className={styles.kicker}>بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</p>
-      <h1>A quiet place<br/>{"to meet the Quran."}</h1>
-      <p>Read with clarity, continue without friction, and keep the Quran at the center.</p>
-      <Link className={styles.primary} href={resumeHref(readingMode, lastRead, mushafPage)}>Begin reading <span>→</span></Link>
-    </section>
-    <section className={styles.homeGrid}>
-      <article className={styles.continueCard}>
-        <p className={styles.label}>Continue reading</p>
-        <div><div><h2>{lastRead?.chapterName ?? chapters?.items?.[0]?.nameSimple ?? "Al-Fatihah"}</h2><p>{lastRead ? `Ayah ${lastRead.verseNumber}` : "The Opening"}</p></div><span className={styles.arabicTitle}>{lastRead ? "اقرأ" : chapters?.items?.[0]?.nameArabic ?? "الفاتحة"}</span></div>
-        <Link href={resumeHref(readingMode, lastRead, mushafPage)} {...warmReaderProps(lastRead?.chapterId ?? 1)}>Resume{readingMode === "mushaf" ? " in Mushaf" : ""} <span>→</span></Link>
-      </article>
-      <Link className={styles.entryCard} href="/quran"><span className={styles.entryIcon}><Icon name="quran"/></span><div><p className={styles.label}>Quran</p><h2>Browse all 114 Surahs</h2><p>Arabic text, trusted translations, Tafsir, Tajweed, and recitation.</p></div><b>→</b></Link>
-    </section>
-    <DailyContent/>
-    {publicFeatures.salahTimes ? <PrayerTimes/> : null}
-    <section className={styles.quickLinks}>{publicFeatures.dua ? <Link href="/dua"><span>Dua</span><b>Daily remembrance →</b></Link> : null}{publicFeatures.qibla ? <Link href="/qibla"><span>Qibla</span><b>Find the direction →</b></Link> : null}{publicFeatures.masjidFinder ? <Link href="/masjid-finder"><span>Nearby</span><b>Find a masjid →</b></Link> : null}</section>
-  </main>;
+  const renderHome = () => <HomePage lastRead={lastRead} resumeHref={resumeHref(readingMode, lastRead, mushafPage)} resumeInMushaf={readingMode === "mushaf"} chapters={chapters?.items} warmReaderProps={warmReaderProps}/>;
 
   const renderLibrary = () => <main className={styles.main}>
     <header className={styles.quranDirectoryHeader}><div><p className={styles.kicker}>The Noble Quran</p><h1>{quranBrowseMode === "juz" ? "Choose a Juz" : quranBrowseMode === "revelation" ? "Revelation Order" : "Choose a Surah"}</h1><p>{quranBrowseMode === "juz" ? "Browse all 30 Juz." : quranBrowseMode === "revelation" ? "Browse Surahs by their sourced revelation order." : "Browse all 114 Surahs."}</p></div><nav className={styles.quranBrowseTools} aria-label="Quran reading options"><Link href="/quran/mushaf/1">Mushaf view</Link><Link href="/quran/structure">Structure</Link><Link href="/reflect">Reflections</Link></nav></header>

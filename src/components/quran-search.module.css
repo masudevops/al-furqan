@@ -1,0 +1,38 @@
+.search{display:flex;align-items:center;gap:8px;min-height:54px;padding:0 6px 0 16px;border:1px solid var(--line);border-radius:var(--radius-pill);background:var(--card);box-shadow:0 1px 2px #0000000a}
+.search:focus-within{border-color:var(--green)}
+.search>svg{width:19px;height:19px;flex:none;color:var(--muted)}
+.search input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:400 16px var(--font-ui);outline:none}
+.search input::-webkit-search-cancel-button{display:none}
+.clear{border:0;background:transparent;color:var(--muted);font:600 13px var(--font-ui);padding:0 6px;cursor:pointer}
+.submit{min-height:42px;padding:0 20px;border:0;border-radius:var(--radius-pill);background:var(--green);color:var(--on-green);font:650 14px var(--font-ui);cursor:pointer}
+.submit:disabled{opacity:.5;cursor:not-allowed}
+.examples{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:16px}
+.examples p{margin:0 4px 0 2px;color:var(--muted);font-size:13px;font-weight:600}
+.examples button{min-height:36px;padding:0 14px;border:1px solid var(--line);border-radius:var(--radius-pill);background:var(--card);color:var(--ink);font:500 14px var(--font-ui);cursor:pointer}
+.examples button[lang="ar"]{font-family:"Geeza Pro","Noto Naskh Arabic","Amiri",serif;font-size:16px}
+.examples button:hover{border-color:var(--green);color:var(--green)}
+.summary{margin:20px 4px 10px;color:var(--muted);font-size:13px}
+.surahs{display:grid;gap:8px;margin-bottom:8px}
+.surah{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border:1px solid var(--line);border-radius:var(--radius);background:var(--card);color:var(--ink)}
+.surah:hover{border-color:var(--green)}
+.surah>span{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex:1;min-width:0}
+.surah strong{font:500 18px/1.3 var(--font-serif)}
+.surah b{font:400 22px/1.4 "Geeza Pro","Noto Naskh Arabic","Amiri",serif;color:var(--green)}
+.surah>svg{width:16px;height:16px;flex:none;color:var(--muted)}
+.results{margin:0;padding:0;list-style:none}
+.results li{border-bottom:1px solid var(--line)}
+.result{display:grid;gap:10px;padding:20px 8px;border-radius:10px;color:var(--ink)}
+.result:hover{background:var(--soft)}
+.key{display:inline-flex;align-items:center;gap:6px;color:var(--green);font:650 13px var(--font-ui);font-variant-numeric:tabular-nums}
+.key svg{width:14px;height:14px;opacity:0;transition:opacity .15s ease}
+.result:hover .key svg{opacity:1}
+.arabic{margin:0;font:400 26px/2 "UthmanicHafs","Amiri Quran","Geeza Pro",serif;text-align:right}
+.translation{margin:0;color:var(--translation);font-size:16px;line-height:1.7}
+.result mark{background:color-mix(in srgb,var(--green) 18%,transparent);color:inherit;border-radius:3px;padding:0 1px}
+.more{display:flex;justify-content:center;margin-top:20px}
+.source{margin:24px 4px 0;color:var(--muted);font-size:12px}
+.loading{display:grid;gap:14px;margin-top:20px}
+.loading i{display:block;height:120px;border-radius:var(--radius-lg);background:linear-gradient(90deg,var(--card),var(--soft),var(--card));background-size:200% 100%;animation:shimmer 1.4s ease-in-out infinite}
+@keyframes shimmer{to{background-position:-200% 0}}
+@media(max-width:760px){.arabic{font-size:23px}.translation{font-size:15px}.surah>span{flex-direction:column;gap:2px}}
+@media(prefers-reduced-motion:reduce){.loading i{animation:none}.key svg{transition:none}}

@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
   const payload = await loadSearchData(
     sessionContext.session,
     request.nextUrl.searchParams.get("query"),
+    Number(request.nextUrl.searchParams.get("page")) || 1,
   );
 
   return withSessionJson(sessionContext, payload);

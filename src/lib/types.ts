@@ -44,6 +44,7 @@ export interface SearchItem {
   readerUrl: string | null;
   subtitle?: string | null;
   text?: string;
+  translationName?: string | null;
   verseKey?: string | null;
 }
 

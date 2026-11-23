@@ -40,12 +40,15 @@ test("saved library reads and removes local bookmarks", async ({ page }) => {
   await expect(page.getByText("Nothing saved here yet")).toBeVisible();
 });
 
-test("Quran search displays match context", async ({ page }) => {
-  await page.route("**/api/search?query=mercy", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ error: null, query: "mercy", navigationItems: [], verseItems: [{ verseKey: "1:1", readerUrl: "/quran/1/1", text: "In the Name of Allah—the Most Compassionate, Most Merciful." }] }) }));
+test("Quran search displays match context and keeps the query in the address", async ({ page }) => {
+  await page.route("**/api/search?query=mercy*", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ error: null, query: "mercy", page: 1, pages: 1, total: 1, navigationItems: [], verseItems: [{ verseKey: "1:1", readerUrl: "/quran/1/1", text: "In the Name of Allah—the Most Compassionate, Most Merciful.", translationName: "Test translation" }] }) }));
   await page.goto("/search");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "sepia");
   await page.getByRole("searchbox", { name: "Search the Quran" }).fill("mercy");
-  await page.getByRole("button", { name: "Search" }).click();
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(page.getByText(/Most Compassionate/)).toBeVisible();
+  await expect(page).toHaveURL(/\/search\?q=mercy$/);
+  await page.goto("/search?q=mercy");
   await expect(page.getByText(/Most Compassionate/)).toBeVisible();
 });
 

@@ -8,7 +8,7 @@ import ContentState from "@/components/content-state";
 import { Button, ButtonLink, Icon, Page, PageHeader } from "@/components/ui";
 import { ARABIC_LETTERS, letterByChar, letterForms, type LetterForm } from "@/lib/learn/alphabet";
 import { ALL_LETTERS, QAIDAH_LESSONS, lessonForDay, lettersLearnedBefore, type QaidahLesson } from "@/lib/learn/curriculum";
-import { LETTER_AUDIO_SOURCE, letterAudioUrl } from "@/lib/learn/letter-audio";
+import { letterAudioUrl } from "@/lib/learn/letter-audio";
 import { SHORT_VOWELS, firstLetterVowel, hasMark, markById, markDisplay, type MarkId } from "@/lib/learn/marks";
 import { completeDay, emptyProgress, readProgress, recordAnswer, reviewPriority, writeProgress, type LearnProgress } from "@/lib/learn/progress";
 import { firstLetterQuestions, firstVowelQuestions, lettersWithForm, listenQuestions, markQuestions, recognitionQuestions, seededRandom, shuffle, wordKey, wordQuestions, wordsByLength, wordsStartingWith, type PracticeWord, type Question } from "@/lib/learn/quiz";
@@ -54,7 +54,6 @@ function LettersLearn({ letters, words, wordError, audio }: { letters: string[];
     const examples = words ? wordsStartingWith(words, char).slice(0, 3) : [];
     return <article className={styles.letterCard} key={char}>
       <div className={styles.letterHero}><PlayLetter char={char} audio={audio} /><span className={styles.bigLetter} lang="ar" translate="no">{char}</span><span className={styles.unicode}>{letter.unicodeName}<small>{letter.codePoint}</small></span></div>
-      <p className={styles.recordingNote}>Recording: {LETTER_AUDIO_SOURCE.name} ({LETTER_AUDIO_SOURCE.license}) · speaker {LETTER_AUDIO_SOURCE.speaker} · awaiting review</p>
       <div className={styles.forms}>{letterForms(letter).map((form) => <span key={form.position}><b lang="ar" translate="no">{form.text}</b><small>{POSITION_LABEL[form.position]}</small></span>)}</div>
       <div className={styles.examples}>
         <p>In the Quran</p>
@@ -235,7 +234,6 @@ export default function QaidahLesson({ day }: { day: number }) {
   const nextLesson = QAIDAH_LESSONS.find((item) => item.day === day + 1);
   const words = data?.words ?? [];
   const needsWords = !["letters", "review", "forms"].includes(focus.kind);
-  const usesLetterAudio = ["letters", "review", "forms"].includes(focus.kind);
 
   const learnPanel = (() => {
     if (needsWords && error) return <ContentState kind="error" message="Practice words from the Quran are unavailable right now." />;
@@ -291,7 +289,5 @@ export default function QaidahLesson({ day }: { day: number }) {
         {nextLesson ? <ButtonLink href={`/learn/qaidah/${nextLesson.day}`} trailingIcon="arrowRight">Day {nextLesson.day}</ButtonLink> : <ButtonLink href="/learn">Back to course</ButtonLink>}
       </div>
     </section> : null}
-
-    <p className={styles.sources}>Sources: {lesson.sources.join(" · ")}{usesLetterAudio ? <> · Letter recordings: <a href={LETTER_AUDIO_SOURCE.url} target="_blank" rel="noreferrer">{LETTER_AUDIO_SOURCE.name}</a>, {LETTER_AUDIO_SOURCE.copyright}, <a href={LETTER_AUDIO_SOURCE.licenseUrl} target="_blank" rel="noreferrer">{LETTER_AUDIO_SOURCE.license} license</a>, speaker unidentified</> : null}. Lesson status: draft, awaiting qualified review.</p>
   </Page>;
 }

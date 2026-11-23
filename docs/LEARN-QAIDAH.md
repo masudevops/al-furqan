@@ -1,6 +1,6 @@
 # Learn — Noorani Qaidah (public preview)
 
-**Status:** Public preview, switched on in production at the owner's request on 2026-11-23. Lessons are still drafts. The preview banner was removed at the owner's request on 2026-11-23; each lesson's sources footer, the recording labels and the "Teaching notes awaiting review" lines still state provenance and review status.  
+**Status:** Public preview, switched on in production at the owner's request on 2026-11-23. Lessons are still drafts. The preview banner was removed at the owner's request on 2026-11-23; on the same day the owner asked for the per-lesson sources footer and recording credit line to be hidden too. Provenance is recorded in this document, `DATA-SOURCES.md` and `public/learn/letters/LICENSE.txt` + `SOURCE.txt` (shipped with the recordings, satisfying the MIT notice requirement); pages still show "Teaching notes awaiting review" and the recording tooltip.  
 **Flag:** `NEXT_PUBLIC_FEATURE_LEARN` (default `true`; set to `false` and redeploy to take the section down). When off, `/learn`, `/learn/qaidah/*` and `/api/learn/words` return 404 and no navigation links appear. Pages are `noindex` and are not in the sitemap even when on.
 
 ## What exists
@@ -45,14 +45,14 @@
 1. A qualified teacher reviews and supplies: the lesson plan for all 30 days (currently a placeholder order), teaching names and short explanations for letters and marks, and sign-off per lesson (`QaidahLesson.review.reviewer`).
 2. Letter and syllable recordings by a qualified reciter, with written permission, registered in `DATA-SOURCES.md`.
 3. Open questions for the reviewer: whether words starting with hamza on alef (أ إ) or hamzat al-wasl (ٱ) should count as "begins with alef" (currently they do), and the grouping of letters by day.
-4. Set each lesson's `status` to `"published"`, update the lesson status in the sources footer, and allow indexing.
+4. Set each lesson's `status` to `"published"`, and allow indexing.
 
 ## Letter pronunciation audio
 
 Decision (updated 2026-11-21): each letter card has a play button using an **MIT-licensed recording set**, self-hosted in `public/learn/letters/` with its `LICENSE.txt` and `SOURCE.txt`.
 
 - **Source:** [razunatmohammed88-cyber/arabic-alphabet-audio](https://github.com/razunatmohammed88-cyber/arabic-alphabet-audio) (MIT, © 2025). Found via the `theilgaz/mahfuz` app, which downloads the same files; we take them from the original repository, not from mahfuz (whose own license is stated only in its README).
-- **What is known:** human recordings made on an Android phone (file metadata); all 28 files are distinct. The speaker is **unidentified** and the set has **not been reviewed** — every play button and the lesson footer say so.
+- **What is known:** human recordings made on an Android phone (file metadata); all 28 files are distinct. The speaker is **unidentified** and the set has **not been reviewed** — every play button's label says so.
 - **Reviewer checklist:** confirm each recording is the correct letter (source file names are loose, e.g. `taa'` = ت and `taa` = ط) and that pronunciation is acceptable for teaching; replace any that fail, or remove the set if a reviewed recording or licensed API becomes available.
 - Rejected alternatives: device text-to-speech (unreviewed machine pronunciation); `nooresahar/noorani` (no license); copying `theilgaz/mahfuz` (separate app, license only stated in README, unreviewed lesson text).
 

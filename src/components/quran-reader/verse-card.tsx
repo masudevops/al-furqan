@@ -21,11 +21,14 @@ export type VerseActions = {
   copy: (verseKey: string, chapter: number | null, verse: number | null, details: HTMLDetailsElement | null) => void;
   share: (verseKey: string, chapter: number | null, verse: number | null, details: HTMLDetailsElement | null) => void;
   toggleBookmark: (bookmark: Parameters<typeof toggleLocalBookmark>[0]) => void;
+  playWord: (url: string) => void;
 };
+
+export type WordDisplay = { meaning: boolean; transliteration: boolean };
 
 type VerseCardProps = {
   verse: ReaderVerse; chapterId: number; chapterName: string; isActive: boolean; isPlaying: boolean; isSaved: boolean; isCopied: boolean; bookmarkNotice: "saved" | "removed" | null;
-  activeWordPosition: number | null; wordMode: boolean; tajweedEnabled: boolean; tajweedWords: TajweedGlyphWord[] | null; uthmaniScript: boolean; tafsirAvailable: boolean; tafsirEverywhere: boolean; tafsirId: number | null;
+  activeWordPosition: number | null; wordMode: boolean; wordDisplay: WordDisplay; playingWordUrl: string | null; tajweedEnabled: boolean; tajweedWords: TajweedGlyphWord[] | null; uthmaniScript: boolean; tafsirAvailable: boolean; tafsirEverywhere: boolean; tafsirId: number | null;
   contentPending: boolean; translationResourceName?: string; translationAuthor?: string | null; tafsirResourceName?: string; actions: VerseActions;
 };
 
@@ -71,7 +74,7 @@ function IconButton({ label, icon, onClick, pressed, className }: { label: strin
 }
 
 // Memoized so audio progress, bookmarks, and other reader state only re-render the Ayahs they affect.
-const VerseCard = memo(function VerseCard({ verse, chapterId, chapterName, isActive, isPlaying, isSaved, isCopied, bookmarkNotice, activeWordPosition, wordMode, tajweedEnabled, tajweedWords, uthmaniScript, tafsirAvailable, tafsirEverywhere, tafsirId, contentPending, translationResourceName, translationAuthor, tafsirResourceName, actions }: VerseCardProps) {
+const VerseCard = memo(function VerseCard({ verse, chapterId, chapterName, isActive, isPlaying, isSaved, isCopied, bookmarkNotice, activeWordPosition, wordMode, wordDisplay, playingWordUrl, tajweedEnabled, tajweedWords, uthmaniScript, tafsirAvailable, tafsirEverywhere, tafsirId, contentPending, translationResourceName, translationAuthor, tafsirResourceName, actions }: VerseCardProps) {
   // undefined follows the Surah-wide Tafsir setting until the reader picks a panel for this Ayah.
   const [panel, setPanel] = useState<StudyPanel | null | undefined>(undefined);
   const panelId = useId();
@@ -110,7 +113,12 @@ const VerseCard = memo(function VerseCard({ verse, chapterId, chapterName, isAct
       </div>
     </div>
     {wordMode && verse.words.length
-      ? <div className={`${styles.wordGrid} ${uthmaniScript ? styles.quranFont : ""}`} lang="ar" dir="rtl" translate="no">{verse.words.filter((word) => word.charType === "word").map((word) => <span className={activeWordPosition === word.position ? styles.activeWord : ""} key={word.position}><b>{word.arabicText}</b><small dir="ltr">{word.transliteration}</small><em dir="ltr">{word.translation}</em></span>)}</div>
+      ? <div className={`${styles.wordGrid} ${uthmaniScript ? styles.quranFont : ""}`} lang="ar" dir="rtl" translate="no">{verse.words.filter((word) => word.charType === "word").map((word) => {
+        const className = `${styles.word} ${activeWordPosition === word.position || (word.audioUrl && playingWordUrl === word.audioUrl) ? styles.activeWord : ""}`;
+        const body = <><b>{word.arabicText}</b>{wordDisplay.transliteration && word.transliteration ? <small dir="ltr">{word.transliteration}</small> : null}{wordDisplay.meaning && word.translation ? <em dir="ltr">{word.translation}</em> : null}</>;
+        // Each word plays its own Quran.Foundation recitation.
+        return word.audioUrl ? <button type="button" className={className} key={word.position} onClick={() => actions.playWord(word.audioUrl!)} aria-label={`Play word ${word.position}${word.translation ? `: ${word.translation}` : ""}`}>{body}</button> : <span className={className} key={word.position}>{body}</span>;
+      })}</div>
       : tajweedEnabled && tajweedWords
         ? <QcfTajweedText words={tajweedWords} verseNumber={verse.verseNumber} plainText={verse.arabicText} plainClassName={arabicClass} />
         : <p className={arabicClass} lang="ar" dir="rtl" translate="no">{verse.arabicText}{verse.verseNumber ? <> <span className={styles.ayahEnd}>{toArabicIndicDigits(verse.verseNumber)}</span></> : null}</p>}

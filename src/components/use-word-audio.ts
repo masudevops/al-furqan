@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// One shared player for Quran.Foundation word recitations, so starting a word stops the previous one.
+// One shared player for Quran.Foundation word recitations (Learn and the reader), so starting a word stops the previous one.
 export function useWordAudio() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState<string | null>(null);

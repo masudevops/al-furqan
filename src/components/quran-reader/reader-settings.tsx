@@ -6,6 +6,7 @@ import { FormEvent, ReactNode, RefObject, useId } from "react";
 import type { ReadingMode } from "@/lib/reading-mode";
 import type { QuranScript, RecitationResource, ReaderPayload, TafsirResource, TranslationResource } from "@/lib/types";
 import { ReaderIcon, type ReaderIconName } from "./icons";
+import type { WordDisplay } from "./verse-card";
 import styles from "./reader-settings.module.css";
 
 export type Theme = "light" | "dark" | "sepia";
@@ -33,6 +34,8 @@ type ReaderContext = {
   onTafsir: (id: number) => void;
   wordMode: boolean;
   onWordMode: (value: boolean) => void;
+  wordDisplay: WordDisplay;
+  onWordDisplay: (value: WordDisplay) => void;
   tafsirEverywhere: boolean;
   onTafsirEverywhere: (value: boolean) => void;
   memorizationOpen: boolean;
@@ -130,7 +133,11 @@ export default function ReaderSettings({ dialogRef, onClose, theme, onTheme, rea
             </div>
           </div>
           <Switch label="Tajweed colors" hint="Official QCF V4 colour-coded text" checked={tajweedEnabled} onChange={onTajweed} />
-          {quran ? <Switch label="Word by word" hint="Meaning and transliteration under each word" checked={quran.wordMode} onChange={quran.onWordMode} /> : null}
+          {quran ? <Switch label="Word by word" hint="Tap a word to hear it recited" checked={quran.wordMode} onChange={quran.onWordMode} /> : null}
+          {quran?.wordMode ? <div className={styles.nested}>
+            <Switch label="Word meaning" checked={quran.wordDisplay.meaning} onChange={(meaning) => quran.onWordDisplay({ ...quran.wordDisplay, meaning })} />
+            <Switch label="Transliteration" checked={quran.wordDisplay.transliteration} onChange={(transliteration) => quran.onWordDisplay({ ...quran.wordDisplay, transliteration })} />
+          </div> : null}
           {quran && quran.tafsirs.length ? <Switch label="Tafsir under every Ayah" hint="Otherwise open Tafsir per Ayah" checked={quran.tafsirEverywhere} onChange={quran.onTafsirEverywhere} /> : null}
           <Switch label="Follow recitation" hint="Scroll to the Ayah being recited" checked={followRecitation} onChange={() => onFollowRecitation()} />
         </Section>

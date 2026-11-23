@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { memo, useId, useState } from "react";
+import { memo, useEffect, useId, useState } from "react";
 import useSWR, { preload } from "swr";
 
 import type { AyahStudyPayload, AyahTafsirPayload, FootnotePayload, ReaderPayload, TajweedGlyphWord } from "@/lib/types";
@@ -28,7 +28,7 @@ export type WordDisplay = { meaning: boolean; transliteration: boolean };
 
 type VerseCardProps = {
   verse: ReaderVerse; chapterId: number; chapterName: string; isActive: boolean; isPlaying: boolean; isSaved: boolean; isCopied: boolean; bookmarkNotice: "saved" | "removed" | null;
-  activeWordPosition: number | null; wordMode: boolean; wordDisplay: WordDisplay; playingWordUrl: string | null; tajweedEnabled: boolean; tajweedWords: TajweedGlyphWord[] | null; uthmaniScript: boolean; tafsirAvailable: boolean; tafsirEverywhere: boolean; tafsirId: number | null;
+  activeWordPosition: number | null; wordMode: boolean; wordDisplay: WordDisplay; playingWordUrl: string | null; concealArabic: boolean; tajweedEnabled: boolean; tajweedWords: TajweedGlyphWord[] | null; uthmaniScript: boolean; tafsirAvailable: boolean; tafsirEverywhere: boolean; tafsirId: number | null;
   contentPending: boolean; translationResourceName?: string; translationAuthor?: string | null; tafsirResourceName?: string; actions: VerseActions;
 };
 
@@ -74,7 +74,7 @@ function IconButton({ label, icon, onClick, pressed, className }: { label: strin
 }
 
 // Memoized so audio progress, bookmarks, and other reader state only re-render the Ayahs they affect.
-const VerseCard = memo(function VerseCard({ verse, chapterId, chapterName, isActive, isPlaying, isSaved, isCopied, bookmarkNotice, activeWordPosition, wordMode, wordDisplay, playingWordUrl, tajweedEnabled, tajweedWords, uthmaniScript, tafsirAvailable, tafsirEverywhere, tafsirId, contentPending, translationResourceName, translationAuthor, tafsirResourceName, actions }: VerseCardProps) {
+const VerseCard = memo(function VerseCard({ verse, chapterId, chapterName, isActive, isPlaying, isSaved, isCopied, bookmarkNotice, activeWordPosition, wordMode, wordDisplay, playingWordUrl, concealArabic, tajweedEnabled, tajweedWords, uthmaniScript, tafsirAvailable, tafsirEverywhere, tafsirId, contentPending, translationResourceName, translationAuthor, tafsirResourceName, actions }: VerseCardProps) {
   // undefined follows the Surah-wide Tafsir setting until the reader picks a panel for this Ayah.
   const [panel, setPanel] = useState<StudyPanel | null | undefined>(undefined);
   const panelId = useId();
@@ -86,6 +86,10 @@ const VerseCard = memo(function VerseCard({ verse, chapterId, chapterName, isAct
   // Tajweed uses the official QCF V4 glyphs; text_uthmani_tajweed is never rendered because it encodes marks
   // (e.g. U+0672) that no available font displays correctly. Plain Uthmani text uses the Uthmani Hafs font.
   const arabicClass = `${styles.arabic} ${uthmaniScript ? styles.quranFont : ""}`;
+  // Test yourself: the Arabic stays hidden until the reader chooses to reveal this Ayah.
+  const [revealed, setRevealed] = useState(false);
+  useEffect(() => { if (!concealArabic) setRevealed(false); }, [concealArabic]);
+  const concealed = concealArabic && !revealed;
   const studyLinks: Array<{ kind: StudyPanel; label: string; icon: ReaderIconName }> = [
     ...(tafsirAvailable ? [{ kind: "tafsir" as const, label: "Tafsir", icon: "book" as const }] : []),
     ...(verse.verseKey ? [{ kind: "hadith" as const, label: "Hadith", icon: "scroll" as const }, { kind: "answers" as const, label: "Answers", icon: "answer" as const }] : []),
@@ -112,6 +116,9 @@ const VerseCard = memo(function VerseCard({ verse, chapterId, chapterName, isAct
         </Popover>
       </div>
     </div>
+    <div className={concealed ? styles.concealed : undefined}>
+      {/* React 18 has no boolean `inert`; an empty string sets the attribute so hidden text can't be focused or selected. */}
+      <div aria-hidden={concealed || undefined} {...(concealed ? { inert: "" } as Record<string, string> : {})}>
     {wordMode && verse.words.length
       ? <div className={`${styles.wordGrid} ${uthmaniScript ? styles.quranFont : ""}`} lang="ar" dir="rtl" translate="no">{verse.words.filter((word) => word.charType === "word").map((word) => {
         const className = `${styles.word} ${activeWordPosition === word.position || (word.audioUrl && playingWordUrl === word.audioUrl) ? styles.activeWord : ""}`;
@@ -122,6 +129,9 @@ const VerseCard = memo(function VerseCard({ verse, chapterId, chapterName, isAct
       : tajweedEnabled && tajweedWords
         ? <QcfTajweedText words={tajweedWords} verseNumber={verse.verseNumber} plainText={verse.arabicText} plainClassName={arabicClass} />
         : <p className={arabicClass} lang="ar" dir="rtl" translate="no">{verse.arabicText}{verse.verseNumber ? <> <span className={styles.ayahEnd}>{toArabicIndicDigits(verse.verseNumber)}</span></> : null}</p>}
+      </div>
+      {concealed ? <button type="button" className={styles.revealButton} onClick={() => setRevealed(true)}>Reveal Ayah {verse.verseNumber}</button> : null}
+    </div>
     {verse.translationText
       ? <div className={styles.translationBlock}>
         <div className={styles.translation} lang="en" translate="no" dangerouslySetInnerHTML={{ __html: verse.translationText }} />

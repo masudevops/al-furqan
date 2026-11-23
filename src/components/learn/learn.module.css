@@ -1,8 +1,4 @@
 /* Letter shapes use a standard Arabic font (the Uthmani Quran font draws isolated yeh without dots); Quran words keep the Quran font. */
-.draft{display:flex;gap:12px;align-items:flex-start;margin-bottom:18px;padding:14px 16px;border:1px solid color-mix(in srgb,#b7791f 40%,var(--line));border-radius:var(--radius);background:color-mix(in srgb,#b7791f 9%,var(--card));color:var(--translation);font-size:13px;line-height:1.55}
-.draft svg{width:18px;height:18px;flex:none;margin-top:1px;color:#b7791f}
-.draft p{margin:0}
-.draft strong{color:var(--ink)}
 
 /* Course overview */
 .course{padding:clamp(18px,4vw,26px);border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--card)}

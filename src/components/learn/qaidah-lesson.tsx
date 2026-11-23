@@ -13,7 +13,6 @@ import { SHORT_VOWELS, firstLetterVowel, hasMark, markById, markDisplay, type Ma
 import { completeDay, emptyProgress, readProgress, recordAnswer, reviewPriority, writeProgress, type LearnProgress } from "@/lib/learn/progress";
 import { firstLetterQuestions, firstVowelQuestions, lettersWithForm, listenQuestions, markQuestions, recognitionQuestions, seededRandom, shuffle, wordKey, wordQuestions, wordsByLength, wordsStartingWith, type PracticeWord, type Question } from "@/lib/learn/quiz";
 import type { PracticeWordPayload } from "@/lib/types";
-import { DraftNotice } from "./learn-home";
 import { useWordAudio } from "./use-word-audio";
 import styles from "./learn.module.css";
 
@@ -255,7 +254,6 @@ export default function QaidahLesson({ day }: { day: number }) {
 
   return <Page narrow>
     <PageHeader back={{ href: "/learn", label: "Noorani Qaidah" }} kicker={`Day ${day} of 30`} kickerIcon="learn" title={isLetters ? <>Letters <span className={styles.titleLetters} lang="ar" dir="rtl" translate="no">{lesson.letters.join(" ")}</span></> : lesson.title} description={isLetters ? undefined : lesson.subtitle} />
-    <DraftNotice />
     <ol className={styles.steps} style={{ gridTemplateColumns: `repeat(${steps.length}, 1fr)` }} aria-label="Lesson steps">{steps.map((label, index) => <li key={label}><button type="button" aria-current={index === step ? "step" : undefined} className={index < step ? styles.stepDone : undefined} onClick={() => goTo(index)}><span>{index < step ? <Icon name="check" /> : index + 1}</span>{label}</button></li>)}</ol>
 
     {step === 0 ? <section aria-labelledby="learn-title">

@@ -3,6 +3,7 @@ import { cache } from "react";
 import HadithBrowser from "@/components/hadith-browser";
 import StructuredData, { breadcrumbData } from "@/components/structured-data";
 import { ummahHadithAdapter } from "@/lib/hadith";
+import { bookOfHadith } from "@/lib/hadith-books";
 
 const getHadith = cache(async (collection: string, number: number) => ummahHadithAdapter.one(collection, number));
 export const revalidate = 3600;
@@ -20,5 +21,5 @@ export async function generateMetadata({ params }: { params: { collection: strin
 
 export default async function SunnahDetailPage({ params }: { params: { collection: string; number: string } }) {
   const item = await getHadith(params.collection, Number(params.number)).catch(() => null);
-  return <><StructuredData data={breadcrumbData([{ name: "Home", path: "/" }, { name: "Sunnah", path: "/sunnah" }, { name: item ? `${item.collectionName} Hadith ${item.hadithNumber}` : "Hadith", path: `/sunnah/${params.collection}/${params.number}` }])}/><HadithBrowser collectionId={params.collection} hadithNumber={params.number} initialItem={item}/></>;
+  return <><StructuredData data={breadcrumbData([{ name: "Home", path: "/" }, { name: "Sunnah", path: "/sunnah" }, { name: item ? `${item.collectionName} Hadith ${item.hadithNumber}` : "Hadith", path: `/sunnah/${params.collection}/${params.number}` }])}/><HadithBrowser collectionId={params.collection} hadithNumber={params.number} book={bookOfHadith(params.collection, Number(params.number))} initialItem={item}/></>;
 }

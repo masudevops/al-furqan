@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import HadithBrowser from "@/components/hadith-browser";
 import StructuredData, { breadcrumbData } from "@/components/structured-data";
 import { ummahHadithAdapter } from "@/lib/hadith";
+import { hadithBooks } from "@/lib/hadith-books";
 export const revalidate = 3600;
 
 export async function generateMetadata({ params }: { params: { collection: string } }): Promise<Metadata> {
@@ -16,6 +17,6 @@ export default async function CollectionPage({ params }: { params: { collection:
     const catalog = await ummahHadithAdapter.collections();
     const collection = catalog.find((item) => item.id === params.collection);
     const list = collection ? await ummahHadithAdapter.list(collection.id, 1) : undefined;
-    return <><StructuredData data={breadcrumbData([{ name: "Home", path: "/" }, { name: "Sunnah", path: "/sunnah" }, { name: collection?.name ?? "Collection", path: `/sunnah/${params.collection}` }])}/><HadithBrowser collectionId={params.collection} initialCatalog={catalog} initialList={list}/></>;
-  } catch { return <HadithBrowser collectionId={params.collection}/>; }
+    return <><StructuredData data={breadcrumbData([{ name: "Home", path: "/" }, { name: "Sunnah", path: "/sunnah" }, { name: collection?.name ?? "Collection", path: `/sunnah/${params.collection}` }])}/><HadithBrowser collectionId={params.collection} books={hadithBooks(params.collection)} initialCatalog={catalog} initialList={list}/></>;
+  } catch { return <HadithBrowser collectionId={params.collection} books={hadithBooks(params.collection)}/>; }
 }

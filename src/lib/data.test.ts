@@ -20,6 +20,8 @@ import {
   parseVerseKey,
   sanitizeSourceHtml,
   sanitizeTranslationMarkup,
+  isStandaloneDailyVerse,
+  qpcHafsText,
 } from "@/lib/data";
 
 const sdkMocks = vi.hoisted(() => ({
@@ -135,7 +137,7 @@ describe("Tajweed page data", () => {
 
     const data = await loadStructureVerses({} as never, "juz", 1);
 
-    expect(byJuz).toHaveBeenCalledWith(1, expect.objectContaining({ fields: { textUthmani: true }, mushaf: 19 }));
+    expect(byJuz).toHaveBeenCalledWith(1, expect.objectContaining({ fields: { textUthmani: true, textQpcHafs: true }, mushaf: 19 }));
     expect(data[0]).not.toHaveProperty("tajweedHtml");
     expect(data[0]).toMatchObject({
       pageNumber: 1,
@@ -344,35 +346,50 @@ describe("synchronized chapter recitation", () => {
   });
 });
 
+describe("qpcHafsText", () => {
+  it("uses the QPC Hafs text the Uthmani font is drawn for, without the trailing Ayah number", () => {
+    expect(qpcHafsText({ textQpcHafs: "وَأَمَّا عَادٞ فَأُهۡلِكُواْ بِرِيحٖ صَرۡصَرٍ عَاتِيَةٖ ٦", textUthmani: "x" })).toBe("وَأَمَّا عَادٞ فَأُهۡلِكُواْ بِرِيحٖ صَرۡصَرٍ عَاتِيَةٖ");
+    expect(qpcHafsText({ text_qpc_hafs: "ٱلۡحَآقَّةُ ١٠٠" })).toBe("ٱلۡحَآقَّةُ");
+    expect(qpcHafsText({ textUthmani: "ٱلْحَآقَّةُ" })).toBeNull();
+  });
+});
+
+describe("isStandaloneDailyVerse", () => {
+  it("skips one-word Ayahs and ignores pause marks when counting words", () => {
+    expect(isStandaloneDailyVerse("ٱلْحَآقَّةُ")).toBe(false);
+    expect(isStandaloneDailyVerse("مَا ٱلْحَآقَّةُ ۚ")).toBe(false);
+    expect(isStandaloneDailyVerse("إِنَّ ٱللَّهَ مَعَ ٱلصَّـٰبِرِينَ ۚ وَٱللَّهُ غَفُورٌ رَّحِيمٌ")).toBe(true);
+  });
+});
+
 describe("loadSearchData", () => {
-  it("keeps Arabic Quran text separate from the search snippet", async () => {
-    sdkMocks.serverClient = {
-      search: {
-        v1: {
-          query: vi.fn(async () => ({
-            result: {
-              navigation: [],
-              verses: [
-                {
-                  key: "1:1",
-                  text: "All praise is for Allah.",
-                  textUthmani: "ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَـٰلَمِينَ",
-                },
-              ],
-            },
-          })),
-        },
+  it("asks for result text, pairs each Ayah with the named translation and keeps Surah matches separate", async () => {
+    const query = vi.fn(async () => ({
+      pagination: { currentPage: 1, totalPages: 3, totalRecords: 45 },
+      result: {
+        navigation: [
+          { key: "55", resultType: "surah", name: "Surah Ar-Rahman", arabic: "سورة الرحمن" },
+          { key: "1:1", resultType: "ayah", isArabic: false, arabic: "بِسْمِ ٱللَّهِ", name: "In the name of God, the Lord of <em>Mercy</em>" },
+          { key: "2:157", resultType: "ayah", isArabic: true, arabic: "وَرَحْمَةٌ", name: "<em>وَرَحْمَةٌ</em>" },
+        ],
+        verses: [],
       },
-    };
+    }));
+    const versesByVerseKey = vi.fn(async ({ path }: { path: { verse_key: string } }) => ({
+      verse: { textUthmani: `uthmani ${path.verse_key}`, textQpcHafs: `qpc ${path.verse_key} ٣`, translations: [{ resource_id: 20, text: `Saheeh <sup foot_note="1">1</sup>${path.verse_key}` }] },
+    }));
+    const list = vi.fn(async () => ({ translations: [{ id: 85, name: "Abdel Haleem" }, { id: 20, name: "Saheeh International" }] }));
+    sdkMocks.serverClient = { search: { v1: { query } }, raw: { content: { v4: { versesByVerseKey } } }, content: { v4: { resources: { translations: { list } } } } };
 
-    const result = await loadSearchData({} as never, "praise");
+    const result = await loadSearchData({} as never, " mercy ", 2);
 
-    expect(result.verseItems[0]).toMatchObject({
-      arabicText: "ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَـٰلَمِينَ",
-      readerUrl: "/quran/1/1",
-      text: "All praise is for Allah.",
-      verseKey: "1:1",
-    });
+    expect(query).toHaveBeenCalledWith(expect.objectContaining({ getText: 1, page: 2, query: "mercy" }));
+    expect(result).toMatchObject({ page: 1, pages: 3, total: 45 });
+    expect(result.navigationItems).toEqual([{ label: "Surah Ar-Rahman", readerUrl: "/quran/55", subtitle: "سورة الرحمن" }]);
+    expect(result.verseItems[0]).toMatchObject({ arabicText: "qpc 1:1", readerUrl: "/quran/1/1", text: "Saheeh 1:1", translationName: "Saheeh International", verseKey: "1:1" });
+    expect(result.verseItems[1]).toMatchObject({ verseKey: "2:157" });
+    // The search snippet's unnamed translation is never shown.
+    expect(JSON.stringify(result)).not.toContain("Lord of");
   });
 
   it("does not expose an upstream token error", async () => {

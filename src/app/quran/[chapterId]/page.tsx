@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import styles from "@/components/seo-fallback.module.css";
 import StructuredData, { breadcrumbData } from "@/components/structured-data";
 import { loadReaderData } from "@/lib/data";
 import { createPublicContentSession } from "@/lib/public-content";
 
-const getChapter = cache(async (chapterId: string) => loadReaderData(createPublicContentSession(), chapterId));
+// The page stays dynamic (the API token request cannot be cached), so the Surah data itself is cached for an hour,
+// well inside Quran.Foundation's one-week limit.
+const getChapter = cache((chapterId: string) => unstable_cache(() => loadReaderData(createPublicContentSession(), chapterId), ["seo-reader", chapterId], { revalidate: 3600 })());
 export const revalidate = 3600;
 
 export async function generateMetadata({ params }: { params: { chapterId: string } }): Promise<Metadata> {

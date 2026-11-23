@@ -110,9 +110,6 @@ const withReaderStage = async <T>(stage: string, operation: () => Promise<T>): P
   }
 };
 
-const containsArabic = (value: string | null): boolean =>
-  Boolean(value && /[\u0600-\u06ff]/.test(value));
-
 const formatTimestamp = (value: unknown): string | null => {
   if (!value) {
     return null;
@@ -243,11 +240,17 @@ const plainSourceText = (value: unknown): string | null => {
   return text.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, " ").trim();
 };
 
+// The UthmanicHafs font is drawn for Quran.Foundation's QPC Hafs encoding; with text_uthmani some marks
+// (e.g. U+06DF small high rounded zero) fall onto a dotted circle. The trailing Ayah number is dropped
+// because the interface draws its own end-of-Ayah marker.
+export const qpcHafsText = (item: Record<string, unknown>) =>
+  asNullableString(item.textQpcHafs ?? item.text_qpc_hafs)?.replace(/\s*[\u0660-\u0669\u06F0-\u06F9]+\s*$/, "") || null;
+
 const normalizeWords = (value: unknown) => toArray(value).map((word) => {
   const translation = asObject(word.translation);
   const transliteration = asObject(word.transliteration);
   return {
-    arabicText: asString(word.textUthmani ?? word.text ?? word.textQpcHafs),
+    arabicText: qpcHafsText(word) ?? asString(word.textUthmani ?? word.text),
     audioUrl: asNullableString(word.audioUrl ?? word.audio_url),
     charType: asString(word.charTypeName ?? word.char_type_name, "word"),
     lineNumber: asNullableNumber(word.lineNumber ?? word.line_number),
@@ -446,46 +449,30 @@ const normalizeFeedItem = (post: unknown): FeedItem => {
   };
 };
 
-const normalizeSearchResults = (response: unknown, query: string) => {
-  const result = asObject(asObject(response).result);
-
-  const navigationItems: SearchItem[] = toArray(result.navigation).map((item) => ({
-    label: asString(item.name ?? item.key, "Search result"),
-    readerUrl: buildReaderUrlFromKey(asNullableString(item.key)),
-    subtitle: asNullableString(item.arabic ?? item.result_type),
-  }));
-
-  const verseItems: SearchItem[] = toArray(result.verses).map((item) => {
-    const translations = toArray(item.translations);
-    const firstTranslation = translations[0];
-    const text =
-      asNullableString(item.text) ??
-      asNullableString(item.highlightedText ?? item.highlighted_text ?? item.translation) ??
-      asNullableString(firstTranslation?.text ?? firstTranslation?.translation);
-    const arabicText =
-      asNullableString(
-        item.textUthmani ??
-          item.text_uthmani ??
-          item.textUthmaniSimple ??
-          item.textImlaei ??
-          item.text_imlaei ??
-          item.arabicText ??
-          item.arabic,
-      ) ?? (containsArabic(text) ? text : null);
-    const verseKey = asNullableString(item.key ?? item.verseKey);
-
-    return {
-      arabicText,
-      readerUrl: buildReaderUrlFromKey(verseKey),
-      text: text ?? (arabicText ? undefined : `Quran ${asString(verseKey, "verse result")}`),
-      verseKey,
-    };
-  });
-
+// Quran.Foundation search (with getText) returns ranked results: Surahs, Juz and Ayahs with their Arabic text.
+// Its English snippets mix unnamed translations, so Ayah results are shown with one named translation instead.
+export const normalizeSearchResults = (response: unknown, query: string) => {
+  const payload = asObject(response);
+  const result = asObject(payload.result);
+  const pagination = asObject(payload.pagination);
+  const navigationItems: SearchItem[] = [];
+  const verseItems: SearchItem[] = [];
+  for (const item of [...toArray(result.navigation), ...toArray(result.verses)]) {
+    const key = asNullableString(item.key);
+    const type = asString(item.resultType ?? item.result_type, "ayah");
+    if (type === "ayah" && key && /^\d+:\d+$/.test(key)) {
+      verseItems.push({ arabicText: asNullableString(item.arabic), readerUrl: buildReaderUrlFromKey(key), verseKey: key });
+    } else if (type === "surah" && key) {
+      navigationItems.push({ label: asString(item.name, `Surah ${key}`), readerUrl: buildReaderUrlFromKey(key), subtitle: asNullableString(item.arabic) });
+    }
+  }
   return {
     error: null,
     navigationItems,
+    page: Number(asNullableNumber(pagination.currentPage ?? pagination.current_page) ?? 1),
+    pages: Number(asNullableNumber(pagination.totalPages ?? pagination.total_pages) ?? 1),
     query,
+    total: Number(asNullableNumber(pagination.totalRecords ?? pagination.total_records) ?? verseItems.length + navigationItems.length),
     verseItems,
   };
 };
@@ -676,40 +663,59 @@ export const loadTafsirResources = async (session: StoredSession): Promise<{erro
   }catch(error){return{error:formatError(error),items:[]}}
 };
 
+type ServerClient = Awaited<ReturnType<typeof createClients>>["serverClient"];
+
+// The English translation shown outside the reader: a configured one if Quran.Foundation offers it, else Saheeh International (the reader's default).
+const resolveDefaultTranslation = async (serverClient: ServerClient) => {
+  const translations = toArray(await serverClient.content.v4.resources.translations.list({ language: "en" }), ["data", "translations"]);
+  const configuredIds = getConfig().translationIds;
+  const resource = translations.find((item) => configuredIds.includes(Number(asNullableNumber(item.id) ?? 0)))
+    ?? translations.find((item) => /\b(saheeh|sahih) international\b/i.test(asString(item.name)))
+    ?? translations[0];
+  const id = Number(asNullableNumber(resource?.id) ?? 0);
+  return id ? { id, name: asString(resource?.name, "Verified English translation") } : null;
+};
+
+// Footnote markers are dropped and markup removed so a translation can be shown as plain text.
+const plainTranslation = (html: string) => html.replace(/<sup\b[^>]*>.*?<\/sup>/gi, "").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+
+export type SearchPayload = { error: string | null; navigationItems: SearchItem[]; page: number; pages: number; query: string; total: number; verseItems: SearchItem[] };
+
 export const loadSearchData = async (
   session: StoredSession,
   query: string | null,
-): Promise<{ error: string | null; navigationItems: SearchItem[]; query: string; verseItems: SearchItem[] }> => {
-  const normalizedQuery = String(query ?? "").trim();
-
-  if (!normalizedQuery) {
-    return {
-      error: null,
-      navigationItems: [],
-      query: "",
-      verseItems: [],
-    };
-  }
+  requestedPage = 1,
+): Promise<SearchPayload> => {
+  const normalizedQuery = String(query ?? "").trim().slice(0, 200);
+  const empty = { navigationItems: [], page: 1, pages: 1, query: normalizedQuery, total: 0, verseItems: [] };
+  if (!normalizedQuery) return { error: null, ...empty };
 
   const { serverClient } = await createClients(session);
   const mode = await getSearchModeQuick();
+  const page = Math.max(1, Math.min(50, Math.floor(requestedPage) || 1));
 
   try {
-    const response = await serverClient.search.v1.query({
-      mode,
-      query: normalizedQuery,
-    });
-
-    return normalizeSearchResults(response, normalizedQuery);
+    const response = await serverClient.search.v1.query({ mode, query: normalizedQuery, getText: 1, size: 20, page } as Parameters<typeof serverClient.search.v1.query>[0]);
+    const results = normalizeSearchResults(response, normalizedQuery);
+    const resource = results.verseItems.length ? await resolveDefaultTranslation(serverClient).catch(() => null) : null;
+    if (!resource) return results;
+    const verses = await Promise.all(results.verseItems.map(async (item) => {
+      try {
+        const verse = asObject(asObject(await serverClient.raw.content.v4.versesByVerseKey({ path: { verse_key: String(item.verseKey) }, query: { fields: { textUthmani: true, textQpcHafs: true } as { textUthmani: boolean }, translations: [resource.id] } })).verse);
+        const translation = getTranslation(verse.translations, resource.id);
+        return { ...item, arabicText: qpcHafsText(verse) ?? asNullableString(verse.textUthmani ?? verse.text_uthmani) ?? item.arabicText, text: translation.text ? plainTranslation(translation.text) : undefined, translationName: translation.text ? resource.name : null };
+      } catch {
+        return item;
+      }
+    }));
+    return { ...results, verseItems: verses };
   } catch (error) {
     return {
       error:
         error instanceof Error && error.message.includes("Token request failed")
           ? "Quran search is not enabled for this API client yet. The application owner must ask Quran.Foundation to approve the search scope."
           : formatError(error),
-      navigationItems: [],
-      query: normalizedQuery,
-      verseItems: [],
+      ...empty,
     };
   }
 };
@@ -756,13 +762,14 @@ export const loadReaderData = async (
       withReaderStage(`verse page ${index + 1}`, () => serverClient.content.v4.verses.byChapter(chapterId, {
         fields: {
           [scriptField]: true,
+          ...(script === "uthmani" ? { textQpcHafs: true } : {}),
         },
         page: index + 1,
         perPage: READER_PAGE_SIZE,
         translations: translationIds,
         tafsirs: options.tafsirId ? [options.tafsirId] : undefined,
         words: Boolean(options.includeWords),
-        wordFields: options.includeWords ? { textUthmani: true, verseKey: true, location: true } : undefined,
+        wordFields: options.includeWords ? { textUthmani: true, ...(script === "uthmani" ? { textQpcHafs: true } : {}), verseKey: true, location: true } : undefined,
       })),
     ),
   );
@@ -794,7 +801,7 @@ export const loadReaderData = async (
       const tafsir = toArray(verse.tafsirs)[0];
 
       return {
-        arabicText: asString(verse[scriptField] ?? verse.textUthmani),
+        arabicText: (script === "uthmani" ? qpcHafsText(verse) : null) ?? asString(verse[scriptField] ?? verse.textUthmani),
         audioUrl: audioByVerse.get(asString(verse.verseKey)) ?? null,
         id: asString(
           verse.id ??
@@ -835,14 +842,14 @@ export const loadReaderData = async (
 export const loadMushafPage = async (session:StoredSession,pageNumber:number) => {
   const {serverClient}=await createClients(session);
   const [response,tajweedResponse,chapterResponse]=await Promise.all([
-    serverClient.content.v4.verses.byPage(pageNumber,{mushaf:1,words:true,perPage:50,fields:{codeV2:true,textUthmani:true},wordFields:{codeV2:true,textUthmani:true,verseKey:true}}),
-    serverClient.content.v4.verses.byPage(pageNumber,{mushaf:19,words:true,perPage:50,fields:{codeV2:true,textUthmani:true},wordFields:{codeV2:true,textUthmani:true,verseKey:true}}),
+    serverClient.content.v4.verses.byPage(pageNumber,{mushaf:1,words:true,perPage:50,fields:{codeV2:true,textUthmani:true,textQpcHafs:true},wordFields:{codeV2:true,textUthmani:true,verseKey:true}}),
+    serverClient.content.v4.verses.byPage(pageNumber,{mushaf:19,words:true,perPage:50,fields:{codeV2:true,textUthmani:true,textQpcHafs:true},wordFields:{codeV2:true,textUthmani:true,verseKey:true}}),
     serverClient.content.v4.chapters.list(),
   ]);
   const verses=toArray(response,["data","verses"]); const lines=new Map<number,Array<Record<string,unknown>>>(); const verseKeys:string[]=[];
   for(const verse of verses){const verseKey=asString(verse.verseKey??verse.verse_key);verseKeys.push(verseKey);for(const word of normalizeWords(verse.words)){const line=word.lineNumber??0;const items=lines.get(line)??[];items.push({...word,verseKey});lines.set(line,items)}}
   const tajweedVerses=verses.map(verse=>({
-    arabicText:asString(verse.textUthmani??verse.text_uthmani),
+    arabicText:qpcHafsText(verse)??asString(verse.textUthmani??verse.text_uthmani),
     verseKey:asString(verse.verseKey??verse.verse_key),
   }));
   const tajweedLines=new Map<number,Array<Record<string,unknown>>>();
@@ -877,19 +884,22 @@ export const loadMushafPage = async (session:StoredSession,pageNumber:number) =>
 
 export const loadStructureVerses = async (session:StoredSession,kind:"juz"|"hizb"|"rub"|"ruku"|"manzil",id:number) => {
   const {serverClient}=await createClients(session); const all:JsonObject[]=[];
-  const fetchPage=(page:number)=>{const query={page,perPage:50,mushaf:19,words:true,wordFields:{codeV2:true,pageNumber:true},fields:{textUthmani:true}};if(kind==="juz")return serverClient.content.v4.verses.byJuz(id,query);if(kind==="hizb")return serverClient.content.v4.verses.byHizb(id,query);if(kind==="rub")return serverClient.content.v4.verses.byRub(id,query);const operation=kind==="ruku"?"versesByRukuNumber":"versesByManzilNumber";const path=kind==="ruku"?{ruku_number:id}:{manzil_number:id};return serverClient.raw.content.v4[operation]({path,query})};
+  const fetchPage=(page:number)=>{const query={page,perPage:50,mushaf:19,words:true,wordFields:{codeV2:true,pageNumber:true},fields:{textUthmani:true,textQpcHafs:true}};if(kind==="juz")return serverClient.content.v4.verses.byJuz(id,query);if(kind==="hizb")return serverClient.content.v4.verses.byHizb(id,query);if(kind==="rub")return serverClient.content.v4.verses.byRub(id,query);const operation=kind==="ruku"?"versesByRukuNumber":"versesByManzilNumber";const path=kind==="ruku"?{ruku_number:id}:{manzil_number:id};return serverClient.raw.content.v4[operation]({path,query})};
   const first=await fetchPage(1);const firstChunk=toArray(first,["data","verses"]);all.push(...firstChunk);
   const responseObject=asObject(first);const dataObject=asObject(responseObject.data);const pagination=asObject(responseObject.pagination??dataObject.pagination);const reportedPages=asNullableNumber(pagination.totalPages??pagination.total_pages);
   if(reportedPages&&reportedPages>1){const remaining=await Promise.all(Array.from({length:Math.min(20,reportedPages)-1},(_,index)=>fetchPage(index+2)));all.push(...remaining.flatMap(response=>toArray(response,["data","verses"]))) }
   else if(firstChunk.length===50){for(let page=2;page<=20;page++){const chunk=toArray(await fetchPage(page),["data","verses"]);all.push(...chunk);if(chunk.length<50)break}}
-  return all.map(verse=>({arabicText:asString(verse.textUthmani??verse.text_uthmani),tajweedWords:toGlyphWords(verse.words),verseKey:asString(verse.verseKey??verse.verse_key),pageNumber:asNullableNumber(verse.pageNumber??verse.page_number)}));
+  return all.map(verse=>({arabicText:qpcHafsText(verse)??asString(verse.textUthmani??verse.text_uthmani),tajweedWords:toGlyphWords(verse.words),verseKey:asString(verse.verseKey??verse.verse_key),pageNumber:asNullableNumber(verse.pageNumber??verse.page_number)}));
 };
 
 export const loadVerseRange = async (session: StoredSession, from: string, to: string) => {
   const { serverClient } = await createClients(session);
-  const response = await serverClient.content.v4.verses.byRange(from, to, { fields: { textUthmani: true }, perPage: 50 });
-  return toArray(response, ["data", "verses"]).map((verse) => ({ arabicText: asString(verse.textUthmani ?? verse.text_uthmani), verseKey: asString(verse.verseKey ?? verse.verse_key), pageNumber: asNullableNumber(verse.pageNumber ?? verse.page_number) }));
+  const response = await serverClient.content.v4.verses.byRange(from, to, { fields: { textUthmani: true, textQpcHafs: true }, perPage: 50 });
+  return toArray(response, ["data", "verses"]).map((verse) => ({ arabicText: qpcHafsText(verse) ?? asString(verse.textUthmani ?? verse.text_uthmani), verseKey: asString(verse.verseKey ?? verse.verse_key), pageNumber: asNullableNumber(verse.pageNumber ?? verse.page_number) }));
 };
+
+export const DAILY_VERSE_MIN_WORDS = 6;
+export const isStandaloneDailyVerse = (arabicText: string) => arabicText.split(/\s+/).filter((word) => /[\u0621-\u064A\u0671]/.test(word)).length >= DAILY_VERSE_MIN_WORDS;
 
 export const loadDailyVerse = async (session: StoredSession, day: string) => {
   const { serverClient } = await createClients(session);
@@ -900,31 +910,40 @@ export const loadDailyVerse = async (session: StoredSession, day: string) => {
     verses: Number(asNullableNumber(chapter.versesCount ?? chapter.verses_count) ?? 0),
   })).filter((chapter) => chapter.id > 0 && chapter.verses > 0);
   const totalVerses = chapters.reduce((total, chapter) => total + chapter.verses, 0);
-  let ordinal = dailyIndex(day, totalVerses, "quran-verse");
-  const chapter = chapters.find((candidate) => {
-    if (ordinal < candidate.verses) return true;
-    ordinal -= candidate.verses;
-    return false;
-  });
-  if (!chapter) throw new Error("A daily Quran verse could not be selected.");
+  const keyAt = (position: number) => {
+    let ordinal = position % totalVerses;
+    const chapter = chapters.find((candidate) => {
+      if (ordinal < candidate.verses) return true;
+      ordinal -= candidate.verses;
+      return false;
+    });
+    if (!chapter) throw new Error("A daily Quran verse could not be selected.");
+    return { chapter, verseKey: `${chapter.id}:${ordinal + 1}` };
+  };
+  const start = dailyIndex(day, totalVerses, "quran-verse");
 
-  const translationsResponse = await serverClient.content.v4.resources.translations.list({ language: "en" });
-  const translations = toArray(translationsResponse, ["data", "translations"]);
-  const configuredIds = getConfig().translationIds;
-  const resource = translations.find((item) => configuredIds.includes(Number(asNullableNumber(item.id) ?? 0))) ?? translations[0];
-  const translationId = Number(asNullableNumber(resource?.id) ?? 0);
-  if (!translationId) throw new Error("A verified English translation is unavailable.");
+  const resource = await resolveDefaultTranslation(serverClient);
+  if (!resource) throw new Error("A verified English translation is unavailable.");
+  const translationId = resource.id;
 
-  const verseKey = `${chapter.id}:${ordinal + 1}`;
-  const response = await serverClient.raw.content.v4.versesByVerseKey({ path: { verse_key: verseKey }, query: { fields: { textUthmani: true }, translations: [translationId] } });
-  const verse = asObject(asObject(response).verse ?? response);
-  const translation = getTranslation(verse.translations, translationId);
-  const arabicText = asString(verse.textUthmani ?? verse.text_uthmani);
-  if (!arabicText || !translation.text) throw new Error("The sourced daily Quran verse is incomplete.");
+  // A one- or two-word Ayah (e.g. 69:1) reads as a fragment out of context, so the selection steps forward
+  // to the next Ayah long enough to stand alone. The order is fixed; nothing is chosen by meaning.
+  let selected: { arabicText: string; chapter: (typeof chapters)[number]; translation: ReturnType<typeof getTranslation>; verseKey: string } | null = null;
+  for (let step = 0; step < 12 && !selected; step += 1) {
+    const { chapter, verseKey } = keyAt(start + step);
+    const response = await serverClient.raw.content.v4.versesByVerseKey({ path: { verse_key: verseKey }, query: { fields: { textUthmani: true, textQpcHafs: true } as { textUthmani: boolean }, translations: [translationId] } });
+    const verse = asObject(asObject(response).verse ?? response);
+    const translation = getTranslation(verse.translations, translationId);
+    const uthmani = asString(verse.textUthmani ?? verse.text_uthmani);
+    const arabicText = qpcHafsText(verse) ?? uthmani;
+    if (arabicText && translation.text && (isStandaloneDailyVerse(uthmani) || step === 11)) selected = { arabicText, chapter, translation, verseKey };
+  }
+  if (!selected) throw new Error("The sourced daily Quran verse is incomplete.");
+  const { arabicText, chapter, translation, verseKey } = selected;
   return {
     arabicText,
     chapterName: chapter.name,
-    translationName: translation.name ?? asString(resource.name, "Verified English translation"),
+    translationName: translation.name ?? resource.name,
     translationText: translation.text,
     verseKey,
   };

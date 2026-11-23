@@ -28,7 +28,6 @@ import type {
   ReaderPayload,
   QuranScript,
   RecitationResource,
-  SearchItem,
   TajweedGlyphPayload,
   TajweedGlyphWord,
   TafsirResource,
@@ -37,6 +36,7 @@ import type {
 import { hasLocalBookmark, readLocalBookmarks, toggleLocalBookmark } from "@/lib/local-bookmarks";
 import { publicFeatures } from "@/lib/features";
 import { readMushafPage, readReadingMode, resumeHref, saveReadingMode, type ReadingMode } from "@/lib/reading-mode";
+import QuranSearch from "./quran-search";
 import styles from "./app-shell.module.css";
 
 type ChaptersPayload = { error: string | null; items: ContentPreviewItem[] };
@@ -46,12 +46,6 @@ type ChapterRecitersPayload = { error: string | null; items: ChapterReciterResou
 type TafsirsPayload = { error: string | null; items: TafsirResource[] };
 type LastRead = { chapterId: number; chapterName: string; verseNumber: number };
 type QuranBrowseMode = "surah" | "juz" | "revelation";
-type SearchPayload = {
-  error: string | null;
-  navigationItems: SearchItem[];
-  query: string;
-  verseItems: SearchItem[];
-};
 
 export const preferredTranslation = (items: TranslationResource[]) =>
   items.find((item) => /\b(saheeh|sahih) international\b/i.test(item.name));
@@ -126,8 +120,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const restoreFocusRef = useRef<HTMLElement | null>(null);
   const playbackTimerRef = useRef<number | null>(null);
   const completedPlayRef = useRef(1);
-  const [searchInput, setSearchInput] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
   const [moreOpen, setMoreOpen] = useState(false);
   const [wordMode, setWordMode] = useState(false);
   const [tafsirOpen, setTafsirOpen] = useState(false);
@@ -238,8 +230,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
     const id = window.setTimeout(() => void preload(chapterInfoKey, fetchJson), 1500);
     return () => window.clearTimeout(id);
   }, [chapterInfoKey, readerReadyForWarmup]);
-  const { data: searchResults, error: searchError, isLoading: searchLoading } =
-    useSWR<SearchPayload>(route === "search" && searchQuery ? `/api/search?query=${encodeURIComponent(searchQuery)}` : null, fetchJson, { keepPreviousData: true, revalidateOnFocus: false });
 
   const translationGroups = useMemo(() => {
     const groups = new Map<string, TranslationResource[]>();
@@ -571,10 +561,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
     const verse = Number(data.get("verse"));
     if (reader && verse >= 1 && verse <= (reader.chapter.versesCount ?? 0)) router.push(`/quran/${reader.chapter.id}/${verse}`);
   };
-  const search = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setSearchQuery(searchInput.trim());
-  };
 
   const renderHome = () => <HomePage lastRead={lastRead} resumeHref={resumeHref(readingMode, lastRead, mushafPage)} resumeInMushaf={readingMode === "mushaf"} chapters={chapters?.items} warmReaderProps={warmReaderProps}/>;
 
@@ -648,13 +634,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
     </main>
   </>;
 
-  const renderSearch = () => <main className={styles.main}>
-    <header className={styles.pageHeader}><p className={styles.kicker}>Quran search</p><h1>Find a verse</h1><p>Search the Quran and open results in reading context.</p></header>
-    <form className={styles.searchForm} role="search" onSubmit={search}><label htmlFor="quran-search">Search the Quran</label><div><input id="quran-search" type="search" value={searchInput} onChange={event => setSearchInput(event.target.value)} placeholder="Try mercy, guidance, or an Arabic phrase"/><button disabled={!searchInput.trim()}>Search</button></div></form>
-    {searchLoading ? <div className={styles.searchLoading} aria-live="polite">Searching…</div> : null}
-    {searchError || searchResults?.error ? <ErrorState message={messageOf(searchError ?? { message: searchResults?.error })}/> : null}
-    {searchResults && !searchResults.error ? <section className={styles.results} aria-live="polite"><p className={styles.label}>Results for “{searchResults.query}”</p>{searchResults.navigationItems.map((item,index) => <Link className={styles.result} href={item.readerUrl ?? "/quran"} key={`navigation-${index}`}><div><h2>{item.label}</h2><p>{item.subtitle}</p></div><b>→</b></Link>)}{searchResults.verseItems.map((item,index) => <Link className={styles.result} href={item.readerUrl ?? "/quran"} key={`${item.verseKey}-${index}`}><div><span>{item.verseKey}</span>{item.arabicText ? <p className={styles.resultArabic} lang="ar" dir="rtl" translate="no">{item.arabicText}</p> : null}<p translate="no">{item.text}</p></div><b>→</b></Link>)}{searchResults.navigationItems.length + searchResults.verseItems.length === 0 ? <p className={styles.empty}>No results were found. Try another word or phrase.</p> : null}</section> : null}
-  </main>;
+  const renderSearch = () => <QuranSearch/>;
 
   return <div className={styles.app}>
     <header className={styles.topbar}><Link className={styles.brand} href="/"><span>ف</span><div><strong>Al-Furqan</strong><small>الفرقان</small></div></Link><nav><Link className={route === "quran" ? styles.active : ""} href="/quran">Quran</Link>{publicFeatures.learn ? <Link className={route === "learn" ? styles.active : ""} href="/learn">Learn</Link> : null}<Link className={route === "sunnah" ? styles.active : ""} href="/sunnah">Sunnah</Link>{publicFeatures.salahTimes ? <Link className={route === "salah" ? styles.active : ""} href="/salah-times">Salah Times</Link> : null}{publicFeatures.dua ? <Link className={route === "dua" ? styles.active : ""} href="/dua">Dua</Link> : null}{publicFeatures.qibla ? <Link className={route === "qibla" ? styles.active : ""} href="/qibla">Qibla</Link> : null}{publicFeatures.masjidFinder ? <Link className={route === "masjid" ? styles.active : ""} href="/masjid-finder">Masjid Finder</Link> : null}</nav><div className={styles.actions}><Link className={styles.iconAction} aria-label="Open saved library" title="Saved Library" href="/library"><Icon name="saved"/></Link><Link className={`${styles.searchAction} ${route === "search" ? styles.activeAction : ""}`} href="/search"><Icon name="search"/><span>Search</span></Link><button aria-label="Toggle reading theme" onClick={() => changeTheme(theme === "light" ? "dark" : theme === "dark" ? "sepia" : "light")}>◐</button><button ref={settingsTriggerRef} aria-label="Open reading settings" onClick={() => setSettingsOpen(true)}>Aa</button></div></header>

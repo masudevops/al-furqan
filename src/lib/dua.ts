@@ -11,3 +11,12 @@ export async function fetchDuaPath(path:string):Promise<unknown>{
   if(!response.ok||payload?.statusCode!==200) throw new Error("Dua source unavailable");
   return payload.data;
 }
+
+// Dua titles across every category. The catalogue is small (about 100 entries) and each list is cached for a day.
+export async function searchDuaTitles(query:string):Promise<DuaSummary[]>{
+  const words=query.toLowerCase().split(/\s+/).filter(Boolean);
+  if(!words.length)return [];
+  const categories=(await fetchDuaPath("/categories")) as DuaCategory[];
+  const lists=await Promise.all(categories.map((category)=>fetchDuaPath(`/categories/${category.slug}`) as Promise<DuaSummary[]>));
+  return lists.flat().filter((dua)=>{const text=`${dua.title} ${dua.categoryName}`.toLowerCase();return words.every((word)=>text.includes(word));});
+}

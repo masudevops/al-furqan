@@ -118,3 +118,12 @@ export async function loadHadithBook(collection: string, bookNumber: number, req
   const page = Math.min(pages, Math.max(1, Math.floor(requestedPage)));
   return { book, items: records.slice((page - 1) * BOOK_PAGE_SIZE, page * BOOK_PAGE_SIZE), page, pages, total: records.length };
 }
+
+// Search across every enabled collection at once (the provider searches Arabic and English text).
+export async function searchAllHadith(query: string): Promise<{ items: HadithRecord[]; total: number }> {
+  const needle = query.trim().slice(0, 200);
+  if (!needle) return { items: [], total: 0 };
+  const data = object((await fetchJson(`/api/hadith/search?q=${encodeURIComponent(needle)}&limit=30`)).data);
+  const items = array(data.hadiths).map(normalizeRecord).filter((item): item is HadithRecord => Boolean(item));
+  return { items, total: items.length };
+}

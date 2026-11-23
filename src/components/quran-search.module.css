@@ -36,3 +36,13 @@
 @keyframes shimmer{to{background-position:-200% 0}}
 @media(max-width:760px){.arabic{font-size:23px}.translation{font-size:15px}.surah>span{flex-direction:column;gap:2px}}
 @media(prefers-reduced-motion:reduce){.loading i{animation:none}.key svg{transition:none}}
+.scopes{display:flex;gap:4px;margin:18px 0 4px;padding:4px;border:1px solid var(--line);border-radius:999px;background:var(--card);width:fit-content;max-width:100%;overflow-x:auto}
+.scopes button{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 16px;border:0;border-radius:999px;background:transparent;color:var(--muted);font:600 14px var(--font-ui);white-space:nowrap;cursor:pointer}
+.scopes button span{font-size:12px;font-weight:600;opacity:.8;font-variant-numeric:tabular-nums}
+.scopes button[aria-selected="true"]{background:var(--green);color:var(--on-green)}
+.grade{margin-left:8px;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--muted);font:600 11px var(--font-ui)}
+.clamp{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden}
+.duaResult{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.duaResult strong{display:block;font:500 18px/1.3 var(--font-serif)}
+.duaResult small{color:var(--muted);font-size:12px}
+.duaResult>svg{width:16px;height:16px;color:var(--muted)}

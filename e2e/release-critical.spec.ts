@@ -44,14 +44,18 @@ test("Quran search displays match context and keeps the query in the address", a
   await page.route("**/api/search?query=mercy*", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ error: null, query: "mercy", page: 1, pages: 1, total: 1, navigationItems: [], verseItems: [{ verseKey: "1:1", readerUrl: "/quran/1/1", text: "In the Name of Allah—the Most Compassionate, Most Merciful.", translationName: "Test translation" }] }) }));
   await page.goto("/search");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "sepia");
-  await page.getByRole("searchbox", { name: "Search the Quran" }).fill("mercy");
+  await page.route("**/api/hadith/search?query=mercy", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ error: null, total: 1, items: [{ arabic: "نص", authenticityContext: "Sahih", collectionId: "bukhari", collectionName: "Sahih al-Bukhari", grades: [{ grade: "Sahih" }], hadithNumber: 5, text: "A narration about mercy." }] }) }));
+  await page.route("**/api/dua/search?query=mercy", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ error: null, total: 0, items: [] }) }));
+  await page.getByRole("searchbox", { name: "Search the Quran, Hadith and Dua" }).fill("mercy");
   await page.getByRole("button", { name: "Search", exact: true }).click();
   await expect(page.getByText(/Most Compassionate/)).toBeVisible();
   await expect(page).toHaveURL(/\/search\?q=mercy$/);
   // Reloading the shared address runs the same search again.
   await page.reload();
-  await expect(page.getByRole("searchbox", { name: "Search the Quran" })).toHaveValue("mercy");
+  await expect(page.getByRole("searchbox", { name: "Search the Quran, Hadith and Dua" })).toHaveValue("mercy");
   await expect(page.getByText(/Most Compassionate/)).toBeVisible();
+  await page.getByRole("tab", { name: /Hadith/ }).click();
+  await expect(page.getByText("A narration about mercy.")).toBeVisible();
 });
 
 test("invalid structural routes return a real 404", async ({ page }) => {

@@ -1,7 +1,7 @@
-# Learn — Noorani Qaidah (draft, behind a feature flag)
+# Learn — Noorani Qaidah (public preview)
 
-**Status:** Draft preview. Off in production.  
-**Flag:** `NEXT_PUBLIC_FEATURE_LEARN` (default `false`). When off, `/learn`, `/learn/qaidah/*` and `/api/learn/words` return 404 and no navigation links appear. Pages are `noindex` and are not in the sitemap even when on.
+**Status:** Public preview, switched on in production at the owner's request on 2026-11-23. Lessons are still drafts: every page shows the preview notice and says teaching notes, recordings and the lesson plan await review by a qualified teacher.  
+**Flag:** `NEXT_PUBLIC_FEATURE_LEARN` (default `true`; set to `false` and redeploy to take the section down). When off, `/learn`, `/learn/qaidah/*` and `/api/learn/words` return 404 and no navigation links appear. Pages are `noindex` and are not in the sitemap even when on.
 
 ## What exists
 
@@ -40,12 +40,12 @@
 
 **Not included, by design (project rule: no AI-written religious or linguistic content):** teaching names (e.g. "Alif", "Ba"), explanations of how each mark is pronounced, makharij, tajweed rules, and reviewed pronunciation audio (the letter recordings below are unreviewed). Days 8–30 teach recognition only — finding marks and letters in real recited words — and every lesson says teaching notes await review.
 
-## Before publishing
+## Before removing the preview label
 
 1. A qualified teacher reviews and supplies: the lesson plan for all 30 days (currently a placeholder order), teaching names and short explanations for letters and marks, and sign-off per lesson (`QaidahLesson.review.reviewer`).
 2. Letter and syllable recordings by a qualified reciter, with written permission, registered in `DATA-SOURCES.md`.
 3. Open questions for the reviewer: whether words starting with hamza on alef (أ إ) or hamzat al-wasl (ٱ) should count as "begins with alef" (currently they do), and the grouping of letters by day.
-4. Set each lesson's `status` to `"published"`, then turn on `NEXT_PUBLIC_FEATURE_LEARN`.
+4. Set each lesson's `status` to `"published"`, then remove the preview notice and allow indexing.
 
 ## Letter pronunciation audio
 

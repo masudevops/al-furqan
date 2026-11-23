@@ -9,7 +9,7 @@ describe("public feature flags", () => {
       dua: true,
       qibla: false,
       masjidFinder: true,
-      learn: false,
+      learn: true,
     });
   });
 
@@ -19,13 +19,13 @@ describe("public feature flags", () => {
       NEXT_PUBLIC_FEATURE_DUA: "false",
       NEXT_PUBLIC_FEATURE_QIBLA: "true",
       NEXT_PUBLIC_FEATURE_MASJID_FINDER: "false",
-      NEXT_PUBLIC_FEATURE_LEARN: "true",
+      NEXT_PUBLIC_FEATURE_LEARN: "False",
     })).toEqual({
       salahTimes: false,
       dua: false,
       qibla: true,
       masjidFinder: false,
-      learn: true,
+      learn: false,
     });
   });
 });

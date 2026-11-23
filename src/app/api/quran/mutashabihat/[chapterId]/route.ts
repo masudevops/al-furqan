@@ -10,6 +10,8 @@ export async function GET(_request: Request, { params }: { params: { chapterId: 
     const fetchPage = async (page: number) => {
       const response = await fetch(`https://ummahapi.com/api/quran/mutashabihat/${chapterId}?page=${page}&limit=50`, { next: { revalidate: 86_400 } });
       const payload = await response.json();
+      // The source answers 404 for a Surah with no similar Ayahs (e.g. 112); that is an empty result, not an outage.
+      if (response.status === 404 && page === 1) return { total_pages: 1, verses: [] };
       if (!response.ok || payload?.success !== true || !Array.isArray(payload?.data?.verses)) throw new Error("Mutashabihat source failed");
       return payload.data;
     };

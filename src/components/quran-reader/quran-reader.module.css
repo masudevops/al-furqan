@@ -174,3 +174,7 @@ button.word:hover{background:var(--soft)}
 }
 @media(max-width:360px){.studyRow svg{display:none}}
 @media(prefers-reduced-motion:reduce){.progress{transition:none}.skeleton i,.infoSkeleton i{animation:none}}
+.concealed{position:relative}
+.concealed>div{filter:blur(9px);user-select:none;pointer-events:none}
+.revealButton{position:absolute;inset:50% auto auto 50%;transform:translate(-50%,-50%);min-height:40px;padding:0 18px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--green);font:650 13px var(--font-ui);box-shadow:0 4px 14px #0000001a;cursor:pointer}
+@media(prefers-reduced-motion:no-preference){.concealed>div{transition:filter .2s ease}}

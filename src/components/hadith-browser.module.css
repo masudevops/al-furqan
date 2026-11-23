@@ -24,6 +24,41 @@
 .error{margin:6px 4px;color:#a1433a;font-size:13px}
 .summary{margin:10px 4px 0;color:var(--muted);font-size:13px}
 
+/* Books / All Hadith switch */
+.views{display:inline-flex;gap:4px;margin:14px 0 4px;padding:4px;border:1px solid var(--line);border-radius:var(--radius-pill);background:var(--card)}
+.views button{min-height:36px;padding:0 18px;border:0;border-radius:var(--radius-pill);background:transparent;color:var(--muted);font:600 14px var(--font-ui);cursor:pointer}
+.views button:hover{color:var(--ink)}
+.views button[aria-pressed="true"]{background:var(--green);color:var(--on-green)}
+
+/* Books: the collection's own divisions */
+.booksHead{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin:16px 0 10px}
+.booksTitle{margin:0;font:500 20px/1.2 var(--font-serif);color:var(--ink)}
+.filter{display:flex;align-items:center;gap:8px;flex:0 1 280px;min-height:40px;padding:0 14px;border:1px solid var(--line);border-radius:var(--radius-pill);background:var(--card)}
+.filter:focus-within{border-color:var(--green)}
+.filter svg{width:16px;height:16px;flex:none;color:var(--muted)}
+.filter input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:400 14px var(--font-ui);outline:none}
+.books{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 24px;margin:0;padding:0;list-style:none}
+.books li{border-bottom:1px solid var(--line)}
+.books a{display:grid;grid-template-columns:40px minmax(0,1fr) 16px;align-items:center;gap:14px;min-height:64px;padding:10px 6px;border-radius:10px;color:var(--ink)}
+.books a:hover{background:var(--soft)}
+.books a:hover strong{color:var(--green)}
+.books a>svg{width:16px;height:16px;color:var(--muted)}
+.bookNumber{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--soft);color:var(--green);font:650 13px var(--font-ui);font-variant-numeric:tabular-nums}
+.bookText{display:grid;gap:2px;min-width:0}
+.bookText strong{font:500 16px/1.3 var(--font-serif)}
+.bookText span{color:var(--muted);font-size:12px}
+.grade{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:12px}
+.gradeList{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0;padding:10px 0 0;border-top:1px dashed var(--line);list-style:none;color:var(--muted);font-size:12px}
+.gradeList strong{color:var(--ink);font-weight:600}
+.bookNav{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:22px}
+.bookNav a{display:grid;gap:4px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--radius);background:var(--card);color:var(--ink)}
+.bookNav a:hover{border-color:var(--green)}
+.bookNav a span{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;font-weight:600}
+.bookNav a span svg{width:14px;height:14px}
+.bookNav strong{font:500 16px/1.3 var(--font-serif)}
+.bookNext{text-align:right}
+.bookNext span{justify-content:flex-end}
+
 /* List items: hairline-separated, like Ayahs */
 .list{margin-top:8px}
 .list[aria-busy="true"]{opacity:.6;transition:opacity .2s ease}
@@ -82,6 +117,9 @@
 .jump{flex:1}
 .jump input{flex:1;width:auto}
 .wideOnly{display:none!important}
+.books{grid-template-columns:minmax(0,1fr)}
+.filter{flex-basis:100%}
+.bookNav{grid-template-columns:minmax(0,1fr)}
 .arabic{font-size:20px}
 .english{font-size:15px}
 .detail{padding:18px 16px}

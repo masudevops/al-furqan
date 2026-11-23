@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { loadContentPreviewData } from "@/lib/data";
 import { ummahHadithAdapter } from "@/lib/hadith";
+import { hadithBooks } from "@/lib/hadith-books";
 import { createPublicContentSession } from "@/lib/public-content";
 import { publicFeatures } from "@/lib/features";
 
@@ -24,5 +25,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...core.map((path) => ({ url: `${BASE}${path}`, lastModified: now, changeFrequency: path === "" ? "daily" as const : "weekly" as const, priority: path === "" ? 1 : .8 })),
     ...chapters.items.map((chapter) => ({ url: `${BASE}/quran/${chapter.id}`, lastModified: now, changeFrequency: "monthly" as const, priority: .9 })),
     ...collections.map((collection) => ({ url: `${BASE}/sunnah/${collection.id}`, lastModified: now, changeFrequency: "weekly" as const, priority: .7 })),
+    ...collections.flatMap((collection) => (hadithBooks(collection.id)?.books ?? []).map((book) => ({ url: `${BASE}/sunnah/${collection.id}/book/${book.number}`, lastModified: now, changeFrequency: "monthly" as const, priority: .6 }))),
   ];
 }

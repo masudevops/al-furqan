@@ -8,13 +8,6 @@ import { COURSE_DAYS, QAIDAH_LESSONS } from "@/lib/learn/curriculum";
 import { emptyProgress, nextDay, readProgress, type LearnProgress } from "@/lib/learn/progress";
 import styles from "./learn.module.css";
 
-export function DraftNotice() {
-  return <aside className={styles.draft} aria-label="Preview notice">
-    <Icon name="info" />
-    <p><strong>Preview — not yet published.</strong> Letters and their forms come from the Unicode Standard, and practice uses real Quran words with recitation from Quran.Foundation. Letter recordings come from an MIT-licensed set by an unidentified speaker. Teaching notes, the recordings and the lesson plan are all awaiting review by a qualified teacher.</p>
-  </aside>;
-}
-
 export default function LearnHome() {
   const [progress, setProgress] = useState<LearnProgress>(emptyProgress);
   useEffect(() => setProgress(readProgress()), []);
@@ -24,7 +17,6 @@ export default function LearnHome() {
 
   return <Page narrow>
     <PageHeader kicker="Learn" kickerIcon="learn" title="Learn to read the Quran" description="Start with the Arabic letters, one short lesson a day, practising on real words from the Quran." />
-    <DraftNotice />
     <section className={styles.course} aria-labelledby="course-title">
       <div className={styles.courseHead}>
         <div><p className={styles.courseKicker}>Course</p><h2 id="course-title">Noorani Qaidah</h2><p className={styles.courseMeta}>{COURSE_DAYS} days · letters, forms, marks, listening and reading along</p></div>

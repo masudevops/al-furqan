@@ -40,8 +40,6 @@
 .letterPlay{display:grid;place-items:center;width:48px;height:48px;padding:0;border:0;border-radius:50%;background:var(--green);color:var(--on-green);cursor:pointer}
 .letterPlay:hover{background:color-mix(in srgb,var(--green) 88%,var(--ink))}
 .letterPlay svg{width:20px;height:20px}
-.recordingNote{margin:-6px 0 0;color:var(--muted);font-size:11px;line-height:1.4}
-.sources a{color:var(--green);text-decoration:underline;text-underline-offset:2px}
 .bigLetter{color:var(--green);font:400 64px/1.1 "Geeza Pro","Noto Naskh Arabic","Amiri","Times New Roman",serif}
 .unicode{display:grid;justify-items:end;color:var(--muted);font:600 12px var(--font-ui);letter-spacing:.06em}
 .unicode small{font:500 11px var(--font-mono);letter-spacing:0}
@@ -93,7 +91,6 @@
 .finishIcon{display:grid;place-items:center;width:56px;height:56px;margin-bottom:12px;border-radius:50%;background:var(--green);color:var(--on-green)}
 .finishIcon svg{width:26px;height:26px;stroke-width:2.6}
 .finish .stepActions{justify-content:center}
-.sources{margin:26px 0 0;padding-top:14px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;line-height:1.5}
 
 @media(max-width:620px){
 .steps{grid-template-columns:repeat(2,1fr)}

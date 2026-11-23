@@ -48,3 +48,8 @@
 .readerMain{width:min(960px,calc(100% - 40px));padding-top:22px}.readerMain>.chapterInfo,.memorizationPanel{margin-top:14px;border:1px solid var(--line);border-radius:14px;overflow:hidden;scroll-margin-top:150px}.memorizationPanel>.memorizationTools{border:0}.memorizationTools button{color:var(--on-green);border-radius:8px}.audioPlayer{border-radius:16px}
 @media(max-width:760px){.readerMain{width:100%;padding-top:14px}.readerMain>.chapterInfo,.memorizationPanel{margin-inline:14px}}.audioPlayer{grid-template-columns:auto minmax(200px,1fr) auto auto auto}.audioSteps{display:flex;gap:2px}.audioPlayer .audioSteps button{width:36px;height:36px;border-radius:50%;font-size:22px;line-height:1;cursor:pointer}.audioPlayer .audioSteps button:hover:not(:disabled){background:var(--soft);color:var(--green)}.audioPlayer .audioSteps button:disabled{opacity:.35;cursor:default}
 @media(max-width:900px){.audioPlayer{grid-template-columns:minmax(0,1fr) auto auto auto}}
+
+.playerReciter{max-width:220px;min-height:34px;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);font:500 13px var(--font-ui)}
+@media(max-width:760px){.playerReciter{max-width:140px}}
+.playerMeta{display:grid;gap:6px;justify-items:start;min-width:0}
+@media(max-width:760px){.audioPlayer{grid-template-columns:minmax(0,1fr) auto auto;gap:8px 10px;padding:10px 12px}.playerMeta{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%}.audioPlayer .audioSteps{grid-column:auto;display:flex}.audioPlayer .followPlayback{display:none}}

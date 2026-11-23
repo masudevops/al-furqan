@@ -86,7 +86,9 @@ button.toolbarButton{padding:0}
 .qcfTajweed{line-height:2.1;word-spacing:0}
 .qcfWord{display:inline;font-weight:400}
 .wordGrid{display:flex;direction:rtl;flex-wrap:wrap;gap:18px 14px;margin:18px 0 6px}
-.wordGrid>span{display:grid;gap:3px;min-width:54px;padding:6px 4px;border-radius:8px;text-align:center}
+.word{display:grid;gap:3px;min-width:54px;padding:6px 4px;border:0;border-radius:8px;background:transparent;color:inherit;font:inherit;text-align:center}
+button.word{cursor:pointer}
+button.word:hover{background:var(--soft)}
 .wordGrid b{color:var(--ink);font:400 clamp(26px,calc(var(--arabic-size) * .8),46px)/1.6 Georgia,serif}
 .wordGrid.quranFont b{font-family:inherit;font-weight:400}
 .wordGrid small,.wordGrid em{color:var(--muted);font-family:var(--font-ui);font-size:11px;font-style:normal}

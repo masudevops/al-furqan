@@ -13,7 +13,7 @@ import { SHORT_VOWELS, firstLetterVowel, hasMark, markById, markDisplay, type Ma
 import { completeDay, emptyProgress, readProgress, recordAnswer, reviewPriority, writeProgress, type LearnProgress } from "@/lib/learn/progress";
 import { firstLetterQuestions, firstVowelQuestions, lettersWithForm, listenQuestions, markQuestions, recognitionQuestions, seededRandom, shuffle, wordKey, wordQuestions, wordsByLength, wordsStartingWith, type PracticeWord, type Question } from "@/lib/learn/quiz";
 import type { PracticeWordPayload } from "@/lib/types";
-import { useWordAudio } from "./use-word-audio";
+import { useWordAudio } from "@/components/use-word-audio";
 import styles from "./learn.module.css";
 
 type Audio = ReturnType<typeof useWordAudio>;

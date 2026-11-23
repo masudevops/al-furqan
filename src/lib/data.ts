@@ -246,12 +246,19 @@ const plainSourceText = (value: unknown): string | null => {
 export const qpcHafsText = (item: Record<string, unknown>) =>
   asNullableString(item.textQpcHafs ?? item.text_qpc_hafs)?.replace(/\s*[\u0660-\u0669\u06F0-\u06F9]+\s*$/, "") || null;
 
+// Word recitations are served from Quran.Foundation's audio host; the API gives paths relative to it.
+const WORD_AUDIO_BASE = "https://verses.quran.foundation/";
+const absoluteWordAudio = (value: unknown) => {
+  const audio = asNullableString(value);
+  return audio ? (audio.startsWith("http") ? audio : `${WORD_AUDIO_BASE}${audio.replace(/^\//, "")}`) : null;
+};
+
 const normalizeWords = (value: unknown) => toArray(value).map((word) => {
   const translation = asObject(word.translation);
   const transliteration = asObject(word.transliteration);
   return {
     arabicText: qpcHafsText(word) ?? asString(word.textUthmani ?? word.text),
-    audioUrl: asNullableString(word.audioUrl ?? word.audio_url),
+    audioUrl: absoluteWordAudio(word.audioUrl ?? word.audio_url),
     charType: asString(word.charTypeName ?? word.char_type_name, "word"),
     lineNumber: asNullableNumber(word.lineNumber ?? word.line_number),
     position: Number(asNullableNumber(word.position) ?? 0),
@@ -1038,7 +1045,6 @@ export const loadChapterTajweedGlyphs = async (session: StoredSession, chapterId
 
 // Short Surahs whose words give every letter real examples for Learn practice.
 export const PRACTICE_CHAPTERS = [1, 93, 94, 95, 97, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114] as const;
-const WORD_AUDIO_BASE = "https://verses.quran.foundation/";
 
 // Surahs read word by word, in order, on the last Learn days.
 export const READ_ALONG_CHAPTERS = [1, 108, 112, 114] as const;
@@ -1055,10 +1061,9 @@ export const parsePracticeWords = (responses: unknown[], chapterIds: readonly nu
         const text = asString(word.textUthmani ?? word.text_uthmani ?? word.text);
         const charType = asString(word.charTypeName ?? word.char_type_name, "word");
         if (charType !== "word" || !text) continue;
-        const audio = asNullableString(word.audioUrl ?? word.audio_url);
         const item = {
           text,
-          audioUrl: audio ? (audio.startsWith("http") ? audio : `${WORD_AUDIO_BASE}${audio.replace(/^\//, "")}`) : null,
+          audioUrl: absoluteWordAudio(word.audioUrl ?? word.audio_url),
           verseKey,
           position: Number(asNullableNumber(word.position) ?? 0),
           transliteration: asNullableString(asObject(word.transliteration).text),

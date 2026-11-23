@@ -38,7 +38,7 @@ Production: [al-furqan.app](https://al-furqan.app)
 - Light, dark, and sepia themes; responsive desktop/mobile navigation; keyboard and reduced-motion considerations.
 - Server-rendered Quran and Sunnah content, route metadata, canonical URLs, structured data, social cards, favicon/app icons, robots.txt, and a dynamic sitemap.
 - Google Search Console domain verification and sitemap submission completed by the owner.
-- Typed public feature flags for Salah Times, Dua, Qibla, and Masjid Finder.
+- Typed public feature flags for Salah Times, Dua, Qibla, Masjid Finder, and Learn.
 - Provider adapters and data transformations separated from UI components where practical for a future native client.
 
 ## End-to-end architecture

@@ -20,8 +20,8 @@ export function resolvePublicFeatures(environment: FeatureEnvironment): Record<P
     dua: enabled(environment.NEXT_PUBLIC_FEATURE_DUA, true),
     qibla: enabled(environment.NEXT_PUBLIC_FEATURE_QIBLA, false),
     masjidFinder: enabled(environment.NEXT_PUBLIC_FEATURE_MASJID_FINDER, true),
-    // Learn (Noorani Qaidah) stays off until its lessons pass qualified review; see docs/LEARN-QAIDAH.md.
-    learn: enabled(environment.NEXT_PUBLIC_FEATURE_LEARN, false),
+    // Learn (Noorani Qaidah) is a public preview; every page says its lessons await qualified review. See docs/LEARN-QAIDAH.md.
+    learn: enabled(environment.NEXT_PUBLIC_FEATURE_LEARN, true),
   };
 }
 

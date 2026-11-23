@@ -30,6 +30,7 @@ Production: [al-furqan.app](https://al-furqan.app)
 - Hisnul Muslim Dua browsing by category with Arabic, transliteration, translation, references, bookmarks, and source-matched audio where available.
 - Masjid Finder combining nearby OpenStreetMap and Takbeer Time listings with deduplication, distance, available contact details, verified congregation times, and external map directions.
 - Ramadan timetable and locally adjustable calculated Hijri display date.
+- Prayer reminders without a server: "Add to calendar" downloads the next 30 days of prayer times as an `.ics` file with an alert at each prayer (`src/lib/prayer-calendar.ts`).
 - Qibla bearing and compass implementation retained behind a public feature flag; it is disabled by default until mobile-browser orientation behavior is validated across supported devices.
 
 ### Product foundations
@@ -39,6 +40,7 @@ Production: [al-furqan.app](https://al-furqan.app)
 - Server-rendered Quran and Sunnah content, route metadata, canonical URLs, structured data, social cards, favicon/app icons, robots.txt, and a dynamic sitemap.
 - Google Search Console domain verification and sitemap submission completed by the owner.
 - Typed public feature flags for Salah Times, Dua, Qibla, Masjid Finder, and Learn.
+- Installable web app: manifest with shortcuts, a service worker (`public/sw.js`) that caches only hashed build assets and serves a self-contained offline page. No Quran or API content is stored offline (Quran.Foundation limits caching to one week).
 - Provider adapters and data transformations separated from UI components where practical for a future native client.
 
 ## End-to-end architecture

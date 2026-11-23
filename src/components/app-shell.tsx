@@ -15,6 +15,7 @@ import ReaderSettings, { type Theme } from "@/components/quran-reader/reader-set
 import SurahHeader from "@/components/quran-reader/surah-header";
 import VerseCard, { type VerseActions, type WordDisplay } from "@/components/quran-reader/verse-card";
 import { useWordAudio } from "@/components/use-word-audio";
+import { registerServiceWorker } from "@/components/install-app";
 import readerStyles from "@/components/quran-reader/quran-reader.module.css";
 import {
   normalizeAyahRange,
@@ -255,6 +256,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
     setFollowRecitation(localStorage.getItem("af-follow-recitation") !== "false");
     setReadingMode(readReadingMode());
     setMushafPage(readMushafPage());
+    registerServiceWorker();
     setTajweedEnabled(localStorage.getItem("af-tajweed") !== "false");
     setWordMode(localStorage.getItem("af-word-mode") === "true");
     setWordDisplay({ meaning: localStorage.getItem("af-word-meaning") !== "false", transliteration: localStorage.getItem("af-word-transliteration") !== "false" });

@@ -48,7 +48,9 @@ test("Quran search displays match context and keeps the query in the address", a
   await page.getByRole("button", { name: "Search", exact: true }).click();
   await expect(page.getByText(/Most Compassionate/)).toBeVisible();
   await expect(page).toHaveURL(/\/search\?q=mercy$/);
-  await page.goto("/search?q=mercy");
+  // Reloading the shared address runs the same search again.
+  await page.reload();
+  await expect(page.getByRole("searchbox", { name: "Search the Quran" })).toHaveValue("mercy");
   await expect(page.getByText(/Most Compassionate/)).toBeVisible();
 });
 

@@ -7,6 +7,7 @@ import type { ReadingMode } from "@/lib/reading-mode";
 import type { QuranScript, RecitationResource, ReaderPayload, TafsirResource, TranslationResource } from "@/lib/types";
 import { ReaderIcon, type ReaderIconName } from "./icons";
 import type { WordDisplay } from "./verse-card";
+import { useInstallApp } from "@/components/install-app";
 import styles from "./reader-settings.module.css";
 
 export type Theme = "light" | "dark" | "sepia";
@@ -65,6 +66,17 @@ type ReaderSettingsProps = {
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
   return <section className={styles.section} aria-labelledby={id}><h3 id={id}>{title}</h3><div className={styles.card}>{children}</div></section>;
+}
+
+function InstallSection() {
+  const { state, install } = useInstallApp();
+  if (state === "unknown" || state === "unavailable") return null;
+  return <Section title="App">
+    <div className={styles.row}>
+      <span className={styles.rowText}><strong>{state === "installed" ? "Installed" : "Install Al-Furqan"}</strong><small>{state === "installed" ? "You're using the installed app" : state === "ios" ? "In Safari, tap Share, then Add to Home Screen" : "Open it from your home screen like an app"}</small></span>
+      {state === "prompt" ? <button type="button" className={styles.installButton} onClick={() => void install()}>Install</button> : null}
+    </div>
+  </Section>;
 }
 
 function Switch({ label, hint, checked, onChange }: { label: string; hint?: string; checked: boolean; onChange: (value: boolean) => void }) {
@@ -173,6 +185,7 @@ export default function ReaderSettings({ dialogRef, onClose, theme, onTheme, rea
             </nav>
           </Section>
         </> : null}
+        <InstallSection />
       </div>
     </aside>
   </div>;

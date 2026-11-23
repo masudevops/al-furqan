@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import LocationPrompt, { LocationChip } from "./location-prompt";
-import { Icon, IconButton, Page, PageHeader } from "@/components/ui";
+import { Button, Icon, IconButton, Page, PageHeader } from "@/components/ui";
+import { buildPrayerCalendar } from "@/lib/prayer-calendar";
 import { getNextPrayer } from "./prayer-times";
 import styles from "./salah-times.module.css";
 
@@ -57,6 +58,7 @@ function SalahContent({ location }: { location: { latitude:number; longitude:num
     </section>
     {today?<section className={styles.timeline} aria-label="Today's five prayer times">{PRAYERS.map(name=><div className={next?.name===name?styles.activePrayer:""} aria-current={next?.name===name?"true":undefined} key={name}><Icon name={name==="Fajr"||name==="Isha"||name==="Maghrib"?"moon":"sun"}/><span>{name}</span><strong>{clockTime(today.timings[name])}</strong>{name==="Fajr"&&today.timings.Sunrise?<small>Sunrise {clockTime(today.timings.Sunrise)}</small>:null}</div>)}</section>:<div className={styles.timelineLoading} role="status" aria-label="Loading prayer times"><i/><i/><i/><i/><i/></div>}
     {error?<p className={styles.errorText} role="alert">{error}</p>:null}
+    <CalendarReminders location={location} method={method} school={school} highLatitude={highLatitude} timezone={today?.timezone}/>
     <details className={styles.panel}>
       <summary><span><strong>Calculation settings</strong><small>{METHODS.find(item=>item.id===method)?.name??"Method"} · {school===1?"Hanafi":"Shafi"} Asr{today?.timezone?` · ${today.timezone}`:""}</small></span><Icon name="chevron"/></summary>
       <div className={styles.settingGrid}>
@@ -78,6 +80,33 @@ function SalahContent({ location }: { location: { latitude:number; longitude:num
       <p className={styles.sourceNote}>Ramadan dates and times are calculated and may differ from local moon-sighting decisions and mosque timetables.</p>
     </section>
   </>;
+}
+
+const REMINDER_DAYS=30;
+// Reminders come from the device calendar: the next 30 days of prayer times are downloaded as an .ics file
+// with an alert at each prayer. Nothing is stored on a server and no notification permission is needed.
+function CalendarReminders({location,method,school,highLatitude,timezone}:{location:{latitude:number;longitude:number;label:string};method:number;school:number;highLatitude:string;timezone?:string}){
+  const [status,setStatus]=useState<{kind:"idle"|"busy"|"done"|"error";message?:string}>({kind:"idle"});
+  const download=async()=>{
+    if(!timezone)return;
+    setStatus({kind:"busy"});
+    try{
+      const now=new Date();
+      const months=[0,1].map(offset=>new Date(now.getFullYear(),now.getMonth()+offset,1));
+      const responses=await Promise.all(months.map(month=>fetch(`/api/prayer-times?${new URLSearchParams({latitude:String(location.latitude),longitude:String(location.longitude),method:String(method),school:String(school),highLatitude,month:String(month.getMonth()+1),year:String(month.getFullYear())})}`).then(async response=>{const value=await response.json();if(!response.ok)throw new Error(value.error??"Prayer times are unavailable.");return value.days as Day[];})));
+      const settings=`${METHODS.find(item=>item.id===method)?.name??"Calculated"} method, ${school===1?"Hanafi":"Shafi"} Asr`;
+      const {ics,events}=buildPrayerCalendar({days:responses.flat(),timezone,label:location.label,settings,from:now,count:REMINDER_DAYS,now});
+      const url=URL.createObjectURL(new Blob([ics],{type:"text/calendar;charset=utf-8"}));
+      const link=document.createElement("a");link.href=url;link.download="al-furqan-prayer-times.ics";document.body.append(link);link.click();link.remove();
+      window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+      setStatus({kind:"done",message:`${events} prayer times saved to a calendar file. Open it to add them to your calendar.`});
+    }catch(error){setStatus({kind:"error",message:error instanceof Error?error.message:"Prayer times are unavailable right now."});}
+  };
+  return <section className={`${styles.panel} ${styles.reminders}`} aria-labelledby="reminders-title">
+    <div className={styles.remindersText}><h2 id="reminders-title">Prayer reminders</h2><p>Add the next {REMINDER_DAYS} days of prayer times to your phone or computer calendar, with an alert at each prayer. Works offline; download again next month or after changing settings.</p></div>
+    <Button variant="primary" icon="calendar" onClick={()=>void download()} disabled={!timezone||status.kind==="busy"}>{status.kind==="busy"?"Preparing…":"Add to calendar"}</Button>
+    {status.message?<p className={status.kind==="error"?styles.errorText:styles.sourceNote} role="status">{status.message}</p>:null}
+  </section>;
 }
 
 export default function SalahTimesPage(){return <Page><LocationPrompt header={(location,controls)=><PageHeader kicker="Daily worship" kickerIcon="salah" title="Salah Times" description="Your next prayer, today's schedule, and a monthly view for your location." actions={location?<LocationChip label={location.label} onChange={controls.clear}/>:undefined}/>}>{location=><SalahContent location={location}/>}</LocationPrompt></Page>}

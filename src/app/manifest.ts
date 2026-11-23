@@ -5,7 +5,9 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Al-Furqan — Quran & Sunnah Companion",
     short_name: "Al-Furqan",
     description: "A free, ad-free, privacy-first Quran and Sunnah companion.",
+    id: "/",
     start_url: "/",
+    scope: "/",
     display: "standalone",
     background_color: "#f6f2e8",
     theme_color: "#1f604b",
@@ -15,6 +17,11 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icons/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
       { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
       { src: "/apple-icon", sizes: "180x180", type: "image/png", purpose: "any" },
+    ],
+    shortcuts: [
+      { name: "Read the Quran", short_name: "Quran", url: "/quran", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
+      { name: "Salah Times", short_name: "Salah", url: "/salah-times", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
+      { name: "Dua", short_name: "Dua", url: "/dua", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
     ],
   };
 }

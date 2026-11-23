@@ -65,3 +65,6 @@ details.panel[open]>summary svg{transform:rotate(180deg)}
 .stepper strong{min-width:96px;font-size:13px}
 }
 @media(prefers-reduced-motion:reduce){.progress i{transition:none}.timelineLoading i{animation:none}details.panel>summary svg{transition:none}}
+
+.reminders{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px 20px}.remindersText h2{margin:0 0 4px;font:500 20px/1.2 var(--font-serif);color:var(--ink)}.remindersText p{margin:0;color:var(--muted);font-size:14px;line-height:1.55}.reminders>p{grid-column:1/-1;margin:0}
+@media(max-width:760px){.reminders{grid-template-columns:minmax(0,1fr)}}

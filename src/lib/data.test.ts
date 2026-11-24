@@ -64,7 +64,7 @@ describe("provider HTML sanitization", () => {
   it("extracts Quran.Foundation translation footnotes and preserves their visible markers", () => {
     expect(sanitizeTranslationMarkup('Guidance.<sup foot_note=227145>1</sup>')).toEqual({
       footnotes: [{ id: 227145, label: "1" }],
-      html: "Guidance.<sup>1</sup>",
+      html: 'Guidance.<sup data-footnote="227145">1</sup>',
     });
   });
 

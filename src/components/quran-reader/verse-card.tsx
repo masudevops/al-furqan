@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { memo, useEffect, useId, useState } from "react";
+import { memo, useEffect, useId, useRef, useState } from "react";
 import useSWR, { preload } from "swr";
 
 import type { AyahStudyPayload, AyahTafsirPayload, FootnotePayload, ReaderPayload, TajweedGlyphWord } from "@/lib/types";
@@ -35,10 +35,15 @@ type VerseCardProps = {
 const studyRequestUrl = (verseKey: string) => `/api/quran/study/${verseKey.replace(":", "/")}`;
 const studyOptions = { dedupingInterval: 60 * 60 * 1000, revalidateIfStale: false, revalidateOnFocus: false, revalidateOnReconnect: false };
 
-function TranslationFootnote({ id, label }: { id: number; label: string }) {
-  const [open, setOpen] = useState(false);
-  const { data, error, isLoading } = useSWR<FootnotePayload>(open ? `/api/quran/footnotes/${id}` : null, fetchJson, { revalidateOnFocus: false });
-  return <details className={styles.footnote} onToggle={(event) => setOpen(event.currentTarget.open)}><summary>Footnote {label}</summary>{isLoading ? <p>Loading footnote…</p> : null}{error ? <p className={styles.unavailable}>This footnote is unavailable right now.</p> : null}{data ? <><div translate="no" dangerouslySetInnerHTML={{ __html: data.textHtml }} /><small>Translation footnote · {data.languageName ?? "source language"}</small></> : null}</details>;
+// A translator's note, opened from its number in the translation text.
+function TranslatorNote({ id, label, translationName, panelId, onClose }: { id: number; label: string; translationName?: string | null; panelId: string; onClose: () => void }) {
+  const { data, error, isLoading } = useSWR<FootnotePayload>(`/api/quran/footnotes/${id}`, fetchJson, { revalidateOnFocus: false });
+  return <aside id={panelId} className={styles.note} aria-label={`Translator's note ${label}`}>
+    <div className={styles.noteHead}><strong>Translator&apos;s note {label}{translationName ? <span> · {translationName}</span> : null}</strong><button type="button" className={styles.noteClose} aria-label={`Close translator's note ${label}`} onClick={onClose}>×</button></div>
+    {isLoading ? <p className={styles.muted}>Loading note…</p> : null}
+    {error ? <p className={styles.unavailable}>This note is unavailable right now.</p> : null}
+    {data ? <div dir="auto" translate="no" dangerouslySetInnerHTML={{ __html: data.textHtml }} /> : null}
+  </aside>;
 }
 
 function AyahTafsir({ verse, tafsirId, tafsirEverywhere, contentPending, fallbackName }: { verse: ReaderVerse; tafsirId: number | null; tafsirEverywhere: boolean; contentPending: boolean; fallbackName?: string }) {
@@ -90,6 +95,27 @@ const VerseCard = memo(function VerseCard({ verse, chapterId, chapterName, isAct
   const [revealed, setRevealed] = useState(false);
   useEffect(() => { if (!concealArabic) setRevealed(false); }, [concealArabic]);
   const concealed = concealArabic && !revealed;
+  // Translator's notes open from the superscript numbers in the translation, which become keyboard-operable buttons.
+  const translationRef = useRef<HTMLDivElement>(null);
+  const [openNote, setOpenNote] = useState<{ id: number; label: string } | null>(null);
+  const notePanelId = `${useId()}-note`;
+  useEffect(() => {
+    translationRef.current?.querySelectorAll<HTMLElement>("sup[data-footnote]").forEach((marker) => {
+      const id = Number(marker.dataset.footnote);
+      marker.setAttribute("role", "button");
+      marker.tabIndex = 0;
+      marker.setAttribute("aria-label", `Translator's note ${marker.textContent ?? ""}`);
+      marker.setAttribute("aria-expanded", String(openNote?.id === id));
+      marker.setAttribute("aria-controls", notePanelId);
+    });
+  }, [verse.translationText, openNote, notePanelId]);
+  const toggleNoteFrom = (target: EventTarget) => {
+    const marker = target instanceof Element ? target.closest<HTMLElement>("sup[data-footnote]") : null;
+    const id = Number(marker?.dataset.footnote);
+    if (!marker || !id) return false;
+    setOpenNote((current) => current?.id === id ? null : { id, label: marker.textContent?.trim() || String(id) });
+    return true;
+  };
   const studyLinks: Array<{ kind: StudyPanel; label: string; icon: ReaderIconName }> = [
     ...(tafsirAvailable ? [{ kind: "tafsir" as const, label: "Tafsir", icon: "book" as const }] : []),
     ...(verse.verseKey ? [{ kind: "hadith" as const, label: "Hadith", icon: "scroll" as const }, { kind: "answers" as const, label: "Answers", icon: "answer" as const }] : []),
@@ -134,9 +160,9 @@ const VerseCard = memo(function VerseCard({ verse, chapterId, chapterName, isAct
     </div>
     {verse.translationText
       ? <div className={styles.translationBlock}>
-        <div className={styles.translation} dir="auto" translate="no" dangerouslySetInnerHTML={{ __html: verse.translationText }} />
+        <div ref={translationRef} className={styles.translation} dir="auto" translate="no" onClick={(event) => toggleNoteFrom(event.target)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { if (toggleNoteFrom(event.target)) event.preventDefault(); } }} dangerouslySetInnerHTML={{ __html: verse.translationText }} />
         {verse.translationName || translationResourceName ? <p className={styles.attribution}>— {verse.translationName ?? translationResourceName}{translationAuthor && !(verse.translationName ?? translationResourceName ?? "").includes(translationAuthor) ? `, ${translationAuthor}` : ""}</p> : null}
-        {verse.translationFootnotes.length ? <div className={styles.footnotes}>{verse.translationFootnotes.map((footnote) => <TranslationFootnote id={footnote.id} label={footnote.label} key={footnote.id} />)}</div> : null}
+        {openNote ? <TranslatorNote id={openNote.id} label={openNote.label} translationName={verse.translationName ?? translationResourceName} panelId={notePanelId} onClose={() => setOpenNote(null)} /> : null}
       </div>
       : <p className={styles.unavailable}>The selected translation is unavailable for this Ayah.</p>}
     {studyLinks.length ? <div className={styles.studyRow} role="group" aria-label={`Study ${label}`}>{studyLinks.map((link) => <button type="button" key={link.kind} aria-expanded={activePanel === link.kind} aria-controls={activePanel === link.kind ? panelId : undefined} onClick={() => togglePanel(link.kind)} {...(link.kind === "tafsir" ? {} : { onFocus: warmStudy, onPointerEnter: warmStudy })}><ReaderIcon name={link.icon} />{link.label}</button>)}</div> : null}

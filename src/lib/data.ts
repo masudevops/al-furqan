@@ -204,7 +204,8 @@ export const sanitizeTranslationMarkup = (value: string) => {
     return `__AF_FOOTNOTE_${parsed}_${escapeHtml(label.trim() || String(footnotes.length))}__`;
   });
   let html = sanitizeSourceHtml(withoutFootnotes);
-  html = html.replace(/__AF_FOOTNOTE_(\d+)_([^_]+)__/g, "<sup>$2</sup>");
+  // The marker keeps the note id so the reader can open the translator's note from the number in the text.
+  html = html.replace(/__AF_FOOTNOTE_(\d+)_([^_]+)__/g, '<sup data-footnote="$1">$2</sup>');
   return { footnotes, html };
 };
 

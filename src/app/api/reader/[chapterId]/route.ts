@@ -19,6 +19,9 @@ export async function GET(
   );
   const tafsirId=parsePositiveInteger(request.nextUrl.searchParams.get("tafsir"));
   const includeWords=request.nextUrl.searchParams.get("words")==="1";
+  // Word meanings in the reader's language, limited to the languages Quran.Foundation offers them in.
+  const requestedWordLanguage=request.nextUrl.searchParams.get("wordLanguage")??"en";
+  const wordLanguage=["en","ur","bn","id","tr","fr"].includes(requestedWordLanguage)?requestedWordLanguage:"en";
   const requestedScript=request.nextUrl.searchParams.get("script")??"uthmani";
   const scripts:QuranScript[]=["uthmani","uthmani_simple","imlaei","indopak","indopak_nastaleeq"];
   const script=scripts.includes(requestedScript as QuranScript)?requestedScript as QuranScript:"uthmani";
@@ -39,7 +42,7 @@ export async function GET(
       String(chapterId),
       translationId ?? undefined,
       recitationId ?? undefined,
-      {includeWords,script,tafsirId:tafsirId??undefined},
+      {includeWords,script,tafsirId:tafsirId??undefined,wordLanguage},
     );
     return publicContentJson(payload);
   } catch (error) {

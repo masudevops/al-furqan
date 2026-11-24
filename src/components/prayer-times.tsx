@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "@/hooks/use-location";
 import { Icon } from "@/components/ui";
 import styles from "./prayer-times.module.css";
+import { t } from "@/i18n";
 
 const PRAYERS = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"] as const;
 type Payload = { date: string; error: null; gregorian: string; hijri: string; timings: Record<string,string>; timezone: string };
@@ -42,9 +43,9 @@ export default function PrayerTimes() {
   useEffect(() => { const id = setInterval(() => setTick(Date.now()), 30_000); return () => clearInterval(id); }, []);
   const next = useMemo(() => getNextPrayer(payload, new Date(tick)), [payload, tick]);
   const countdown = next ? `${Math.floor(next.ms/3_600_000)}h ${Math.floor((next.ms%3_600_000)/60_000)}m` : null;
-  return <Link href="/salah-times" className={styles.compactCard} aria-label="Open Salah Times">
+  return <Link href="/salah-times" className={styles.compactCard} aria-label={t("Open Salah Times")}>
     <span className={styles.icon} aria-hidden="true"><Icon name="salah" /></span>
-    <div><span>Next prayer{location ? ` · ${location.label}` : ""}</span><h2>{next ? next.name : location ? "Loading Salah Times…" : "Set your location for prayer times"}</h2></div>
-    <strong>{countdown ? `in ${countdown}` : location ? "View schedule" : "Set location"}</strong><Icon name="arrowRight" />
+    <div><span>{t("Next prayer")}{location ? ` · ${location.label}` : ""}</span><h2>{next ? next.name : location ? t("Loading Salah Times…") : t("Set your location for prayer times")}</h2></div>
+    <strong>{countdown ? `in ${countdown}` : location ? t("View schedule") : t("Set location")}</strong><Icon name="arrowRight" />
   </Link>;
 }

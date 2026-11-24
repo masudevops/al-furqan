@@ -22,7 +22,7 @@ test("settings is a keyboard modal and restores focus", async ({ page }) => {
   await expect(page.locator("html")).toHaveAttribute("data-theme", "sepia");
   const trigger = page.getByRole("button", { name: "Open reading settings" });
   await trigger.click();
-  const dialog = page.getByRole("dialog", { name: "Reader settings" });
+  const dialog = page.getByRole("dialog", { name: "Settings" });
   await expect(dialog).toBeVisible();
   await expect(page.getByRole("button", { name: "Close settings" })).toBeFocused();
   await page.keyboard.press("Escape");

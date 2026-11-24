@@ -732,7 +732,7 @@ export const loadReaderData = async (
   chapterId: string,
   requestedTranslationId?: number,
   requestedRecitationId?: number,
-  options: { includeWords?: boolean; tafsirId?: number; script?: QuranScript } = {},
+  options: { includeWords?: boolean; tafsirId?: number; script?: QuranScript; wordLanguage?: string } = {},
 ): Promise<ReaderPayload> => {
   const config = getConfig();
   const translationIds = requestedTranslationId
@@ -776,6 +776,7 @@ export const loadReaderData = async (
         translations: translationIds,
         tafsirs: options.tafsirId ? [options.tafsirId] : undefined,
         words: Boolean(options.includeWords),
+        ...(options.includeWords && options.wordLanguage ? { language: options.wordLanguage } : {}),
         wordFields: options.includeWords ? { textUthmani: true, ...(script === "uthmani" ? { textQpcHafs: true } : {}), verseKey: true, location: true } : undefined,
       })),
     ),

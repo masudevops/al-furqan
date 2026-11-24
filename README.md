@@ -40,6 +40,7 @@ Production: [al-furqan.app](https://al-furqan.app)
 - Server-rendered Quran and Sunnah content, route metadata, canonical URLs, structured data, social cards, favicon/app icons, robots.txt, and a dynamic sitemap.
 - Google Search Console domain verification and sitemap submission completed by the owner.
 - Typed public feature flags for Salah Times, Dua, Qibla, Masjid Finder, and Learn.
+- Interface languages (preview): English, Arabic, Urdu, Bengali, Indonesian, Turkish and French, with right-to-left layout for Arabic and Urdu. Choosing a language switches the Quran translation, Tafsir and word meanings to sourced versions where they exist. Interface text awaits native-speaker review; see `docs/I18N.md`.
 - Installable web app: manifest with shortcuts, a service worker (`public/sw.js`) that caches only hashed build assets and serves a self-contained offline page. No Quran or API content is stored offline (Quran.Foundation limits caching to one week).
 - Provider adapters and data transformations separated from UI components where practical for a future native client.
 

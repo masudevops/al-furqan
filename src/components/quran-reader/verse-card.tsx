@@ -134,7 +134,7 @@ const VerseCard = memo(function VerseCard({ verse, chapterId, chapterName, isAct
     </div>
     {verse.translationText
       ? <div className={styles.translationBlock}>
-        <div className={styles.translation} lang="en" translate="no" dangerouslySetInnerHTML={{ __html: verse.translationText }} />
+        <div className={styles.translation} dir="auto" translate="no" dangerouslySetInnerHTML={{ __html: verse.translationText }} />
         {verse.translationName || translationResourceName ? <p className={styles.attribution}>— {verse.translationName ?? translationResourceName}{translationAuthor && !(verse.translationName ?? translationResourceName ?? "").includes(translationAuthor) ? `, ${translationAuthor}` : ""}</p> : null}
         {verse.translationFootnotes.length ? <div className={styles.footnotes}>{verse.translationFootnotes.map((footnote) => <TranslationFootnote id={footnote.id} label={footnote.label} key={footnote.id} />)}</div> : null}
       </div>

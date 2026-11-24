@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 
 import { loadReaderData, parsePositiveInteger } from "@/lib/data";
 import { createPublicContentSession, publicContentJson } from "@/lib/public-content";
-import type { QuranScript } from "@/lib/types";
+import { WORD_LANGUAGES, type QuranScript } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -19,9 +19,9 @@ export async function GET(
   );
   const tafsirId=parsePositiveInteger(request.nextUrl.searchParams.get("tafsir"));
   const includeWords=request.nextUrl.searchParams.get("words")==="1";
-  // Word meanings in the reader's language, limited to the languages Quran.Foundation offers them in.
+  // Word meanings in a reader-chosen language, limited to the languages Quran.Foundation offers them in.
   const requestedWordLanguage=request.nextUrl.searchParams.get("wordLanguage")??"en";
-  const wordLanguage=["en","ur","bn","id","tr","fr"].includes(requestedWordLanguage)?requestedWordLanguage:"en";
+  const wordLanguage=WORD_LANGUAGES.some((item)=>item.code===requestedWordLanguage)?requestedWordLanguage:"en";
   const requestedScript=request.nextUrl.searchParams.get("script")??"uthmani";
   const scripts:QuranScript[]=["uthmani","uthmani_simple","imlaei","indopak","indopak_nastaleeq"];
   const script=scripts.includes(requestedScript as QuranScript)?requestedScript as QuranScript:"uthmani";

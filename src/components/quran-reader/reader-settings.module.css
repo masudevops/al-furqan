@@ -108,4 +108,3 @@ div.row{cursor:default;flex-wrap:wrap}
 
 .nested{margin:-4px 0 4px 14px;padding-left:12px;border-left:2px solid var(--line)}
 .installButton{min-height:36px;padding:0 16px;border:0;border-radius:999px;background:var(--green);color:var(--on-green);font:650 13px var(--font-ui);cursor:pointer}
-.note{margin:2px 0 0;color:var(--muted);font-size:12px;line-height:1.5}

@@ -4,7 +4,6 @@ import Link from "next/link";
 import useSWR from "swr";
 import { Icon } from "@/components/ui";
 import styles from "./daily-content.module.css";
-import { t } from "@/i18n";
 
 type DailyPayload = {
   day: string;
@@ -21,20 +20,20 @@ const fetcher = async (url: string) => {
 
 export default function DailyContent() {
   const { data, error, isLoading } = useSWR<DailyPayload>("/api/daily-content", fetcher, { revalidateOnFocus: false });
-  if (isLoading) return <section className={styles.grid} aria-label={t("Loading daily sourced content")}><article className={styles.skeleton}/><article className={styles.skeleton}/></section>;
-  if (error) return <p className={styles.unavailable}>{t("Today's sourced verse and Hadith are unavailable right now.")}</p>;
+  if (isLoading) return <section className={styles.grid} aria-label="Loading daily sourced content"><article className={styles.skeleton}/><article className={styles.skeleton}/></section>;
+  if (error) return <p className={styles.unavailable}>Today&apos;s sourced verse and Hadith are unavailable right now.</p>;
   if (!data?.verse && !data?.hadith) return null;
-  return <section className={styles.grid} aria-label={t("Daily sourced content")}>
+  return <section className={styles.grid} aria-label="Daily sourced content">
     {data.verse ? <article className={styles.card}>
-      <p className={styles.kicker}>{t("Verse of the day")}</p>
+      <p className={styles.kicker}>Verse of the day</p>
       <p className={styles.arabic} lang="ar" dir="rtl" translate="no">{data.verse.arabicText}</p>
       <div className={styles.translation} dir="auto" translate="no" dangerouslySetInnerHTML={{ __html: data.verse.translationText }}/>
-      <footer><span>{data.verse.chapterName} · {data.verse.verseKey}<small>{data.verse.translationName} · Quran.Foundation</small></span><Link href={`/quran/${data.verse.verseKey.replace(":", "/")}`}>{t("Read in context")}<Icon name="arrowRight"/></Link></footer>
+      <footer><span>{data.verse.chapterName} · {data.verse.verseKey}<small>{data.verse.translationName} · Quran.Foundation</small></span><Link href={`/quran/${data.verse.verseKey.replace(":", "/")}`}>Read in context<Icon name="arrowRight"/></Link></footer>
     </article> : null}
     {data.hadith ? <article className={styles.card}>
-      <p className={styles.kicker}>{t("Hadith of the day")}</p>
+      <p className={styles.kicker}>Hadith of the day</p>
       <p className={styles.hadith} translate="no">{data.hadith.text}</p>
-      <footer><span>{data.hadith.collectionName} · {t("Hadith {number}", { number: data.hadith.hadithNumber })}{data.hadith.authenticityContext && data.hadith.authenticityContext !== "No grade supplied" ? <small>{t("Reported grade: {grade}", { grade: data.hadith.authenticityContext })}</small> : <small>{t("Source: {source}", { source: "UmmahAPI" })}</small>}</span><Link href={`/sunnah/${data.hadith.collectionId}/${data.hadith.hadithNumber}`}>{t("Read Arabic & English")}<Icon name="arrowRight"/></Link></footer>
+      <footer><span>{data.hadith.collectionName} · Hadith {data.hadith.hadithNumber}{data.hadith.authenticityContext && data.hadith.authenticityContext !== "No grade supplied" ? <small>Reported grade: {data.hadith.authenticityContext}</small> : <small>Source: UmmahAPI</small>}</span><Link href={`/sunnah/${data.hadith.collectionId}/${data.hadith.hadithNumber}`}>Read Arabic & English<Icon name="arrowRight"/></Link></footer>
     </article> : null}
   </section>;
 }

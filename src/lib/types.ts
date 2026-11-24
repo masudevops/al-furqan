@@ -184,6 +184,16 @@ export interface ReaderPayload {
   verses: ReaderVerse[];
 }
 
+// Languages Quran.Foundation offers word-by-word meanings in (checked 2026-11-23).
+export const WORD_LANGUAGES = [
+  { code: "en", name: "English" },
+  { code: "ur", name: "Urdu" },
+  { code: "bn", name: "Bengali" },
+  { code: "id", name: "Indonesian" },
+  { code: "tr", name: "Turkish" },
+  { code: "fr", name: "French" },
+] as const;
+
 export type QuranScript = "uthmani" | "uthmani_simple" | "imlaei" | "indopak" | "indopak_nastaleeq";
 
 export interface QuranReflectItem {

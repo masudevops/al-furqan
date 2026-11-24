@@ -122,7 +122,7 @@ const VerseCard = memo(function VerseCard({ verse, chapterId, chapterName, isAct
     {wordMode && verse.words.length
       ? <div className={`${styles.wordGrid} ${uthmaniScript ? styles.quranFont : ""}`} lang="ar" dir="rtl" translate="no">{verse.words.filter((word) => word.charType === "word").map((word) => {
         const className = `${styles.word} ${activeWordPosition === word.position || (word.audioUrl && playingWordUrl === word.audioUrl) ? styles.activeWord : ""}`;
-        const body = <><b>{word.arabicText}</b>{wordDisplay.transliteration && word.transliteration ? <small dir="ltr">{word.transliteration}</small> : null}{wordDisplay.meaning && word.translation ? <em dir="ltr">{word.translation}</em> : null}</>;
+        const body = <><b>{word.arabicText}</b>{wordDisplay.transliteration && word.transliteration ? <small dir="ltr">{word.transliteration}</small> : null}{wordDisplay.meaning && word.translation ? <em dir="auto">{word.translation}</em> : null}</>;
         // Each word plays its own Quran.Foundation recitation.
         return word.audioUrl ? <button type="button" className={className} key={word.position} onClick={() => actions.playWord(word.audioUrl!)} aria-label={`Play word ${word.position}${word.translation ? `: ${word.translation}` : ""}`}>{body}</button> : <span className={className} key={word.position}>{body}</span>;
       })}</div>

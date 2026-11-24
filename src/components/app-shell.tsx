@@ -40,6 +40,8 @@ import { publicFeatures } from "@/lib/features";
 import { readMushafPage, readReadingMode, resumeHref, saveReadingMode, type ReadingMode } from "@/lib/reading-mode";
 import QuranSearch from "./quran-search";
 import styles from "./app-shell.module.css";
+import { setCurrentLocale, t } from "@/i18n";
+import { LOCALE_KEY, localeInfo, type Locale } from "@/i18n/locales";
 
 type ChaptersPayload = { error: string | null; items: ContentPreviewItem[] };
 type TranslationsPayload = { error: string | null; items: TranslationResource[] };
@@ -88,6 +90,10 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const chapterId = params?.chapterId;
   const verseNumber = params?.verseNumber;
   const [theme, setTheme] = useState<Theme>("sepia");
+  // Interface language: set for this render before any child renders, and the tree is remounted when it changes.
+  const [locale, setLocale] = useState<Locale>("en");
+  setCurrentLocale(locale);
+  const localeDetails = localeInfo(locale);
   const [arabicSize, setArabicSize] = useState(40);
   const [translationSize, setTranslationSize] = useState(17);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -202,7 +208,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
     useSWR<ChapterRecitersPayload>(chapterId ? "/api/chapter-reciters" : null, fetchJson, { revalidateOnFocus: false });
   const { data: tafsirs, error: tafsirsError } =
     useSWR<TafsirsPayload>(chapterId ? "/api/tafsirs" : null, fetchJson, { revalidateOnFocus: false });
-  const readerKey = (id: string | number | undefined) => id && selectedTranslation && selectedRecitation ? `/api/reader/${id}?translation=${selectedTranslation}&recitation=${selectedRecitation}&script=${quranScript}${wordMode?"&words=1":""}${tafsirOpen&&selectedTafsir?`&tafsir=${selectedTafsir}`:""}` : null;
+  const readerKey = (id: string | number | undefined) => id && selectedTranslation && selectedRecitation ? `/api/reader/${id}?translation=${selectedTranslation}&recitation=${selectedRecitation}&script=${quranScript}${wordMode?`&words=1&wordLanguage=${localeDetails.wordLanguage}`:""}${tafsirOpen&&selectedTafsir?`&tafsir=${selectedTafsir}`:""}` : null;
   // Start loading a Surah when the reader points at or focuses its link, so the request overlaps navigation.
   const warmReader = (id: string | number) => { const key = readerKey(id); if (key) void preload(key, fetchJson); };
   const warmReaderProps = (id: string | number) => ({ onFocus: () => warmReader(id), onPointerEnter: () => warmReader(id), onTouchStart: () => warmReader(id) });
@@ -258,6 +264,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
     setReadingMode(readReadingMode());
     setMushafPage(readMushafPage());
     registerServiceWorker();
+    const savedLocale = localeInfo(localStorage.getItem(LOCALE_KEY)).code;
+    if (savedLocale !== "en") setLocale(savedLocale);
     setTajweedEnabled(localStorage.getItem("af-tajweed") !== "false");
     setWordMode(localStorage.getItem("af-word-mode") === "true");
     setWordDisplay({ meaning: localStorage.getItem("af-word-meaning") !== "false", transliteration: localStorage.getItem("af-word-transliteration") !== "false" });
@@ -417,6 +425,28 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const changeSize = (kind: "arabic" | "translation", value: number) => {
     if (kind === "arabic") { setArabicSize(value); localStorage.setItem("af-arabic-size", String(value)); }
     else { setTranslationSize(value); localStorage.setItem("af-translation-size", String(value)); }
+  };
+  useEffect(() => {
+    document.documentElement.lang = localeDetails.code;
+    document.documentElement.dir = localeDetails.dir;
+  }, [localeDetails]);
+  // Choosing a language switches Quran content to sourced versions in it; where a source has none, the current choice stays.
+  const changeLocale = async (next: Locale) => {
+    setLocale(next);
+    try { localStorage.setItem(LOCALE_KEY, next); } catch {}
+    const info = localeInfo(next);
+    try {
+      const [translationList, tafsirList] = await Promise.all([
+        translations?.items ?? fetchJson<TranslationsPayload>("/api/translations").then((value) => value.items),
+        tafsirs?.items ?? fetchJson<TafsirsPayload>("/api/tafsirs").then((value) => value.items),
+      ]);
+      const inLanguage = <T extends { languageName: string | null }>(items: T[]) => items.filter((item) => item.languageName?.toLowerCase() === info.contentLanguage);
+      // Arabic readers read the Quran itself; their translation choice is left as it is.
+      const translation = next === "en" ? preferredTranslation(translationList) : next === "ar" ? undefined : inLanguage(translationList)[0];
+      if (translation) changeTranslation(translation.id);
+      const tafsir = inLanguage(tafsirList)[0];
+      if (tafsir) { setSelectedTafsir(tafsir.id); localStorage.setItem("af-tafsir-id", String(tafsir.id)); }
+    } catch {}
   };
   const changeTranslation = (value: number) => {
     setSelectedTranslation(value);
@@ -655,15 +685,15 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
   const renderSearch = () => <QuranSearch/>;
 
-  return <div className={styles.app}>
-    <header className={styles.topbar}><Link className={styles.brand} href="/"><span>ف</span><div><strong>Al-Furqan</strong><small>الفرقان</small></div></Link><nav><Link className={route === "quran" ? styles.active : ""} href="/quran">Quran</Link>{publicFeatures.learn ? <Link className={route === "learn" ? styles.active : ""} href="/learn">Learn</Link> : null}<Link className={route === "sunnah" ? styles.active : ""} href="/sunnah">Sunnah</Link>{publicFeatures.salahTimes ? <Link className={route === "salah" ? styles.active : ""} href="/salah-times">Salah Times</Link> : null}{publicFeatures.dua ? <Link className={route === "dua" ? styles.active : ""} href="/dua">Dua</Link> : null}{publicFeatures.qibla ? <Link className={route === "qibla" ? styles.active : ""} href="/qibla">Qibla</Link> : null}{publicFeatures.masjidFinder ? <Link className={route === "masjid" ? styles.active : ""} href="/masjid-finder">Masjid Finder</Link> : null}</nav><div className={styles.actions}><Link className={styles.iconAction} aria-label="Open saved library" title="Saved Library" href="/library"><Icon name="saved"/></Link><Link className={`${styles.searchAction} ${route === "search" ? styles.activeAction : ""}`} href="/search"><Icon name="search"/><span>Search</span></Link><button aria-label="Toggle reading theme" onClick={() => changeTheme(theme === "light" ? "dark" : theme === "dark" ? "sepia" : "light")}>◐</button><button ref={settingsTriggerRef} aria-label="Open reading settings" onClick={() => setSettingsOpen(true)}>Aa</button></div></header>
+  return <div className={styles.app} key={locale}>
+    <header className={styles.topbar}><Link className={styles.brand} href="/"><span>ف</span><div><strong>Al-Furqan</strong><small>الفرقان</small></div></Link><nav><Link className={route === "quran" ? styles.active : ""} href="/quran">{t("Quran")}</Link>{publicFeatures.learn ? <Link className={route === "learn" ? styles.active : ""} href="/learn">{t("Learn")}</Link> : null}<Link className={route === "sunnah" ? styles.active : ""} href="/sunnah">{t("Sunnah")}</Link>{publicFeatures.salahTimes ? <Link className={route === "salah" ? styles.active : ""} href="/salah-times">{t("Salah Times")}</Link> : null}{publicFeatures.dua ? <Link className={route === "dua" ? styles.active : ""} href="/dua">{t("Dua")}</Link> : null}{publicFeatures.qibla ? <Link className={route === "qibla" ? styles.active : ""} href="/qibla">{t("Qibla")}</Link> : null}{publicFeatures.masjidFinder ? <Link className={route === "masjid" ? styles.active : ""} href="/masjid-finder">{t("Masjid Finder")}</Link> : null}</nav><div className={styles.actions}><Link className={styles.iconAction} aria-label={t("Open saved library")} title={t("Saved Library")} href="/library"><Icon name="saved"/></Link><Link className={`${styles.searchAction} ${route === "search" ? styles.activeAction : ""}`} href="/search"><Icon name="search"/><span>{t("Search")}</span></Link><button aria-label={t("Toggle reading theme")} onClick={() => changeTheme(theme === "light" ? "dark" : theme === "dark" ? "sepia" : "light")}>◐</button><button ref={settingsTriggerRef} aria-label={t("Open reading settings")} onClick={() => setSettingsOpen(true)}>Aa</button></div></header>
     {route === "home" ? renderHome() : quranToolRoute ? children : route === "quran" && !chapterId ? renderLibrary() : route === "quran" ? renderReader() : route === "search" ? renderSearch() : children}
-    <nav className={styles.mobileNav}><Link className={route === "quran" ? styles.active : ""} href="/quran"><Icon name="quran"/><span>Quran</span></Link><Link className={route === "sunnah" ? styles.active : ""} href="/sunnah"><UiIcon name="scroll"/><span>Sunnah</span></Link>{publicFeatures.salahTimes ? <Link className={route === "salah" ? styles.active : ""} href="/salah-times"><UiIcon name="salah"/><span>Salah</span></Link> : null}{publicFeatures.dua ? <Link className={route === "dua" ? styles.active : ""} href="/dua"><UiIcon name="dua"/><span>Dua</span></Link> : null}<button className={route === "search" || route === "qibla" || route === "masjid" || route === "learn" ? styles.active : ""} onClick={()=>setMoreOpen(value=>!value)}><Icon name="more"/><span>More</span></button></nav>
-    {moreOpen?<div className={styles.moreMenu} role="menu" aria-label="More navigation">{publicFeatures.learn ? <Link href="/learn" onClick={()=>setMoreOpen(false)}>Learn <span>→</span></Link> : null}<Link href="/plan" onClick={()=>setMoreOpen(false)}>Reading plan <span>→</span></Link><Link href="/library" onClick={()=>setMoreOpen(false)}>Saved Library <span>→</span></Link><Link href="/search" onClick={()=>setMoreOpen(false)}>Search <span>→</span></Link>{publicFeatures.qibla ? <Link href="/qibla" onClick={()=>setMoreOpen(false)}>Qibla <span>→</span></Link> : null}{publicFeatures.masjidFinder ? <Link href="/masjid-finder" onClick={()=>setMoreOpen(false)}>Masjid Finder <span>→</span></Link> : null}</div>:null}
-    {settingsOpen ? <ReaderSettings dialogRef={settingsDialogRef} onClose={closeSettings} theme={theme} onTheme={changeTheme} readingMode={readingMode} onReadingMode={changeReadingMode} tajweedEnabled={tajweedEnabled} onTajweed={changeTajweed} followRecitation={followRecitation} onFollowRecitation={changeFollowRecitation} arabicSize={arabicSize} translationSize={translationSize} onSize={changeSize}
+    <nav className={styles.mobileNav}><Link className={route === "quran" ? styles.active : ""} href="/quran"><Icon name="quran"/><span>{t("Quran")}</span></Link><Link className={route === "sunnah" ? styles.active : ""} href="/sunnah"><UiIcon name="scroll"/><span>{t("Sunnah")}</span></Link>{publicFeatures.salahTimes ? <Link className={route === "salah" ? styles.active : ""} href="/salah-times"><UiIcon name="salah"/><span>{t("Salah")}</span></Link> : null}{publicFeatures.dua ? <Link className={route === "dua" ? styles.active : ""} href="/dua"><UiIcon name="dua"/><span>{t("Dua")}</span></Link> : null}<button className={route === "search" || route === "qibla" || route === "masjid" || route === "learn" ? styles.active : ""} onClick={()=>setMoreOpen(value=>!value)}><Icon name="more"/><span>{t("More")}</span></button></nav>
+    {moreOpen?<div className={styles.moreMenu} role="menu" aria-label={t("More navigation")}>{publicFeatures.learn ? <Link href="/learn" onClick={()=>setMoreOpen(false)}>{t("Learn")} <span>→</span></Link> : null}<Link href="/plan" onClick={()=>setMoreOpen(false)}>{t("Reading plan")} <span>→</span></Link><Link href="/library" onClick={()=>setMoreOpen(false)}>{t("Saved Library")} <span>→</span></Link><Link href="/search" onClick={()=>setMoreOpen(false)}>{t("Search")} <span>→</span></Link>{publicFeatures.qibla ? <Link href="/qibla" onClick={()=>setMoreOpen(false)}>{t("Qibla")} <span>→</span></Link> : null}{publicFeatures.masjidFinder ? <Link href="/masjid-finder" onClick={()=>setMoreOpen(false)}>{t("Masjid Finder")} <span>→</span></Link> : null}</div>:null}
+    {settingsOpen ? <ReaderSettings dialogRef={settingsDialogRef} locale={locale} onLocale={(next) => void changeLocale(next)} onClose={closeSettings} theme={theme} onTheme={changeTheme} readingMode={readingMode} onReadingMode={changeReadingMode} tajweedEnabled={tajweedEnabled} onTajweed={changeTajweed} followRecitation={followRecitation} onFollowRecitation={changeFollowRecitation} arabicSize={arabicSize} translationSize={translationSize} onSize={changeSize}
       quran={reader && route === "quran" && chapterId ? { reader, verseNumber: Number(verseNumber) || 1, translationGroups, selectedTranslation, onTranslation: changeTranslation, recitations: recitations?.items ?? [], selectedRecitation, onRecitation: changeRecitation, script: quranScript, onScript: (value) => { setQuranScript(value); localStorage.setItem("af-quran-script", value); }, tafsirs: tafsirs?.items ?? [], selectedTafsir, onTafsir: (value) => { setSelectedTafsir(value); localStorage.setItem("af-tafsir-id", String(value)); }, wordMode, onWordMode: (value) => { setWordMode(value); localStorage.setItem("af-word-mode", String(value)); }, wordDisplay, onWordDisplay: (value) => { setWordDisplay(value); localStorage.setItem("af-word-meaning", String(value.meaning)); localStorage.setItem("af-word-transliteration", String(value.transliteration)); }, tafsirEverywhere: tafsirOpen, onTafsirEverywhere: setTafsirOpen, memorizationOpen, onMemorization: toggleMemorization, introductionOpen: chapterInfoOpen, onIntroduction: toggleIntroduction, onJump: jump } : undefined}/> : null}
   </div>;
 }
 
-function ErrorState({message}:{message:string}) { return <section className={styles.error} role="alert"><span>!</span><h2>We could not load this content</h2><p>{message}</p><button onClick={()=>location.reload()}>Try again</button></section>; }
-function ReaderSkeleton() { return <div className={readerStyles.skeleton} aria-label="Loading Quran"><i/><i/><i/></div>; }
+function ErrorState({message}:{message:string}) { return <section className={styles.error} role="alert"><span>!</span><h2>{t("We could not load this content")}</h2><p>{message}</p><button onClick={()=>location.reload()}>{t("Try again")}</button></section>; }
+function ReaderSkeleton() { return <div className={readerStyles.skeleton} aria-label={t("Loading Quran")}><i/><i/><i/></div>; }

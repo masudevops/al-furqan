@@ -7,6 +7,7 @@ import type { DuaCategory, DuaEntry, DuaSummary } from "@/lib/dua";
 import { hasLocalBookmark, readLocalBookmarks, toggleLocalBookmark } from "@/lib/local-bookmarks";
 import ContentState from "./content-state";
 import { ButtonLink, Icon, IconButton, Page, PageHeader, type IconName } from "@/components/ui";
+import { publicFeatures } from "@/lib/features";
 import styles from "./dua.module.css";
 
 const fetcher = (url: string) => fetch(url).then(async response => { const data = await response.json(); if (!response.ok) throw new Error(data.error); return data; });
@@ -15,7 +16,13 @@ const icons: Record<string, IconName> = { "morning-dhikr": "sun", "evening-dhikr
 export function DuaCategories() {
   const { data, error, isLoading } = useSWR<{ items: DuaCategory[] }>("/api/dua/categories", fetcher);
   return <Page>
-    <PageHeader kicker="Hisnul Muslim" kickerIcon="dua" title="Dua" description="Authentic daily duas and dhikr, kept with their Arabic, meaning, and source reference." />
+    <PageHeader kicker="Dua & Dhikr" kickerIcon="dua" title="Dua" description="Duas and remembrance kept with their Arabic, meaning and source." />
+    {publicFeatures.hisnulMuslim ? <Link className={styles.feature} href="/dua/hisnul-muslim">
+      <span className={styles.categoryIcon} aria-hidden="true"><Icon name="book" /></span>
+      <span className={styles.featureText}><strong>Hisnul Muslim<span lang="ar" dir="rtl" translate="no">حصن المسلم</span></strong><span>Fortress of the Muslim · the complete book of Duas for daily life, chapter by chapter</span></span>
+      <Icon name="arrowRight" />
+    </Link> : null}
+    <h2 className={styles.sectionTitle}>Daily remembrance</h2>
     {isLoading ? <div className={styles.loadingGrid} role="status" aria-label="Loading Dua categories"><i /><i /><i /></div> : null}
     {error ? <ContentState kind="error" message="Dua content is unavailable right now. No substitute content has been used." /> : null}
     <section className={styles.categoryGrid}>{data?.items.map(item => <Link className={styles.categoryCard} href={`/dua/${item.slug}`} key={item.slug}>

@@ -54,3 +54,21 @@
 
 @media(max-width:620px){.audio{grid-template-columns:auto 1fr}.audio audio{grid-column:1/-1}.translation{font-size:16px}}
 @media(prefers-reduced-motion:reduce){.loadingGrid i,.loadingList i{animation:none}.categoryCard{transition:none}}
+
+/* Hisnul Muslim */
+.feature{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:16px;margin-bottom:28px;padding:22px 24px;border:1px solid color-mix(in srgb,var(--green) 35%,var(--line));border-radius:var(--radius-lg);background:linear-gradient(135deg,color-mix(in srgb,var(--green) 9%,var(--card)),var(--card));color:var(--ink)}
+.feature:hover{border-color:var(--green)}
+.feature>svg{width:18px;height:18px;color:var(--green)}
+.featureText{display:grid;gap:4px;min-width:0}
+.featureText strong{font:500 22px/1.2 var(--font-serif)}
+.featureText strong span{display:inline-block;margin-left:10px;color:var(--green);font:400 20px "Geeza Pro","Noto Naskh Arabic","Amiri",serif}
+.featureText>span{color:var(--muted);font-size:14px;line-height:1.5}
+.sectionTitle{margin:0 0 12px;color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.chapterTitle{display:grid;gap:2px;min-width:0}
+.chapterTitle [lang="ar"]{color:var(--muted);font:400 15px/1.6 "Geeza Pro","Noto Naskh Arabic","Amiri",serif;text-align:left}
+.entries{display:grid;gap:14px}
+.entryBar{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.repeat{padding:4px 10px;border-radius:var(--radius-pill);background:color-mix(in srgb,var(--green) 12%,var(--card));color:var(--green);font-size:12px;font-weight:650}
+.entryAudio{flex:1 1 220px;min-width:0;height:38px;margin-left:auto}
+.entries .arabic{margin-top:18px}
+@media(max-width:620px){.feature{padding:18px}.entryAudio{flex-basis:100%;margin-left:0}}

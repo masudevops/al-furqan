@@ -1,6 +1,8 @@
 export interface DuaCategory { name:string; slug:string; total:number }
 export interface DuaSummary { id:number; title:string; category:string; categoryName:string }
 import type { DuaAudioSource } from "@/lib/dua-audio";
+import { publicFeatures } from "@/lib/features";
+import { loadHisnChapters } from "@/lib/hisnul-muslim";
 
 export interface DuaEntry extends DuaSummary { arabic:string; latin:string; translation:string; notes:string; fawaid:string; source:string; audio:DuaAudioSource|null }
 
@@ -39,6 +41,11 @@ export async function searchDuaTitles(query:string):Promise<DuaSummary[]>{
   const words=query.toLowerCase().split(/\s+/).filter(Boolean);
   if(!words.length)return [];
   const categories=(await fetchDuaPath("/categories")) as DuaCategory[];
-  const lists=await Promise.all(categories.map((category)=>fetchDuaPath(`/categories/${category.slug}`) as Promise<DuaSummary[]>));
-  return lists.flat().filter((dua)=>{const text=`${dua.title} ${dua.categoryName}`.toLowerCase();return words.every((word)=>text.includes(word));});
+  const [lists,chapters]=await Promise.all([
+    Promise.all(categories.map((category)=>fetchDuaPath(`/categories/${category.slug}`) as Promise<DuaSummary[]>)),
+    // Hisnul Muslim chapters are searched by title too; if that source is down, the other results still show.
+    publicFeatures.hisnulMuslim?loadHisnChapters().catch(()=>[]):Promise.resolve([]),
+  ]);
+  const hisn:DuaSummary[]=chapters.map((chapter)=>({id:chapter.id,title:chapter.title,category:"hisnul-muslim",categoryName:"Hisnul Muslim"}));
+  return [...lists.flat(),...hisn].filter((dua)=>{const text=`${dua.title} ${dua.categoryName}`.toLowerCase();return words.every((word)=>text.includes(word));});
 }

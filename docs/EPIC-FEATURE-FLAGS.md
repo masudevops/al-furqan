@@ -10,6 +10,7 @@ Allow optional public sections to be enabled or withdrawn cleanly without deleti
 | --- | --- | --- |
 | `NEXT_PUBLIC_FEATURE_SALAH_TIMES` | `true` | Salah Times page, navigation and homepage widget |
 | `NEXT_PUBLIC_FEATURE_DUA` | `true` | Dua routes, navigation and homepage shortcut |
+| `NEXT_PUBLIC_FEATURE_HISNUL_MUSLIM` | `true` | Complete Hisnul Muslim at `/dua/hisnul-muslim` from hisnmuslim.com (interim source; set `false` to withdraw) |
 | `NEXT_PUBLIC_FEATURE_QIBLA` | `false` | Qibla route, navigation, homepage shortcut and discovery metadata |
 | `NEXT_PUBLIC_FEATURE_MASJID_FINDER` | `true` | Masjid Finder page, navigation and homepage shortcut |
 

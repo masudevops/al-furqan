@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { HADITH_ENABLED } from "@/lib/feature-flags";
-import { ummahHadithAdapter } from "@/lib/hadith";
+import { ummahHadithAdapter, withHadithTranslations } from "@/lib/hadith";
 import { publicContentJson } from "@/lib/public-content";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +12,8 @@ export async function GET(request: NextRequest, { params }: { params: { collecti
   const query = request.nextUrl.searchParams.get("query") ?? undefined;
   const page = Number(request.nextUrl.searchParams.get("page")) || 1;
   try {
-    return publicContentJson({ error: null, ...await ummahHadithAdapter.list(params.collection, page, query) });
+    const result = await ummahHadithAdapter.list(params.collection, page, query);
+    return publicContentJson({ error: null, ...result, items: await withHadithTranslations(result.items, params.collection, request.nextUrl.searchParams.get("language")) });
   } catch (error) {
     console.error("UmmahAPI Hadith list request failed", { collection: params.collection, message: error instanceof Error ? error.message : "Unknown error" });
     return publicContentJson({ error: "The sourced Hadith records are unavailable right now.", items: [] }, 502);

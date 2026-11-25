@@ -1,12 +1,15 @@
 import "server-only";
 import { dailyIndex } from "@/lib/daily";
 import { hadithBook, type HadithBook } from "@/lib/hadith-books";
+import { resolveHadithLanguage } from "@/lib/hadith-languages";
 
 const DEFAULT_BASE_URL = "https://ummahapi.com";
 type Json = Record<string, unknown>;
 
 export interface HadithCollection { id: string; name: string; reliability?: string; sections: Array<{ id: string; name: string }>; total: number }
-export interface HadithRecord { arabic: string; authenticityContext: string; bookNumber: number; collectionId: string; collectionName: string; grades: Array<{ grade: string; scholar: string }>; hadithNumber: number; narrator: string; referenceNumber: number; sectionName: string; text: string }
+export interface HadithRecord { arabic: string; authenticityContext: string; bookNumber: number; collectionId: string; collectionName: string; grades: Array<{ grade: string; scholar: string }>; hadithNumber: number; narrator: string; referenceNumber: number; sectionName: string; text: string; translation?: HadithTranslation }
+// Another language's text from the same dataset. `text` is null when the source has none for this Hadith; `unavailable` when it couldn't be fetched.
+export interface HadithTranslation { language: string; text: string | null; unavailable?: boolean }
 export interface HadithListPage { items: HadithRecord[]; page: number; pages: number; total: number }
 export interface HadithBookPage extends HadithListPage { book: HadithBook }
 export interface HadithSourceAdapter { collections(): Promise<HadithCollection[]>; daily(day: string): Promise<HadithRecord | null>; list(collection: string, page?: number, query?: string): Promise<HadithListPage>; one(collection: string, number: number): Promise<HadithRecord | null> }
@@ -93,7 +96,33 @@ const fetchBookFile = async (edition: string, book: number) => {
   return array(object(await response.json()).hadiths);
 };
 
-export async function loadHadithBook(collection: string, bookNumber: number, requestedPage = 1): Promise<HadithBookPage | null> {
+// A single Hadith's text in one edition, or null when that edition has none.
+const fetchHadithFile = async (edition: string, hadithNumber: number) => {
+  const baseUrl = process.env.HADITH_DATASET_URL?.trim() || HADITH_DATASET_URL;
+  const response = await fetch(`${baseUrl}/editions/${edition}/${hadithNumber}.min.json`, { next: { revalidate: 86_400 } });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`Hadith dataset request failed: ${response.status}`);
+  return text(array(object(await response.json()).hadiths)[0]?.text) || null;
+};
+
+// Attaches the requested language's text to each record. English (the default) or an edition the collection lacks leaves records unchanged.
+// A failed fetch marks that record's translation unavailable rather than failing the page; the English text is still there.
+export async function withHadithTranslations(records: HadithRecord[], collection: string, languageCode: string | null | undefined, bookTexts?: Map<number, string>): Promise<HadithRecord[]> {
+  const language = resolveHadithLanguage(collection, languageCode);
+  if (language.code === "en") return records;
+  const edition = `${language.edition}-${collection}`;
+  return Promise.all(records.map(async (record) => {
+    if (record.collectionId !== collection || !Number.isInteger(record.hadithNumber)) return record;
+    if (bookTexts) return { ...record, translation: { language: language.code, text: bookTexts.get(record.hadithNumber) || null } };
+    try {
+      return { ...record, translation: { language: language.code, text: await fetchHadithFile(edition, record.hadithNumber) } };
+    } catch {
+      return { ...record, translation: { language: language.code, text: null, unavailable: true } };
+    }
+  }));
+}
+
+export async function loadHadithBook(collection: string, bookNumber: number, requestedPage = 1, languageCode?: string | null): Promise<HadithBookPage | null> {
   if (!validSlug(collection) || !isAllowedCollection(collection) || !Number.isInteger(bookNumber)) return null;
   const book = hadithBook(collection, bookNumber);
   if (!book) return null;
@@ -116,7 +145,22 @@ export async function loadHadithBook(collection: string, bookNumber: number, req
   }).sort((a, b) => a.hadithNumber - b.hadithNumber);
   const pages = Math.max(1, Math.ceil(records.length / BOOK_PAGE_SIZE));
   const page = Math.min(pages, Math.max(1, Math.floor(requestedPage)));
-  return { book, items: records.slice((page - 1) * BOOK_PAGE_SIZE, page * BOOK_PAGE_SIZE), page, pages, total: records.length };
+  const items = records.slice((page - 1) * BOOK_PAGE_SIZE, page * BOOK_PAGE_SIZE);
+  return { book, items: await translateBookPage(items, collection, bookNumber, languageCode), page, pages, total: records.length };
+}
+
+// A book page reads the translation's whole book file once instead of one request per Hadith.
+async function translateBookPage(items: HadithRecord[], collection: string, bookNumber: number, languageCode?: string | null) {
+  const language = resolveHadithLanguage(collection, languageCode);
+  if (language.code === "en") return items;
+  try {
+    const translated = await fetchBookFile(`${language.edition}-${collection}`, bookNumber);
+    return withHadithTranslations(items, collection, language.code, new Map(translated.map((item) => [number(item.hadithnumber), text(item.text)])));
+  } catch (error) {
+    // A missing book file means the edition has no text for this book; anything else is an outage.
+    const unavailable = !(error instanceof HadithNotFoundError);
+    return items.map((item) => ({ ...item, translation: { language: language.code, text: null, ...(unavailable ? { unavailable } : {}) } }));
+  }
 }
 
 // Search across every enabled collection at once (the provider searches Arabic and English text).

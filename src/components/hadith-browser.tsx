@@ -6,11 +6,12 @@ import { FormEvent, memo, useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import ContentState from "./content-state";
 import { Badge, ButtonLink, Chip, Icon, IconButton, Page, PageHeader } from "@/components/ui";
+import { hadithLanguage, hadithLanguagesFor, resolveHadithLanguage, type HadithLanguage } from "@/lib/hadith-languages";
 import { hasLocalBookmark, readLocalBookmarks, toggleLocalBookmark } from "@/lib/local-bookmarks";
 import styles from "./hadith-browser.module.css";
 
 type Collection = { id: string; name: string; sections: Array<{ id: string; name: string }>; total: number };
-type Hadith = { arabic: string; authenticityContext: string; bookNumber: number; collectionId: string; collectionName: string; grades: Array<{ grade: string; scholar: string }>; hadithNumber: number; narrator: string; referenceNumber: number; sectionName: string; text: string };
+type Hadith = { arabic: string; authenticityContext: string; bookNumber: number; collectionId: string; collectionName: string; grades: Array<{ grade: string; scholar: string }>; hadithNumber: number; narrator: string; referenceNumber: number; sectionName: string; text: string; translation?: { language: string; text: string | null; unavailable?: boolean } };
 type HadithPage = { items: Hadith[]; page: number; pages: number; total: number };
 type Book = { number: number; name: string; count: number };
 type BookList = { books: Book[]; unassigned: number };
@@ -18,6 +19,7 @@ type BookPage = HadithPage & { book: Book };
 type Bookmarks = ReturnType<typeof readLocalBookmarks>;
 
 const ARABIC_KEY = "af-hadith-arabic";
+const LANGUAGE_KEY = "af-hadith-language";
 const fetcher = async (url: string) => { const response = await fetch(url); const value = await response.json(); if (!response.ok) throw value; return value; };
 const hadithPath = (item: Pick<Hadith, "collectionId" | "hadithNumber">) => `/sunnah/${item.collectionId}/${item.hadithNumber}`;
 const bookPath = (collectionId: string, book: number) => `/sunnah/${collectionId}/book/${book}`;
@@ -35,6 +37,33 @@ function useArabicPreference() {
   const change = (value: boolean) => { setShowArabic(value); try { localStorage.setItem(ARABIC_KEY, String(value)); } catch {} };
   return [showArabic, change] as const;
 }
+
+// Translation language, remembered on this device. A collection without that edition falls back to English.
+function useHadithLanguage(collection: string) {
+  const [code, setCode] = useState("en");
+  useEffect(() => { try { setCode(hadithLanguage(localStorage.getItem(LANGUAGE_KEY)).code); } catch {} }, []);
+  const change = (value: string) => { setCode(value); try { localStorage.setItem(LANGUAGE_KEY, value); } catch {} };
+  return [resolveHadithLanguage(collection, code), change, hadithLanguagesFor(collection)] as const;
+}
+const languageParam = (language: HadithLanguage, separator: "?" | "&") => language.code === "en" ? "" : `${separator}language=${language.code}`;
+
+function LanguageSelect({ language, options, onChange }: { language: HadithLanguage; options: HadithLanguage[]; onChange: (code: string) => void }) {
+  if (options.length < 2) return null;
+  return <select className={styles.language} value={language.code} onChange={(event) => onChange(event.target.value)} aria-label="Translation language" title="Translation language">{options.map((option) => <option key={option.code} value={option.code}>{option.name}</option>)}</select>;
+}
+
+// The chosen translation, or the English text with a note saying why the translation isn't shown.
+function HadithText({ item, className }: { item: Hadith; className: string }) {
+  const translation = item.translation;
+  const language = translation ? hadithLanguage(translation.language) : null;
+  if (translation?.text && language) return <p className={className} lang={language.code} dir={language.dir} translate="no">{translation.text}</p>;
+  return <>
+    {language ? <p className={styles.fallback}>{translation?.unavailable ? `The ${language.name} text is unavailable right now. Showing English.` : `The source has no ${language.name} text for this Hadith. Showing English.`}</p> : null}
+    <p className={className} lang="en" translate="no">{item.text}</p>
+  </>;
+}
+
+const translationCredit = (language: HadithLanguage) => language.code === "en" ? "" : ` · ${language.name} translation from fawazahmed0/hadith-api; the source doesn't name the translator for most editions`;
 
 function useShareLink() {
   const [copied, setCopied] = useState<string | null>(null);
@@ -91,7 +120,7 @@ const HadithItem = memo(function HadithItem({ item, showArabic, saved, copied, o
     </div>
     <div className={expanded ? styles.expanded : styles.clamped}>
       {showArabic ? <p className={styles.arabic} lang="ar" dir="rtl" translate="no">{item.arabic}</p> : null}
-      <p className={styles.english} translate="no">{item.text}</p>
+      <HadithText item={item} className={styles.english} />
       {expanded ? <GradeList item={item} /> : null}
     </div>
     <div className={styles.itemFooter}>
@@ -103,10 +132,11 @@ const HadithItem = memo(function HadithItem({ item, showArabic, saved, copied, o
 
 function HadithDetail({ collectionId, hadithNumber, book, initialItem, total }: { collectionId: string; hadithNumber: string; book?: Book | null; initialItem?: Hadith | null; total?: number }) {
   const [showArabic, setShowArabic] = useArabicPreference();
+  const [language, setLanguage, languages] = useHadithLanguage(collectionId);
   const [bookmarks, setBookmarks] = useState<Bookmarks>(readLocalBookmarks);
   useEffect(() => setBookmarks(readLocalBookmarks()), []);
   const { copied, copy, share } = useShareLink();
-  const { data, error } = useSWR<{ item: Hadith }>(`/api/hadith/${collectionId}/${hadithNumber}`, fetcher, { fallbackData: initialItem ? { item: initialItem } : undefined, revalidateOnFocus: false });
+  const { data, error } = useSWR<{ item: Hadith }>(`/api/hadith/${collectionId}/${hadithNumber}${languageParam(language, "?")}`, fetcher, { fallbackData: initialItem && language.code === "en" ? { item: initialItem } : undefined, keepPreviousData: true, revalidateOnFocus: false });
   const item = data?.item;
   const number = Number(hadithNumber);
   const neighbours = <nav className={styles.pager} aria-label="Neighbouring Hadith">
@@ -134,10 +164,10 @@ function HadithDetail({ collectionId, hadithNumber, book, initialItem, total }: 
       </>} />
     {copied ? <p className={styles.copied} role="status">Link copied</p> : null}
     <article className={styles.detail}>
-      <div className={styles.detailBar}><Grade item={item} /><label className={styles.toggle}><input type="checkbox" role="switch" checked={showArabic} onChange={(event) => setShowArabic(event.target.checked)} />Arabic</label></div>
+      <div className={styles.detailBar}><Grade item={item} /><div className={styles.detailControls}><LanguageSelect language={language} options={languages} onChange={setLanguage} /><label className={styles.toggle}><input type="checkbox" role="switch" checked={showArabic} onChange={(event) => setShowArabic(event.target.checked)} />Arabic</label></div></div>
       {showArabic ? <p className={`${styles.arabic} ${styles.detailArabic}`} lang="ar" dir="rtl" translate="no">{item.arabic}</p> : null}
-      <p className={`${styles.english} ${styles.detailEnglish}`} translate="no">{item.text}</p>
-      <p className={styles.source}>Source: UmmahAPI · {item.collectionName}, Hadith {item.hadithNumber}{item.grades.length ? " · Grade as reported; grading authority not identified by the provider" : ""}</p>
+      <HadithText item={item} className={`${styles.english} ${styles.detailEnglish}`} />
+      <p className={styles.source}>Source: UmmahAPI · {item.collectionName}, Hadith {item.hadithNumber}{item.grades.length ? " · Grade as reported; grading authority not identified by the provider" : ""}{translationCredit(language)}</p>
     </article>
     {neighbours}
   </Page>;
@@ -183,7 +213,8 @@ function BooksPanel({ collectionId, books }: { collectionId: string; books: Book
 function BookView({ collectionId, bookNumber, books, collectionName, initialBook }: { collectionId: string; bookNumber: number; books: BookList; collectionName: string; initialBook?: BookPage }) {
   const [page, setPage] = useState(1);
   const [showArabic, setShowArabic] = useArabicPreference();
-  const { data, error, isLoading } = useSWR<BookPage>(`/api/hadith/${collectionId}/books/${bookNumber}?page=${page}`, fetcher, { fallbackData: page === 1 ? initialBook : undefined, keepPreviousData: true, revalidateOnFocus: false });
+  const [language, setLanguage, languages] = useHadithLanguage(collectionId);
+  const { data, error, isLoading } = useSWR<BookPage>(`/api/hadith/${collectionId}/books/${bookNumber}?page=${page}${languageParam(language, "&")}`, fetcher, { fallbackData: page === 1 && language.code === "en" ? initialBook : undefined, keepPreviousData: true, revalidateOnFocus: false });
   const position = books.books.findIndex((entry) => entry.number === bookNumber);
   const book = books.books[position];
   const previous = books.books[position - 1];
@@ -191,7 +222,7 @@ function BookView({ collectionId, bookNumber, books, collectionName, initialBook
   const changePage = (value: number) => { setPage(value); scrollToTop(); };
   return <Page>
     <PageHeader back={{ href: `/sunnah/${collectionId}`, label: collectionName }} kicker={`Book ${book.number} of ${books.books.length}`} kickerIcon="scroll" title={book.name} description={`${collectionName} · ${book.count.toLocaleString()} Hadith`}
-      actions={<Chip icon="quran" aria-pressed={showArabic} onClick={() => setShowArabic(!showArabic)}>Arabic</Chip>} />
+      actions={<><LanguageSelect language={language} options={languages} onChange={setLanguage} /><Chip icon="quran" aria-pressed={showArabic} onClick={() => setShowArabic(!showArabic)}>Arabic</Chip></>} />
     {error ? <ContentState kind="error" message="This book is unavailable right now. No substitute content has been used." />
       : !data ? <div className={styles.loading} role="status" aria-label="Loading Hadith"><i /><i /><i /></div>
       : <>
@@ -203,7 +234,7 @@ function BookView({ collectionId, bookNumber, books, collectionName, initialBook
       {previous ? <Link href={bookPath(collectionId, previous.number)}><span><Icon name="back" />Book {previous.number}</span><strong>{previous.name}</strong></Link> : <span />}
       {next ? <Link className={styles.bookNext} href={bookPath(collectionId, next.number)}><span>Book {next.number}<Icon name="arrowRight" /></span><strong>{next.name}</strong></Link> : null}
     </nav>
-    <p className={styles.source}>Source: fawazahmed0/hadith-api (the dataset UmmahAPI serves) · book names and grades as the source gives them.</p>
+    <p className={styles.source}>Source: fawazahmed0/hadith-api (the dataset UmmahAPI serves) · book names and grades as the source gives them{translationCredit(language)}.</p>
   </Page>;
 }
 
@@ -217,10 +248,11 @@ export default function HadithBrowser({ collectionId, hadithNumber, bookNumber, 
   const [jumpError, setJumpError] = useState<string | null>(null);
   const [view, setView] = useState<"books" | "all">("books");
   const [showArabic, setShowArabic] = useArabicPreference();
+  const [language, setLanguage, languages] = useHadithLanguage(collection);
   const selected = catalog?.items.find((item) => item.id === collection);
   const showBooks = Boolean(books?.books.length) && view === "books" && !query;
-  const listUrl = !hadithNumber && !bookNumber && !showBooks && selected ? `/api/hadith/${collection}?${query ? `query=${encodeURIComponent(query)}` : `page=${page}`}` : null;
-  const { data: list, error: listError, isLoading } = useSWR<HadithPage>(listUrl, fetcher, { fallbackData: page === 1 && !query ? initialList : undefined, keepPreviousData: true, revalidateOnFocus: false });
+  const listUrl = !hadithNumber && !bookNumber && !showBooks && selected ? `/api/hadith/${collection}?${query ? `query=${encodeURIComponent(query)}` : `page=${page}`}${languageParam(language, "&")}` : null;
+  const { data: list, error: listError, isLoading } = useSWR<HadithPage>(listUrl, fetcher, { fallbackData: page === 1 && !query && language.code === "en" ? initialList : undefined, keepPreviousData: true, revalidateOnFocus: false });
 
   if (hadithNumber && collectionId) return <HadithDetail collectionId={collectionId} hadithNumber={hadithNumber} book={book} initialItem={initialItem} total={selected?.total} />;
   if (bookNumber && collectionId && books) return <BookView collectionId={collectionId} bookNumber={bookNumber} books={books} collectionName={selected?.name ?? "Collection"} initialBook={initialBook} />;
@@ -236,7 +268,7 @@ export default function HadithBrowser({ collectionId, hadithNumber, bookNumber, 
   const changePage = (next: number) => { setPage(next); scrollToTop(); };
 
   return <Page>
-    <PageHeader kicker="Hadith collections" kickerIcon="scroll" title="Sunnah library" description="Browse major Hadith collections in Arabic and English, with the grade each source reports." />
+    <PageHeader kicker="Hadith collections" kickerIcon="scroll" title="Sunnah library" description="Browse major Hadith collections in Arabic with English and other translations, and the grade each source reports." />
     {catalogError ? <ContentState kind="error" message="Sunnah collections are unavailable right now. No substitute content has been used." /> : <>
       <nav className={styles.collections} aria-label="Hadith collections">
         {catalog?.items.map((entry) => <Link key={entry.id} href={`/sunnah/${entry.id}`} className={styles.collection} aria-current={entry.id === collection ? "page" : undefined}><strong>{entry.name}</strong><span>{entry.total.toLocaleString()} Hadith</span></Link>)}
@@ -253,6 +285,7 @@ export default function HadithBrowser({ collectionId, hadithNumber, bookNumber, 
           <input id="hadith-number" name="number" type="number" inputMode="numeric" min={1} max={selected?.total} placeholder="1" />
           <button aria-label="Open Hadith number">Go</button>
         </form>
+        <LanguageSelect language={language} options={languages} onChange={setLanguage} />
         <Chip icon="quran" aria-pressed={showArabic} onClick={() => setShowArabic(!showArabic)}>Arabic</Chip>
       </div>
       {jumpError ? <p className={styles.error} role="alert">{jumpError}</p> : null}

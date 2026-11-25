@@ -7,7 +7,7 @@ import styles from "./daily-content.module.css";
 
 type DailyPayload = {
   day: string;
-  hadith: null | { collectionId: string; collectionName: string; hadithNumber: number; text: string; authenticityContext: string };
+  hadith: null | { arabic: string; collectionId: string; collectionName: string; hadithNumber: number; text: string; authenticityContext: string };
   verse: null | { arabicText: string; chapterName: string; translationName: string; translationText: string; verseKey: string };
 };
 
@@ -32,8 +32,9 @@ export default function DailyContent() {
     </article> : null}
     {data.hadith ? <article className={styles.card}>
       <p className={styles.kicker}>Hadith of the day</p>
+      {data.hadith.arabic ? <p className={styles.hadithArabic} lang="ar" dir="rtl" translate="no">{data.hadith.arabic}</p> : null}
       <p className={styles.hadith} translate="no">{data.hadith.text}</p>
-      <footer><span>{data.hadith.collectionName} · Hadith {data.hadith.hadithNumber}{data.hadith.authenticityContext && data.hadith.authenticityContext !== "No grade supplied" ? <small>Reported grade: {data.hadith.authenticityContext}</small> : <small>Source: UmmahAPI</small>}</span><Link href={`/sunnah/${data.hadith.collectionId}/${data.hadith.hadithNumber}`}>Read Arabic & English<Icon name="arrowRight"/></Link></footer>
+      <footer><span>{data.hadith.collectionName} · Hadith {data.hadith.hadithNumber}{data.hadith.authenticityContext && data.hadith.authenticityContext !== "No grade supplied" ? <small>Reported grade: {data.hadith.authenticityContext}</small> : <small>Source: UmmahAPI</small>}</span><Link href={`/sunnah/${data.hadith.collectionId}/${data.hadith.hadithNumber}`}>Read in full<Icon name="arrowRight"/></Link></footer>
     </article> : null}
   </section>;
 }

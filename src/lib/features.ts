@@ -1,4 +1,4 @@
-export type PublicFeature = "salahTimes" | "dua" | "qibla" | "masjidFinder" | "learn";
+export type PublicFeature = "salahTimes" | "dua" | "hisnulMuslim" | "qibla" | "masjidFinder" | "learn";
 
 function enabled(value: string | undefined, defaultValue: boolean) {
   if (value == null || value.trim() === "") return defaultValue;
@@ -8,6 +8,7 @@ function enabled(value: string | undefined, defaultValue: boolean) {
 type FeatureEnvironment = Partial<Record<
   | "NEXT_PUBLIC_FEATURE_SALAH_TIMES"
   | "NEXT_PUBLIC_FEATURE_DUA"
+  | "NEXT_PUBLIC_FEATURE_HISNUL_MUSLIM"
   | "NEXT_PUBLIC_FEATURE_QIBLA"
   | "NEXT_PUBLIC_FEATURE_MASJID_FINDER"
   | "NEXT_PUBLIC_FEATURE_LEARN",
@@ -18,6 +19,8 @@ export function resolvePublicFeatures(environment: FeatureEnvironment): Record<P
   return {
     salahTimes: enabled(environment.NEXT_PUBLIC_FEATURE_SALAH_TIMES, true),
     dua: enabled(environment.NEXT_PUBLIC_FEATURE_DUA, true),
+    // Full Hisnul Muslim from hisnmuslim.com, an interim source pending written permission (docs/DATA-SOURCES.md). Set to false to withdraw it.
+    hisnulMuslim: enabled(environment.NEXT_PUBLIC_FEATURE_HISNUL_MUSLIM, true),
     qibla: enabled(environment.NEXT_PUBLIC_FEATURE_QIBLA, false),
     masjidFinder: enabled(environment.NEXT_PUBLIC_FEATURE_MASJID_FINDER, true),
     // Learn (Noorani Qaidah) is a public preview; every page says its lessons await qualified review. See docs/LEARN-QAIDAH.md.
@@ -28,6 +31,7 @@ export function resolvePublicFeatures(environment: FeatureEnvironment): Record<P
 export const publicFeatures = resolvePublicFeatures({
   NEXT_PUBLIC_FEATURE_SALAH_TIMES: process.env.NEXT_PUBLIC_FEATURE_SALAH_TIMES,
   NEXT_PUBLIC_FEATURE_DUA: process.env.NEXT_PUBLIC_FEATURE_DUA,
+  NEXT_PUBLIC_FEATURE_HISNUL_MUSLIM: process.env.NEXT_PUBLIC_FEATURE_HISNUL_MUSLIM,
   NEXT_PUBLIC_FEATURE_QIBLA: process.env.NEXT_PUBLIC_FEATURE_QIBLA,
   NEXT_PUBLIC_FEATURE_MASJID_FINDER: process.env.NEXT_PUBLIC_FEATURE_MASJID_FINDER,
   NEXT_PUBLIC_FEATURE_LEARN: process.env.NEXT_PUBLIC_FEATURE_LEARN,

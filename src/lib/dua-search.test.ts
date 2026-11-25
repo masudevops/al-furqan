@@ -9,6 +9,7 @@ describe("Dua dataset", () => {
     if (url.endsWith("/core/categories.json")) return reply({ id: [{ name: "Dzikir Pagi", slug: "morning-dhikr" }], en: [{ name: "Morning Dhikr", slug: "morning-dhikr" }, { name: "Daily Dua", slug: "daily-dua" }] });
     if (url.endsWith("/morning-dhikr/en.json")) return reply([entry("Ayatul Kursi"), entry("Al-Ikhlas")]);
     if (url.endsWith("/daily-dua/en.json")) return reply([entry("Before sleeping")]);
+    if (url.endsWith("/en/husn_en.json")) return { ok: true, status: 200, text: async () => JSON.stringify({ English: [{ ID: 28, TITLE: "What to say before sleeping" }] }) } as Response;
     return reply({}, 404);
   })));
   afterEach(() => vi.unstubAllGlobals());
@@ -31,5 +32,6 @@ describe("Dua dataset", () => {
     expect((await searchDuaTitles("kursi")).map((dua) => dua.id)).toEqual([1]);
     expect((await searchDuaTitles("morning ikhlas")).map((dua) => dua.id)).toEqual([2]);
     expect(await searchDuaTitles("  ")).toEqual([]);
+    expect(await searchDuaTitles("sleeping")).toEqual([{ id: 1, title: "Before sleeping", category: "daily-dua", categoryName: "Daily Dua" }, { id: 28, title: "What to say before sleeping", category: "hisnul-muslim", categoryName: "Hisnul Muslim" }]);
   });
 });

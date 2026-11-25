@@ -7,6 +7,7 @@ describe("public feature flags", () => {
     expect(resolvePublicFeatures({})).toEqual({
       salahTimes: true,
       dua: true,
+      hisnulMuslim: true,
       qibla: false,
       masjidFinder: true,
       learn: true,
@@ -17,12 +18,14 @@ describe("public feature flags", () => {
     expect(resolvePublicFeatures({
       NEXT_PUBLIC_FEATURE_SALAH_TIMES: "FALSE",
       NEXT_PUBLIC_FEATURE_DUA: "false",
+      NEXT_PUBLIC_FEATURE_HISNUL_MUSLIM: "false",
       NEXT_PUBLIC_FEATURE_QIBLA: "true",
       NEXT_PUBLIC_FEATURE_MASJID_FINDER: "false",
       NEXT_PUBLIC_FEATURE_LEARN: "False",
     })).toEqual({
       salahTimes: false,
       dua: false,
+      hisnulMuslim: false,
       qibla: true,
       masjidFinder: false,
       learn: false,

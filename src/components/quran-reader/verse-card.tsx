@@ -46,16 +46,28 @@ function TranslatorNote({ id, label, translationName, panelId, onClose }: { id: 
   </aside>;
 }
 
+// "114:1"–"114:6" → "114:1–6"; across Surahs both keys are written in full.
+const passageLabel = (keys: string[]) => {
+  const [first, last] = [keys[0], keys[keys.length - 1]];
+  return first.split(":")[0] === last.split(":")[0] ? `${first}–${last.split(":")[1]}` : `${first}–${last}`;
+};
+
 function AyahTafsir({ verse, tafsirId, tafsirEverywhere, contentPending, fallbackName }: { verse: ReaderVerse; tafsirId: number | null; tafsirEverywhere: boolean; contentPending: boolean; fallbackName?: string }) {
-  // "Tafsir under every Ayah" loads with the Surah; a single panel fetches only its own Ayah.
-  const url = !tafsirEverywhere && tafsirId && verse.verseKey ? `/api/quran/tafsir/${verse.verseKey.replace(":", "/")}?tafsir=${tafsirId}` : null;
+  // "Tafsir under every Ayah" loads with the Surah, where a passage's entry sits under one of its Ayahs.
+  // A single panel, or an Ayah with no entry of its own in that mode, asks for the entry covering this Ayah.
+  const needsLookup = !tafsirEverywhere || (!contentPending && !verse.tafsirText);
+  const url = needsLookup && tafsirId && verse.verseKey ? `/api/quran/tafsir/${verse.verseKey.replace(":", "/")}?tafsir=${tafsirId}` : null;
   const { data, error, isLoading } = useSWR<AyahTafsirPayload>(url, fetchJson, studyOptions);
-  const text = tafsirEverywhere ? verse.tafsirText : data?.tafsirText;
-  const name = (tafsirEverywhere ? verse.tafsirName : data?.tafsirName) ?? fallbackName ?? "Selected source";
+  const passage = data && data.verseKeys.length > 1 ? passageLabel(data.verseKeys) : null;
+  // In the Surah-wide view the passage's text is already shown under another Ayah, so point to it instead of repeating it.
+  const sharedElsewhere = tafsirEverywhere && !verse.tafsirText && passage;
+  const text = tafsirEverywhere ? verse.tafsirText ?? (sharedElsewhere ? null : data?.tafsirText) : data?.tafsirText;
+  const name = (tafsirEverywhere ? verse.tafsirName ?? data?.tafsirName : data?.tafsirName) ?? fallbackName ?? "Selected source";
   return <>
-    <p className={styles.panelSource}>{name}</p>
+    <p className={styles.panelSource}>{name}{passage && !sharedElsewhere ? <span className={styles.passage}> · Explains Ayahs {passage} together</span> : null}</p>
     {text ? <p translate="no" dir="auto">{text}</p>
-      : (tafsirEverywhere ? contentPending : isLoading || (!data && !error)) ? <p className={styles.panelState}>Loading tafsir…</p>
+      : sharedElsewhere ? <p className={styles.unavailable}>This Tafsir explains Ayahs {passage} together; its commentary appears under one of those Ayahs.</p>
+      : (tafsirEverywhere ? contentPending || (url && isLoading) : isLoading || (!data && !error)) ? <p className={styles.panelState}>Loading tafsir…</p>
       : error ? <p className={styles.unavailable}>This Tafsir is unavailable right now.</p>
       : <p className={styles.unavailable}>No tafsir entry was returned for this Ayah.</p>}
   </>;

@@ -153,6 +153,8 @@ export interface AyahTafsirPayload {
   tafsirName: string | null;
   tafsirText: string | null;
   verseKey: string;
+  /** Ayahs this entry explains together, in order (many Tafsirs comment on a passage once). Empty when unknown. */
+  verseKeys: string[];
 }
 
 export interface FootnotePayload {

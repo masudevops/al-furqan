@@ -320,6 +320,24 @@ describe("loadReaderData", () => {
   });
 });
 
+describe("Surah-wide Tafsir", () => {
+  it("keeps every Ayah when the Tafsir files a passage's commentary under one of them", async () => {
+    const byChapter = vi.fn<(chapterId: string, options: Record<string, unknown>) => Promise<unknown[]>>(async () => [1, 2, 3].map((n) => ({ id: n, textUthmani: `Verse ${n}`, translations: [{ resourceId: 85, text: `Translation ${n}` }], verseKey: `1:${n}`, verseNumber: n })));
+    const listSurahTafsirs = vi.fn(async () => ({ tafsirs: [{ verseKey: "1:3", text: "<p>On Ayahs 1 to 3.</p>" }], pagination: { totalPages: 1 } }));
+    sdkMocks.serverClient = {
+      content: { v4: { chapters: { get: vi.fn(async () => ({ id: 1, nameSimple: "Al-Fatihah", versesCount: 3 })) }, verses: { byChapter } } },
+      raw: { content: { v4: { listSurahTafsirs } } },
+    };
+
+    const data = await loadReaderData({} as never, "1", 85, undefined, { tafsirId: 818 });
+
+    expect(data.verses.map((verse) => verse.verseKey)).toEqual(["1:1", "1:2", "1:3"]);
+    expect(data.verses.map((verse) => verse.tafsirText)).toEqual([null, null, "On Ayahs 1 to 3."]);
+    expect(byChapter.mock.calls[0][1]).not.toHaveProperty("tafsirs");
+    expect(listSurahTafsirs).toHaveBeenCalledWith(expect.objectContaining({ path: { resource_id: 818, chapter_number: 1 } }));
+  });
+});
+
 describe("loadRecitationResources", () => {
   it("normalizes the dynamic reciter catalog", async () => {
     sdkMocks.serverClient = { content: { v4: { resources: { recitations: { list: vi.fn(async () => [{ id: 7, reciterName: "Mishari Rashid al-`Afasy", style: null }]) } } } } };
@@ -451,12 +469,18 @@ describe("parseVerseKey", () => {
 
 describe("single-Ayah Tafsir", () => {
   it("reads the requested source's text and name from a verse-by-key response", () => {
-    const payload = parseAyahTafsir({ verse: { verse_key: "2:255", tafsirs: [{ resource_name: "Ibn Kathir (Abridged)", text: "<p>The greatest Ayah.</p>" }] } }, "2:255", 169);
-    expect(payload).toEqual({ tafsirId: 169, tafsirName: "Ibn Kathir (Abridged)", tafsirText: "The greatest Ayah.", verseKey: "2:255" });
+    const payload = parseAyahTafsir({ tafsir: { resourceName: "Ibn Kathir (Abridged)", text: "<p>The greatest Ayah.</p>", verses: { "2:255": { id: 262 } } } }, "2:255", 169);
+    expect(payload).toEqual({ tafsirId: 169, tafsirName: "Ibn Kathir (Abridged)", tafsirText: "The greatest Ayah.", verseKey: "2:255", verseKeys: ["2:255"] });
+  });
+
+  it("returns the passage entry covering an Ayah, with the Ayahs it explains in order", () => {
+    const payload = parseAyahTafsir({ tafsir: { resourceName: "Tanweer", text: "<p>On the last three Surahs.</p>", verses: { "114:6": {}, "114:1": {}, "114:10": {} } } }, "114:6", 925);
+    expect(payload.verseKeys).toEqual(["114:1", "114:6", "114:10"]);
+    expect(payload.tafsirText).toBe("On the last three Surahs.");
   });
 
   it("reports a missing entry instead of inventing text", () => {
-    expect(parseAyahTafsir({ verse: { tafsirs: [] } }, "2:1", 169)).toEqual({ tafsirId: 169, tafsirName: null, tafsirText: null, verseKey: "2:1" });
+    expect(parseAyahTafsir({ tafsir: { text: "", verses: {} } }, "2:1", 169)).toEqual({ tafsirId: 169, tafsirName: null, tafsirText: null, verseKey: "2:1", verseKeys: [] });
   });
 });
 

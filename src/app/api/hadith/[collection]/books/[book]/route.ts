@@ -11,7 +11,7 @@ export async function GET(request: NextRequest, { params }: { params: { collecti
   }
   const page = Number(request.nextUrl.searchParams.get("page")) || 1;
   try {
-    const result = await loadHadithBook(params.collection, Number(params.book), page);
+    const result = await loadHadithBook(params.collection, Number(params.book), page, request.nextUrl.searchParams.get("language"));
     return result ? publicContentJson({ error: null, ...result }, 200, "stable") : publicContentJson({ error: "Book not found.", items: [] }, 404);
   } catch (error) {
     console.error("Hadith book request failed", { book: params.book, collection: params.collection, message: error instanceof Error ? error.message : "Unknown error" });

@@ -666,7 +666,7 @@ export const loadTafsirResources = async (session: StoredSession): Promise<{erro
     const items=toArray(response,["data","tafsirs"]).map(resource=>({
       authorName:asNullableString(resource.authorName??resource.author_name),id:Number(asNullableNumber(resource.id)??0),
       languageName:asNullableString(resource.languageName??resource.language_name),name:asString(resource.name,"Unnamed tafsir"),
-    })).filter(item=>item.id>0);
+    })).filter(item=>item.id>0&&!EMPTY_TAFSIRS.has(item.id));
     return{error:null,items};
   }catch(error){return{error:formatError(error),items:[]}}
 };
@@ -775,13 +775,14 @@ export const loadReaderData = async (
         page: index + 1,
         perPage: READER_PAGE_SIZE,
         translations: translationIds,
-        tafsirs: options.tafsirId ? [options.tafsirId] : undefined,
+        // Tafsir is loaded separately: asking for it here drops every Ayah that has no entry of its own.
         words: Boolean(options.includeWords),
         ...(options.includeWords && options.wordLanguage ? { language: options.wordLanguage } : {}),
         wordFields: options.includeWords ? { textUthmani: true, ...(script === "uthmani" ? { textQpcHafs: true } : {}), verseKey: true, location: true } : undefined,
       })),
     ),
   );
+  const tafsirByVerse = options.tafsirId ? await loadSurahTafsir(serverClient, chapterId, options.tafsirId) : null;
   const audioByVerse = new Map<string, string>();
   if (requestedRecitationId) {
     const audioPageResponses = await Promise.all(
@@ -807,7 +808,7 @@ export const loadReaderData = async (
         verse.translations,
         translationIds[0],
       );
-      const tafsir = toArray(verse.tafsirs)[0];
+      const tafsir = tafsirByVerse?.get(asString(verse.verseKey ?? verse.verse_key));
 
       return {
         arabicText: (script === "uthmani" ? qpcHafsText(verse) : null) ?? asString(verse[scriptField] ?? verse.textUthmani),
@@ -1086,23 +1087,48 @@ export const loadPracticeWords = async (session: StoredSession): Promise<Practic
   return parsePracticeWords(responses);
 };
 
+// A Surah's Tafsir entries keyed by the Ayah each is filed under. Passage entries cover several Ayahs but are filed under one.
+const loadSurahTafsir = async (serverClient: ServerClient, chapterId: string, tafsirId: number) => {
+  const entries = new Map<string, Record<string, unknown>>();
+  for (let page = 1, pages = 1; page <= pages; page += 1) {
+    const response = asObject(await withReaderStage(`tafsir page ${page}`, () => serverClient.raw.content.v4.listSurahTafsirs({ path: { resource_id: tafsirId, chapter_number: Number(chapterId) }, query: { page, per_page: 50 } } as never)));
+    pages = Number(asNullableNumber(asObject(response.pagination).totalPages ?? asObject(response.pagination).total_pages) ?? 1);
+    for (const entry of toArray(response.tafsirs)) entries.set(asString(entry.verseKey ?? entry.verse_key), entry);
+  }
+  return entries;
+};
+
+const verseOrder = (key: string) => { const [chapter, verse] = key.split(":").map(Number); return chapter * 1000 + verse; };
+
+// Reads the Tafsir-by-Ayah response: the entry covering this Ayah, which may explain a whole passage.
 export const parseAyahTafsir = (response: unknown, verseKey: string, tafsirId: number): AyahTafsirPayload => {
-  const root = asObject(response);
-  const verse = asObject(root.verse ?? root);
-  const tafsir = toArray(verse.tafsirs)[0];
+  const tafsir = asObject(asObject(response).tafsir);
+  const verseKeys = Object.keys(asObject(tafsir.verses)).filter((key) => /^\d+:\d+$/.test(key)).sort((a, b) => verseOrder(a) - verseOrder(b));
   return {
     tafsirId,
-    tafsirName: asNullableString(tafsir?.resourceName ?? tafsir?.resource_name ?? tafsir?.name),
-    tafsirText: plainSourceText(tafsir?.text),
+    tafsirName: asNullableString(tafsir.resourceName ?? tafsir.resource_name ?? tafsir.name),
+    tafsirText: plainSourceText(tafsir.text),
     verseKey,
+    verseKeys,
   };
 };
 
+// Tafsirs that Quran.Foundation lists but that have no text for most Ayahs (checked 2026-11-25 on 20 Ayahs across the Quran).
+// Hidden rather than offered as a broken choice; see docs/DATA-SOURCES.md.
+const EMPTY_TAFSIRS = new Set([381]);
+
 // One Ayah's Tafsir, so opening a single study panel does not refetch the whole Surah.
+// The by-Ayah endpoint returns the passage entry that covers this Ayah; the verse endpoint 404s for every Ayah but the one an entry is filed under.
 export const loadAyahTafsir = async (session: StoredSession, verseKey: string, tafsirId: number): Promise<AyahTafsirPayload> => {
   const { serverClient } = await createClients(session);
-  const response = await serverClient.content.v4.verses.byKey(verseKey, { tafsirs: [tafsirId] });
-  return parseAyahTafsir(response, verseKey, tafsirId);
+  try {
+    const response = await serverClient.raw.content.v4.listAyahTafsirs({ path: { resource_id: tafsirId, ayah_key: verseKey } } as never);
+    return parseAyahTafsir(response, verseKey, tafsirId);
+  } catch (error) {
+    // No entry for this Ayah in this Tafsir is an empty result, not an outage.
+    if (error instanceof Error && /^404\b/.test(error.message)) return { tafsirId, tafsirName: null, tafsirText: null, verseKey, verseKeys: [] };
+    throw error;
+  }
 };
 
 export const loadAyahStudy = async (session: StoredSession, verseKey: string): Promise<AyahStudyPayload> => {

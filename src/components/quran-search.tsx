@@ -46,6 +46,8 @@ function QuranResults({ query }: { query: string }) {
   const last = data?.at(-1);
   const hasMore = Boolean(last && last.page < last.pages);
   const translationName = verses.find((item) => item.translationName)?.translationName;
+  const { data: chapters } = useSWR<{ items: Array<{ id: number; nameSimple: string }> }>("/api/chapters", (url: string) => fetch(url).then((response) => response.json()), { revalidateOnFocus: false });
+  const surahName = (verseKey?: string | null) => verseKey && chapters?.items?.find((chapter) => chapter.id === Number(verseKey.split(":")[0]))?.nameSimple;
   if (failure) return <ContentState kind="error" message={failure} />;
   if (isLoading && !data) return <div className={styles.loading} role="status" aria-label="Searching"><i /><i /><i /></div>;
   return <section aria-live="polite" aria-busy={isValidating}>
@@ -54,7 +56,7 @@ function QuranResults({ query }: { query: string }) {
     <ol className={styles.results}>
       {verses.map((item) => <li key={item.verseKey}>
         <Link href={item.readerUrl ?? "/quran"} className={styles.result}>
-          <span className={styles.key}>{item.verseKey}<Icon name="arrowRight" /></span>
+          <span className={styles.key}>{surahName(item.verseKey) ? `${surahName(item.verseKey)} ` : ""}{item.verseKey}<Icon name="arrowRight" /></span>
           {item.arabicText ? <p className={styles.arabic} lang="ar" dir="rtl" translate="no">{item.arabicText}</p> : null}
           {item.text ? <p className={styles.translation} translate="no"><Highlighted text={item.text} query={query} /></p> : null}
         </Link>

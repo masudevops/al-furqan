@@ -3,7 +3,6 @@ import localFont from "next/font/local";
 
 import { starterConfig } from "../../starter.config";
 import AppShell from "@/components/app-shell";
-import PageViewBeacon from "@/components/page-view-beacon";
 import StructuredData, { siteStructuredData } from "@/components/structured-data";
 import { enabledFeatureLabels } from "@/lib/features";
 import "./globals.css";
@@ -77,7 +76,6 @@ export default function RootLayout({
       <body className={`${bodyFont.variable} ${monoFont.variable}`}>
         <StructuredData data={siteStructuredData}/>
         <AppShell>{children}</AppShell>
-        <PageViewBeacon/>
       </body>
     </html>
   );

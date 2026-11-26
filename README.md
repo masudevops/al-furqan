@@ -35,7 +35,7 @@ Production: [al-furqan.app](https://al-furqan.app)
 
 ### Product foundations
 
-- No ads, third-party tracking scripts, cookies for analytics, premium tier, or forced login for the public experience. Page visits are counted first-party as anonymous daily totals (see below).
+- No ads, tracking scripts, premium tier, or forced login for the public experience.
 - Light, dark, and sepia themes; responsive desktop/mobile navigation; keyboard and reduced-motion considerations.
 - Server-rendered Quran and Sunnah content, route metadata, canonical URLs, structured data, social cards, favicon/app icons, robots.txt, and a dynamic sitemap.
 - Google Search Console domain verification and sitemap submission completed by the owner.
@@ -136,7 +136,6 @@ The complete license, attribution, caching, and provenance registry is in [docs/
 - Secrets and access/refresh tokens remain server-side. Never prefix them with `NEXT_PUBLIC_`.
 - Public Quran access never requires login. Local preferences, bookmarks, location, theme, and last-read state stay in browser storage.
 - Personalized Quran.Foundation User API responses are private and uncached.
-- Page-visit analytics are first-party and cookieless: the site's own beacon posts the page path, the referring site's host on arrival, and the screen width to `/api/insights/hit`. Only daily totals are stored in Redis for 400 days (views, pages, sections, referring hosts, country from the CDN header, device class). Unique visitors are estimated per day from a hash of IP + user agent with a random salt deleted after a day; no IP, user agent, cookie or per-person history is stored. Bots, Do Not Track and Global Privacy Control are not counted. The owner-only dashboard is `/insights`, enabled by `INSIGHTS_PASSWORD`.
 - Third-party religious-source failure is fail-closed: no LLM or alternate provider silently fills missing scripture or scholarship.
 
 ## Local setup
